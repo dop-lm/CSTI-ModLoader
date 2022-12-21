@@ -13,40 +13,6 @@ namespace ModLoader
     public class CardDataWarpper : WarpperBase
     {
         public CardDataWarpper(string SrcPath) : base(SrcPath) { }
-        //public void WarpperCopy(System.Object obj, string data, string field_name)
-        //{
-        //    UnityEngine.Debug.Log("CardDataWarpper WarpperCopy Single " + obj.GetType().Name + "." + field_name);
-        //    WarpperFunction.UniqueIDScriptableCopyWarpper(obj, data, field_name);
-        //    //if (ModLoader.AllGUIDDict.TryGetValue(data, out var ele))
-        //    //{
-        //    //    var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-        //    //    var field = obj.GetType().GetField(field_name, bindingFlags);
-        //    //    if (field != ele.GetType().GetField(field_name, bindingFlags))
-        //    //    {
-        //    //        UnityEngine.Debug.LogError("CardDataWarpper WarpperCopy List " + obj.GetType().Name + "." + field_name + "Field not Same");
-        //    //        return;
-        //    //    }
-        //    //    field.SetValue(obj, field.GetValue(ele));
-        //    //}
-        //}
-
-        //public void WarpperCopy(System.Object obj, List<string> data, string field_name)
-        //{
-        //    UnityEngine.Debug.Log("CardDataWarpper WarpperCopy List " + obj.GetType().Name + "." + field_name);
-        //    WarpperFunction.UniqueIDScriptableCopyWarpper(obj, data, field_name);
-        //    //if (data.Count > 0 && ModLoader.AllGUIDDict.TryGetValue(data[0], out var ele))
-        //    //{
-        //    //    var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-        //    //    var field = obj.GetType().GetField(field_name, bindingFlags);
-        //    //    if (field != ele.GetType().GetField(field_name, bindingFlags))
-        //    //    {
-        //    //        UnityEngine.Debug.LogError("CardDataWarpper WarpperCopy List " + obj.GetType().Name + "." + field_name + "Field not Same");
-        //    //        return;
-        //    //    }
-        //    //    field.SetValue(obj, field.GetValue(ele));
-        //    //}
-        //}
-
         public void WarpperCustomSelf(CardData instance)
         {
             WarpperFunction.ClassWarpper(instance, "CardImage", CardImageWarpType, CardImageWarpData, SrcPath);
@@ -81,42 +47,6 @@ namespace ModLoader
 
             WarpperFunction.ClassWarpper(instance, "EnvironmentImprovements", EnvironmentImprovementsWarpType, EnvironmentImprovementsWarpData, SrcPath);
         }
-
-        //public void WarpperReference(System.Object obj, string data, string field_name)
-        //{
-        //    UnityEngine.Debug.Log("CardDataWarpper WarpperReference Single " + obj.GetType().Name + "." + field_name);
-        //    WarpperFunction.ObjectReferenceWarpper(obj, data, field_name, ModLoader.AllGUIDDict);
-        //    //if (ModLoader.AllGUIDDict.TryGetValue(data, out var ele) && ele is CardData)
-        //    //{
-        //    //    var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-        //    //    var field = obj.GetType().GetField(field_name, bindingFlags);
-        //    //    field.SetValue(obj, ele);
-        //    //}
-        //}
-
-        //public void WarpperReference(System.Object obj, List<string> data, string field_name)
-        //{
-        //    UnityEngine.Debug.Log("CardDataWarpper WarpperReference List " + obj.GetType().Name + "." + field_name);
-        //    WarpperFunction.ObjectReferenceWarpper(obj, data, field_name, ModLoader.AllGUIDDict);
-        //    //var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-        //    //var field = obj.GetType().GetField(field_name, bindingFlags);
-        //    //if (field.FieldType.IsGenericType && (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
-        //    //{
-        //    //    var target = field.GetValue(obj) as List<CardData>;
-        //    //    foreach (var name in data)
-        //    //        if (ModLoader.AllGUIDDict.TryGetValue(name, out var ele) && ele is CardData)
-        //    //            target.Add(ele as CardData);
-        //    //}
-        //    //else if (field.FieldType.IsArray)
-        //    //{
-        //    //    var target = field.GetValue(obj) as CardData[];
-        //    //    Array.Resize<CardData>(ref target, data.Count);
-        //    //    for (int i = 0; i < data.Count; i++)
-        //    //        if (ModLoader.AllGUIDDict.TryGetValue(data[i], out var ele) && ele is CardData)
-        //    //            target[i] = ele as CardData;
-        //    //    field.SetValue(obj, target);
-        //    //}
-        //}
 
         // Object Name
         public String ObjectName;

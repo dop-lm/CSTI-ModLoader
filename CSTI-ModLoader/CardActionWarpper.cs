@@ -12,18 +12,6 @@ namespace ModLoader
     {
         public CardActionWarpper(string SrcPath) : base(SrcPath) { }
 
-        //public void WarpperCopy(System.Object obj, string data, string field_name)
-        //{
-        //    UnityEngine.Debug.Log("CardActionWarpper WarpperCopy Single " + obj.GetType().Name + "." + field_name);
-        //    WarpperFunction.UniqueIDScriptableCopyWarpper(obj, data, field_name);
-        //}
-
-        //public void WarpperCopy(System.Object obj, List<string> data, string field_name)
-        //{
-        //    UnityEngine.Debug.Log("CardActionWarpper WarpperCopy List " + obj.GetType().Name + "." + field_name);
-        //    WarpperFunction.UniqueIDScriptableCopyWarpper(obj, data, field_name);
-        //}
-
         public void WarpperCustomSelf(CardAction obj)
         {
             WarpperFunction.ClassWarpper(obj, "ActionLog", ActionLogWarpType, ActionLogWarpData, SrcPath);
@@ -39,23 +27,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "ProducedCards", ProducedCardsWarpType, ProducedCardsWarpData, SrcPath);
 
         }
-
-        //public void WarpperCustom(System.Object obj, string data, string field_name)
-        //{
-        //    UnityEngine.Debug.Log("CardActionWarpper WarpperCustom Single " + obj.GetType().Name + "." + field_name);
-        //    WarpperFunction.ObjectCustomWarpper(obj, data, field_name, this);
-        //    //using (StreamReader sr = new StreamReader(SrcPath + "\\" + data))
-        //    //    UnityEngine.JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), this);
-        //    //var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-        //    //var field = obj.GetType().GetField(field_name, bindingFlags);
-        //    //var sub_obj = field.GetValue(obj) as CardAction;
-        //    //WarpperCustom(sub_obj);
-        //}
-        //public void WarpperCustom(System.Object obj, List<string> data, string field_name)
-        //{
-        //    UnityEngine.Debug.Log("CardActionWarpper WarpperCustom List " + obj.GetType().Name + "." + field_name);
-        //    WarpperFunction.ObjectCustomWarpper(obj, data, field_name, this);
-        //}
 
         // Object Name
         public String ObjectName;
