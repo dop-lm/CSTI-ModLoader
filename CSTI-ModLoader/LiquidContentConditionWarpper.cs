@@ -16,20 +16,13 @@ namespace ModLoader
 
         public void WarpperCustomSelf(ref LiquidContentCondition obj)
         {
-            if (RequiredLiquidWarpType == WarpperFunction.WarpType.REFERENCE)
-            {
-                if (ModLoader.AllGUIDDict.TryGetValue(RequiredLiquidWarpData, out var ele) && ele is CardData)
-                {
-                    obj.RequiredLiquid = ele as CardData;
-                }
-            }
-            if (RequiredGroupWarpType == WarpperFunction.WarpType.REFERENCE)
-            {
-                if (ModLoader.CardTabGroupDict.TryGetValue(RequiredGroupWarpData, out var ele))
-                {
-                    obj.RequiredGroup = ele;
-                }
-            }
+            object box = obj;
+
+            WarpperFunction.ClassWarpper(box, "RequiredLiquid", RequiredLiquidWarpType, RequiredLiquidWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(box, "RequiredGroup", RequiredGroupWarpType, RequiredGroupWarpData, SrcPath);
+
+            obj = (LiquidContentCondition)box;
         }
 
         // Object Name

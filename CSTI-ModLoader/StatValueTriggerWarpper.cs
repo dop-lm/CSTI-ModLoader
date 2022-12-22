@@ -14,13 +14,11 @@ namespace ModLoader
 
         public void WarpperCustomSelf(ref StatValueTrigger obj)
         {
-            if (StatWarpType == WarpperFunction.WarpType.REFERENCE)
-            {
-                if (ModLoader.AllGUIDDict.TryGetValue(StatWarpData, out var ele) && ele is GameStat)
-                {
-                    obj.Stat = ele as GameStat;
-                }
-            }
+            object box = obj;
+
+            WarpperFunction.ClassWarpper(box, "Stat", StatWarpType, StatWarpData, SrcPath);
+
+            obj = (StatValueTrigger)box;
         }
 
         // Object Name

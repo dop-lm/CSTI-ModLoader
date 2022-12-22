@@ -12,13 +12,11 @@ namespace ModLoader
 
         public void WarpperCustomSelf(ref CardStateChange obj)
         {
-            if (TransformIntoWarpType == WarpperFunction.WarpType.REFERENCE)
-            {
-                if (ModLoader.AllGUIDDict.TryGetValue(TransformIntoWarpData, out var ele) && ele is CardData)
-                {
-                    obj.TransformInto = ele as CardData;
-                }
-            }
+            object box = obj;
+
+            WarpperFunction.ClassWarpper(box, "TransformInto", TransformIntoWarpType, TransformIntoWarpData, SrcPath);
+
+            obj = (CardStateChange)box;
         }
 
         // Object Name

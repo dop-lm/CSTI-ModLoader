@@ -14,13 +14,11 @@ namespace ModLoader
 
         public void WarpperCustomSelf(ref TagOnBoardCondition obj)
         {
-            if (TriggerTagWarpType == WarpperFunction.WarpType.REFERENCE)
-            {
-                if (ModLoader.CardTagDict.TryGetValue(TriggerTagWarpData, out var ele) && ele is CardTag)
-                {
-                    obj.TriggerTag = ele;
-                }
-            }
+            object box = obj;
+
+            WarpperFunction.ClassWarpper(box, "TriggerTag", TriggerTagWarpType, TriggerTagWarpData, SrcPath);
+
+            obj = (TagOnBoardCondition)box;
         }
 
         // Object Name

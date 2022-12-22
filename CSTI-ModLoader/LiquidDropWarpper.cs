@@ -12,13 +12,11 @@ namespace ModLoader
 
         public void WarpperCustomSelf(ref LiquidDrop obj)
         {
-            if (LiquidCardWarpType == WarpperFunction.WarpType.REFERENCE)
-            {
-                if (ModLoader.AllGUIDDict.TryGetValue(LiquidCardWarpData, out var ele) && ele is CardData)
-                {
-                    obj.LiquidCard = ele as CardData;
-                }
-            }
+            object box = obj;
+
+            WarpperFunction.ClassWarpper(box, "LiquidCard", LiquidCardWarpType, LiquidCardWarpData, SrcPath);
+
+            obj = (LiquidDrop)box;
         }
 
         // Object Name

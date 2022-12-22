@@ -6,12 +6,17 @@ using System.Threading.Tasks;
 
 namespace ModLoader
 {
-    public class StatBasedDropChanceModifierWarpper
+    public class StatBasedDropChanceModifierWarpper : WarpperBase
     {
-        public void Warpper(StatInterruptionCondition instance)
+        public StatBasedDropChanceModifierWarpper(string SrcPath) : base(SrcPath) { }
+
+        public void WarpperCustomSelf(ref StatBasedDropChanceModifier obj)
         {
-            //if (StatWarpType != WarpperFunction.WarpType.NONE)
-            //    WarpperFunction.UniqueIDScriptableWarpper(instance, "Stat", StatWarpType, StatWarpData);
+            object box = obj;
+
+            WarpperFunction.ClassWarpper(box, "Stat", StatWarpType, StatWarpData, SrcPath);
+
+            obj = (StatBasedDropChanceModifier)box;
         }
 
         // Object Name

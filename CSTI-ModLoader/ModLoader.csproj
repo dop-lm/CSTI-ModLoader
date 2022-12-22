@@ -42,6 +42,7 @@
     <Compile Include="CardDropWapper.cs" />
     <Compile Include="CardDataRefWarpper.cs" />
     <Compile Include="CardStateChangeWarpper.cs" />
+    <Compile Include="CardTabGroupWarpper.cs" />
     <Compile Include="CardTagWarpper.cs" />
     <Compile Include="ActionTagWarpper.cs" />
     <Compile Include="AudioClipWarpper.cs" />
@@ -52,6 +53,7 @@
     <Compile Include="EquipmentTagWarpper.cs" />
     <Compile Include="ExtraDurabilityChangeWarpper.cs" />
     <Compile Include="FromStatChangeActionWarpper.cs" />
+    <Compile Include="GameStatWarpper.cs" />
     <Compile Include="LiquidDropWarpper.cs" />
     <Compile Include="PassiveEffectWarpper.cs" />
     <Compile Include="StatModifierWarpper.cs" />

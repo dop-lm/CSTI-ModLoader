@@ -12,29 +12,13 @@ namespace ModLoader
 
         public void WarpperCustomSelf(ref CardInteractionTrigger obj)
         {
-            if (TriggerCardsWarpType == WarpperFunction.WarpType.REFERENCE)
-            {
-                Array.Resize<CardData>(ref obj.TriggerCards, TriggerCardsWarpData.Count);
-                for(int i = 0; i < TriggerCardsWarpData.Count; i++)
-                {
-                    if (ModLoader.AllGUIDDict.TryGetValue(TriggerCardsWarpData[i], out var ele) && ele is CardData)
-                    {
-                        obj.TriggerCards[i] = ele as CardData;
-                    }
-                }
-            }
+            object box = obj;
+            
+            WarpperFunction.ClassWarpper(box, "TriggerCards", TriggerCardsWarpType, TriggerCardsWarpData, SrcPath);
 
-            if (TriggerTagsWarpType == WarpperFunction.WarpType.REFERENCE)
-            {
-                Array.Resize<CardTag>(ref obj.TriggerTags, TriggerTagsWarpData.Count);
-                for (int i = 0; i < TriggerTagsWarpData.Count; i++)
-                {
-                    if (ModLoader.CardTagDict.TryGetValue(TriggerTagsWarpData[i], out var ele))
-                    {
-                        obj.TriggerTags[i] = ele as CardTag;
-                    }
-                }
-            }
+            WarpperFunction.ClassWarpper(box, "TriggerTags", TriggerTagsWarpType, TriggerTagsWarpData, SrcPath);
+
+            obj = (CardInteractionTrigger)box;
         }
 
         // Object Name

@@ -14,13 +14,11 @@ namespace ModLoader
 
         public void WarpperCustomSelf(ref CardDrop obj)
         {
-            if (DroppedCardWarpType == WarpperFunction.WarpType.REFERENCE)
-            {
-                if (ModLoader.AllGUIDDict.TryGetValue(DroppedCardWarpData, out var ele) && ele is CardData)
-                {
-                    obj.DroppedCard = ele as CardData;
-                }
-            }
+            object box = obj;
+
+            WarpperFunction.ClassWarpper(box, "DroppedCard", DroppedCardWarpType, DroppedCardWarpData, SrcPath);
+
+            obj = (CardDrop)box;
         }
 
         // Object Name

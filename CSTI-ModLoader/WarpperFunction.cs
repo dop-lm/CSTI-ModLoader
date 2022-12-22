@@ -22,11 +22,11 @@ namespace ModLoader
 
         public static void ClassWarpper(System.Object obj, string field_name, WarpType warp_type, string data, string src_dir)
         {
-            if (!obj.GetType().IsClass)
-            {
-                UnityEngine.Debug.LogWarning("ClassWarpper Object IsNotClass");
-                return;
-            }
+            //if (!obj.GetType().IsClass)
+            //{
+            //    UnityEngine.Debug.LogWarning("ClassWarpper Object IsNotClass");
+            //    return;
+            //}
             string method_name;
             if (warp_type == WarpType.NONE)
                 return;
@@ -46,11 +46,11 @@ namespace ModLoader
             {
                 var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
                 var field = obj.GetType().GetField(field_name, bindingFlags);
-                if (warp_type == WarpType.REFERENCE && field.FieldType.IsSubclassOf(typeof(ScriptableObject)))
-                {
-                    UnityEngine.Debug.LogWarning("ClassWarpper Reference Warp Field Must be Subclass of ScriptableObject");
-                    return;
-                }
+                //if (warp_type == WarpType.REFERENCE && !field.FieldType.IsSubclassOf(typeof(ScriptableObject)))
+                //{
+                //    UnityEngine.Debug.LogWarning("ClassWarpper Reference Warp Field Must be Subclass of ScriptableObject");
+                //    return;
+                //}
 
                 Type warpper_type = Type.GetType("ModLoader." + field.FieldType.Name + "Warpper");
                 var warpper = Activator.CreateInstance(warpper_type, src_dir + "\\" + field_name);
@@ -65,11 +65,11 @@ namespace ModLoader
 
         public static void ClassWarpper(System.Object obj, string field_name, WarpType warp_type, List<string> data, string src_dir)
         {
-            if (!obj.GetType().IsClass)
-            {
-                UnityEngine.Debug.LogWarning("ClassWarpper Object IsNotClass");
-                return;
-            }
+            //if (!obj.GetType().IsClass)
+            //{
+            //    UnityEngine.Debug.LogWarning("ClassWarpper Object IsNotClass");
+            //    return;
+            //}
             string method_name;
             if (warp_type == WarpType.NONE)
                 return;
@@ -89,11 +89,11 @@ namespace ModLoader
             {
                 var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
                 var field = obj.GetType().GetField(field_name, bindingFlags);
-                if (warp_type == WarpType.REFERENCE && field.FieldType.IsSubclassOf(typeof(ScriptableObject)))
-                {
-                    UnityEngine.Debug.LogWarning("ClassWarpper Reference Warp Field Must be Subclass of ScriptableObject");
-                    return;
-                }
+                //if (warp_type == WarpType.REFERENCE && !field.FieldType.IsSubclassOf(typeof(ScriptableObject)))
+                //{
+                //    UnityEngine.Debug.LogWarning("ClassWarpper Reference Warp Field Must be Subclass of ScriptableObject");
+                //    return;
+                //}
 
                 Type ele_type;
                 if (field.FieldType.IsGenericType && (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
@@ -123,11 +123,11 @@ namespace ModLoader
 
         public static void UniqueIDScriptableCopyWarpper(System.Object obj, string data, string field_name)
         {
-            if (!obj.GetType().IsClass)
-            {
-                UnityEngine.Debug.LogWarning("UniqueIDScriptableCopyWarpper Object IsNotClass");
-                return;
-            }
+            //if (!obj.GetType().IsClass)
+            //{
+            //    UnityEngine.Debug.LogWarning("UniqueIDScriptableCopyWarpper Object IsNotClass");
+            //    return;
+            //}
             if (ModLoader.AllGUIDDict.TryGetValue(data, out var ele))
             {
 
@@ -151,11 +151,11 @@ namespace ModLoader
 
         public static void UniqueIDScriptableCopyWarpper(System.Object obj, List<string> data, string field_name)
         {
-            if (!obj.GetType().IsClass)
-            {
-                UnityEngine.Debug.LogWarning("UniqueIDScriptableCopyWarpper Object IsNotClass");
-                return;
-            }
+            //if (!obj.GetType().IsClass)
+            //{
+            //    UnityEngine.Debug.LogWarning("UniqueIDScriptableCopyWarpper Object IsNotClass");
+            //    return;
+            //}
             if (data.Count > 0 && ModLoader.AllGUIDDict.TryGetValue(data[0], out var ele))
             {
                 try
@@ -178,11 +178,11 @@ namespace ModLoader
 
         public static void ObjectCustomWarpper(System.Object obj, string data, string field_name, WarpperBase warpper)
         {
-            if (!obj.GetType().IsClass)
-            {
-                UnityEngine.Debug.LogWarning("ObjectCustomWarpper Object IsNotClass");
-                return;
-            }
+            //if (!obj.GetType().IsClass)
+            //{
+            //    UnityEngine.Debug.LogWarning("ObjectCustomWarpper Object IsNotClass");
+            //    return;
+            //}
             try
             {
                 var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
@@ -221,11 +221,11 @@ namespace ModLoader
 
         public static void ObjectCustomWarpper(System.Object obj, List<string> data, string field_name, WarpperBase warpper)
         {
-            if (!obj.GetType().IsClass)
-            {
-                UnityEngine.Debug.LogWarning("ObjectCustomWarpper Object IsNotClass");
-                return;
-            }
+            //if (!obj.GetType().IsClass)
+            //{
+            //    UnityEngine.Debug.LogWarning("ObjectCustomWarpper Object IsNotClass");
+            //    return;
+            //}
 
             try
             {
@@ -306,11 +306,11 @@ namespace ModLoader
 
         public static void ObjectReferenceWarpper<ValueType>(System.Object obj, string data, string field_name, Dictionary<string, ValueType> dict)
         {
-            if (!obj.GetType().IsClass)
-            {
-                UnityEngine.Debug.LogWarning("ObjectReferenceWarpper Object IsNotClass");
-                return;
-            }
+            //if (!obj.GetType().IsClass)
+            //{
+            //    UnityEngine.Debug.LogWarning("ObjectReferenceWarpper Object IsNotClass");
+            //    return;
+            //}
             if (dict.TryGetValue(data, out var ele))
             {
                 try
@@ -328,11 +328,11 @@ namespace ModLoader
 
         public static void ObjectReferenceWarpper<ValueType>(System.Object obj, List<string> data, string field_name, Dictionary<string, ValueType> dict)
         {
-            if (!obj.GetType().IsClass)
-            {
-                UnityEngine.Debug.LogWarning("ObjectReferenceWarpper Object IsNotClass");
-                return;
-            }
+            //if (!obj.GetType().IsClass)
+            //{
+            //    UnityEngine.Debug.LogWarning("ObjectReferenceWarpper Object IsNotClass");
+            //    return;
+            //}
             try
             {
                 var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
