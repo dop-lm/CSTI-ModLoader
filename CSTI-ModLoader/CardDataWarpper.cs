@@ -33,13 +33,13 @@ namespace ModLoader
 
             WarpperFunction.ClassWarpper(obj, "Ambience", AmbienceWarpType, AmbienceWarpData, SrcPath);
 
-            //WarpperFunction.ClassWarpper(obj, "VisualEffects", VisualEffectsWarpType, VisualEffectsWarpData, SrcPath);
+            WarpperFunction.ClassWarpper(obj, "VisualEffects", VisualEffectsWarpType, VisualEffectsWarpData, SrcPath);
 
             WarpperFunction.ClassWarpper(obj, "LocationsBackground", LocationsBackgroundWarpType, LocationsBackgroundWarpData, SrcPath);
 
             WarpperFunction.ClassWarpper(obj, "BaseBackground", BaseBackgroundWarpType, BaseBackgroundWarpData, SrcPath);
 
-            //WarpperFunction.ClassWarpper(obj, "WeatherEffects", WeatherEffectsWarpType, WeatherEffectsWarpData, SrcPath);
+            WarpperFunction.ClassWarpper(obj, "WeatherEffects", WeatherEffectsWarpType, WeatherEffectsWarpData, SrcPath);
 
             WarpperFunction.ClassWarpper(obj, "SpoilageTime", SpoilageTimeWarpType, SpoilageTimeWarpData, SrcPath);
 
@@ -107,12 +107,47 @@ namespace ModLoader
 
             WarpperFunction.ClassWarpper(obj, "TimeValues", TimeValuesWarpType, TimeValuesWarpData, SrcPath);
 
-            //WarpperFunction.ClassWarpper(obj, "CompletedObjectives", CompletedObjectivesWarpType, CompletedObjectivesWarpData, SrcPath);
+            WarpperFunction.ClassWarpper(obj, "CompletedObjectives", CompletedObjectivesWarpType, CompletedObjectivesWarpData, SrcPath);
 
+            WarpperFunction.ClassWarpper(obj, "OnUnlockedLog", OnUnlockedLogWarpType, OnUnlockedLogWarpData, SrcPath);
 
+            WarpperFunction.ClassWarpper(obj, "ExplicitBlueprintNeeded", ExplicitBlueprintNeededWarpType, ExplicitBlueprintNeededWarpData, SrcPath);
 
+            WarpperFunction.ClassWarpper(obj, "BlueprintCardConditions", BlueprintCardConditionsWarpType, BlueprintCardConditionsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BlueprintTagConditions", BlueprintTagConditionsWarpType, BlueprintTagConditionsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BlueprintStatConditions", BlueprintStatConditionsWarpType, BlueprintStatConditionsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BuildingCardConditions", BuildingCardConditionsWarpType, BuildingCardConditionsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BuildingTagConditions", BuildingTagConditionsWarpType, BuildingTagConditionsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BuildingStatConditions", BuildingStatConditionsWarpType, BuildingStatConditionsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BlueprintStages", BlueprintStagesWarpType, BlueprintStagesWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BuildSounds", BuildSoundsWarpType, BuildSoundsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "DeconstructSounds", DeconstructSoundsWarpType, DeconstructSoundsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BlueprintActionTags", BlueprintActionTagsWarpType, BlueprintActionTagsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BlueprintResult", BlueprintResultWarpType, BlueprintResultWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BlueprintStatModifications", BlueprintStatModificationsWarpType, BlueprintStatModificationsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BlueprintCardModifications", BlueprintCardModificationsWarpType, BlueprintCardModificationsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BlueprintFinishedLog", BlueprintFinishedLogWarpType, BlueprintFinishedLogWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "ExplorationResults", ExplorationResultsWarpType, ExplorationResultsWarpData, SrcPath);
 
             WarpperFunction.ClassWarpper(obj, "EnvironmentImprovements", EnvironmentImprovementsWarpType, EnvironmentImprovementsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "EnvironmentDamages", EnvironmentDamagesWarpType, EnvironmentDamagesWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "DefaultEnvCards", DefaultEnvCardsWarpType, DefaultEnvCardsWarpData, SrcPath);
         }
 
         // Object Name

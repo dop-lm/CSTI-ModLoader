@@ -15,6 +15,7 @@ namespace ModLoader
     {
         public static Dictionary<string, UnityEngine.Sprite> SpriteDict = new Dictionary<string, UnityEngine.Sprite>();
         public static Dictionary<string, UnityEngine.AudioClip> AudioClipDict = new Dictionary<string, UnityEngine.AudioClip>();
+        public static Dictionary<string, WeatherSpecialEffect> WeatherSpecialEffectDict = new Dictionary<string, WeatherSpecialEffect>();
 
         public static Dictionary<string, UniqueIDScriptable> AllGUIDDict = new Dictionary<string, UniqueIDScriptable>();
         public static Dictionary<string, ScriptableObject> AllScriptableObjectDict = new Dictionary<string, ScriptableObject>();
@@ -25,7 +26,8 @@ namespace ModLoader
         public static Dictionary<string, CardTabGroup> CardTabGroupDict = new Dictionary<string, CardTabGroup>();
         public static Dictionary<string, EndgameLogCategory> EndgameLogCategoryDict = new Dictionary<string, EndgameLogCategory>();
         public static Dictionary<string, LocalTickCounter> LocalTickCounterDict = new Dictionary<string, LocalTickCounter>();
-        
+        public static Dictionary<string, WeatherSet> WeatherSetDict = new Dictionary<string, WeatherSet>();
+
         private void Awake()
         {
             // Plugin startup logic
@@ -80,7 +82,13 @@ namespace ModLoader
                     else
                         UnityEngine.Debug.LogWarning("CardTabGroupDict Same Key was Add " + ele.name);
                 }
-                
+                else if (ele is WeatherSet)
+                {
+                    if (!WeatherSetDict.ContainsKey(ele.name))
+                        WeatherSetDict.Add(ele.name, ele as WeatherSet);
+                    else
+                        UnityEngine.Debug.LogWarning("WeatherSetDict Same Key was Add " + ele.name);
+                }
             }
 
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(UnityEngine.Sprite)))
@@ -96,6 +104,13 @@ namespace ModLoader
                     AudioClipDict.Add(ele.name, ele as UnityEngine.AudioClip);
                 else
                     UnityEngine.Debug.LogWarning("AudioClipDict Same Key was Add " + ele.name);
+            }
+            foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(WeatherSpecialEffect)))
+            {
+                if (!WeatherSpecialEffectDict.ContainsKey(ele.name))
+                    WeatherSpecialEffectDict.Add(ele.name, ele as WeatherSpecialEffect);
+                else
+                    UnityEngine.Debug.LogWarning("WeatherSpecialEffectDict Same Key was Add " + ele.name);
             }
 
             // find all mod and init all data

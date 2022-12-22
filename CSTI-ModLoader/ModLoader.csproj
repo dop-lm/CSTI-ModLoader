@@ -32,6 +32,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AmbienceSettingsWarpper.cs" />
+    <Compile Include="BlueprintElementWarpper.cs" />
+    <Compile Include="BlueprintStageWarpper.cs" />
     <Compile Include="CardDataWarpper.cs" />
     <Compile Include="CardActionWarpper.cs" />
     <Compile Include="CardFilterRefWarpper.cs" />
@@ -54,6 +56,7 @@
     <Compile Include="ConditionalStatModifierWarpper.cs" />
     <Compile Include="CookingConditionsWarpper.cs" />
     <Compile Include="CookingRecipeWarpper.cs" />
+    <Compile Include="ExplorationResultWarpper.cs" />
     <Compile Include="GeneralConditionWarpper.cs" />
     <Compile Include="DurabilityStatWarpper.cs" />
     <Compile Include="EndgameLogCategoryWarpper.cs" />
@@ -67,6 +70,8 @@
     <Compile Include="LocalCounterEffectWarpper.cs" />
     <Compile Include="LocalTickCounterRefWarpper.cs" />
     <Compile Include="LocalTickCounterWarpper.cs" />
+    <Compile Include="ObjectiveSubObjectiveWarpper.cs" />
+    <Compile Include="ObjectiveWarpper.cs" />
     <Compile Include="PassiveEffectWarpper.cs" />
     <Compile Include="RemotePassiveEffectWarpper.cs" />
     <Compile Include="StatModifierWarpper.cs" />
@@ -85,6 +90,8 @@
     <Compile Include="WarpperFunction.cs" />
     <Compile Include="ModLoader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WeatherSetWarpper.cs" />
+    <Compile Include="WeatherSpecialEffectWarpper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
