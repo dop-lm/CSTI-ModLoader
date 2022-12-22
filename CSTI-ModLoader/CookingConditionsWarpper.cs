@@ -19,9 +19,6 @@ namespace ModLoader
             obj = (CookingConditions)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // CookingPausedSound: AudioClip
         public WarpperFunction.WarpType CookingPausedSoundWarpType;
         public String CookingPausedSoundWarpData;

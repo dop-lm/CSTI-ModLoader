@@ -23,9 +23,6 @@ namespace ModLoader
             obj = (PassiveEffect)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // Conditions: GeneralCondition
         public WarpperFunction.WarpType ConditionsWarpType;
         public String ConditionsWarpData;

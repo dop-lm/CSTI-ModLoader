@@ -14,18 +14,32 @@ namespace ModLoader
         {
         }
 
-        public override void WarpperReference(System.Object obj, string data, string field_name)
-        {
-            UnityEngine.Debug.Log(string.Format("{0} WarpperReference Single {1}.{2}", this.GetType().Name, obj.GetType().Name, field_name));
-            WarpperFunction.ObjectReferenceWarpper(obj, data, field_name, ModLoader.AllGUIDDict);
-        }
-        public override void WarpperReference(System.Object obj, List<string> data, string field_name)
-        {
-            UnityEngine.Debug.Log(string.Format("{0} WarpperReference List {1}.{2}", this.GetType().Name, obj.GetType().Name, field_name));
-            WarpperFunction.ObjectReferenceWarpper(obj, data, field_name, ModLoader.AllGUIDDict);
-        }
+        // TimeOfDayMods: StatTimeOfDayModifier[]
+        public WarpperFunction.WarpType TimeOfDayModsWarpType;
+        public List<String> TimeOfDayModsWarpData;
 
-        // Object Name
-        public String ObjectName;
+        // RequiredPerks: CharacterPerk[]
+        public WarpperFunction.WarpType RequiredPerksWarpType;
+        public List<String> RequiredPerksWarpData;
+
+        // DefaultStatusIcon: Sprite
+        public WarpperFunction.WarpType DefaultStatusIconWarpType;
+        public String DefaultStatusIconWarpData;
+
+        // Statuses: StatStatus[]
+        public WarpperFunction.WarpType StatusesWarpType;
+        public List<String> StatusesWarpData;
+
+        // FeedbackInfo: AmtFeedbackInfo
+        public WarpperFunction.WarpType FeedbackInfoWarpType;
+        public String FeedbackInfoWarpData;
+
+        // OverrideFeedbackPrefab: UIFeedbackStepsBase
+        public WarpperFunction.WarpType OverrideFeedbackPrefabWarpType;
+        public String OverrideFeedbackPrefabWarpData;
+
+        // NotEnoughIcon: Sprite
+        public WarpperFunction.WarpType NotEnoughIconWarpType;
+        public String NotEnoughIconWarpData;
     }
 }

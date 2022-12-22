@@ -13,8 +13,5 @@ namespace ModLoader
         public void WarpperCustomSelf(LocalTickCounter obj)
         {
         }
-
-        // Object Name
-        public String ObjectName;
     }
 }

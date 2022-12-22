@@ -22,9 +22,6 @@ namespace ModLoader
             obj = (RemotePassiveEffect)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // AppliesTo: CardOrTagRef[]
         public WarpperFunction.WarpType AppliesToWarpType;
         public List<string> AppliesToWarpData;

@@ -49,9 +49,6 @@ namespace ModLoader
             //WarpperFunction.ClassWarpper(obj, "CustomWindowPrefab", CustomWindowPrefabWarpType, CustomWindowPrefabWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // ActionLog: EndgameLog
         public WarpperFunction.WarpType ActionLogWarpType;
         public String ActionLogWarpData;

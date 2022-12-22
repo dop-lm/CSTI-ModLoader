@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace ModLoader
 {
-    public class ObjectiveWarpper : CompletableObjectWarpper
+    public class CharacterPerkWarpper : CompletableObjectWarpper
     {
-        public ObjectiveWarpper(string SrcPath) : base(SrcPath) { }
+        public CharacterPerkWarpper(string SrcPath) : base(SrcPath) { }
 
-        public void WarpperCustomSelf(Objective obj)
+        public void WarpperCustomSelf(CharacterPerk obj)
         {
             base.WarpperCustomSelf(obj);
 

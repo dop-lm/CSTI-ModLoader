@@ -27,9 +27,6 @@ namespace ModLoader
             obj = (CardFilter)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // AcceptedCards: CardData[]
         public WarpperFunction.WarpType AcceptedCardsWarpType;
         public List<string> AcceptedCardsWarpData;

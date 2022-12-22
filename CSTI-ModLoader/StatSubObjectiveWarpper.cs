@@ -15,9 +15,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "StatCondition", StatConditionWarpType, StatConditionWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // StatCondition: StatValueTrigger
         public WarpperFunction.WarpType StatConditionWarpType;
         public string StatConditionWarpData;

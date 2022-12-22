@@ -15,9 +15,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "RequiredElements", RequiredElementsWarpType, RequiredElementsWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // RequiredElements: BlueprintElement[]
         public WarpperFunction.WarpType RequiredElementsWarpType;
         public List<string> RequiredElementsWarpData;

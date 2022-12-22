@@ -17,9 +17,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "LiquidImage", LiquidImageWarpType, LiquidImageWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // LiquidCards: List<CardData>
         public WarpperFunction.WarpType LiquidCardsWarpType;
         public List<string> LiquidCardsWarpData;

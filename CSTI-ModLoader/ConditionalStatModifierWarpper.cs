@@ -21,9 +21,6 @@ namespace ModLoader
             obj = (ConditionalStatModifier)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // Stat: GameStat
         public WarpperFunction.WarpType StatWarpType;
         public String StatWarpData;

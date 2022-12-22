@@ -41,9 +41,6 @@ namespace ModLoader
             obj = (GeneralCondition)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // RequiredEnvironment: CardData
         public WarpperFunction.WarpType RequiredEnvironmentWarpType;
         public String RequiredEnvironmentWarpData;

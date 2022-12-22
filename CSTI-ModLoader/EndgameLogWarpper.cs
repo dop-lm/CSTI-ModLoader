@@ -15,9 +15,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "Category", CategoryWarpType, CategoryWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // Category: EndgameLogCategory
         public WarpperFunction.WarpType CategoryWarpType;
         public string CategoryWarpData;

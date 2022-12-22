@@ -17,9 +17,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "RandomNoises", RandomNoisesWarpType, RandomNoisesWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // BackgroundSound: AudioClip
         public WarpperFunction.WarpType BackgroundSoundWarpType;
         public string BackgroundSoundWarpData;

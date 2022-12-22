@@ -21,9 +21,6 @@ namespace ModLoader
             obj = (CardDrop)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // DroppedCard: CardData
         public WarpperFunction.WarpType DroppedCardWarpType;
         public string DroppedCardWarpData;

@@ -19,9 +19,6 @@ namespace ModLoader
             obj = (LocalCounterEffect)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // Counter: LocalTickCounter
         public WarpperFunction.WarpType CounterWarpType;
         public String CounterWarpData;

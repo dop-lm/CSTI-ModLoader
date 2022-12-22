@@ -23,8 +23,5 @@ namespace ModLoader
             UnityEngine.Debug.Log(string.Format("{0} WarpperReference List {1}.{2}", this.GetType().Name, obj.GetType().Name, field_name));
             WarpperFunction.ObjectReferenceWarpper(obj, data, field_name, ModLoader.CardTabGroupDict);
         }
-
-        // Object Name
-        public String ObjectName;
     }
 }

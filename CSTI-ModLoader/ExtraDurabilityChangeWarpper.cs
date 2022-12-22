@@ -20,9 +20,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "SendToEnvironment", SendToEnvironmentWarpType, SendToEnvironmentWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // AffectedCards: List<CardData>
         public WarpperFunction.WarpType AffectedCardsWarpType;
         public List<string> AffectedCardsWarpData;

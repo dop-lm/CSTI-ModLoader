@@ -19,9 +19,6 @@ namespace ModLoader
             obj = (LiquidDrop)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // LiquidCard: CardData
         public WarpperFunction.WarpType LiquidCardWarpType;
         public string LiquidCardWarpData;

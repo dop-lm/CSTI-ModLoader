@@ -31,9 +31,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "DropsAsCollection", DropsAsCollectionWarpType, DropsAsCollectionWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // CompatibleCards: CardData[]
         public WarpperFunction.WarpType CompatibleCardsWarpType;
         public List<string> CompatibleCardsWarpData;

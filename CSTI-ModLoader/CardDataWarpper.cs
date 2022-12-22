@@ -150,9 +150,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "DefaultEnvCards", DefaultEnvCardsWarpType, DefaultEnvCardsWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // CardImage: Sprite
         public WarpperFunction.WarpType CardImageWarpType;
         public String CardImageWarpData;

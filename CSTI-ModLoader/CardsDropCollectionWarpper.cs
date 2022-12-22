@@ -25,9 +25,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "StatModifications", StatModificationsWarpType, StatModificationsWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // StatsDropChanceModifiers: StatBasedDropChanceModifier[]
         public WarpperFunction.WarpType StatsDropChanceModifiersWarpType;
         public List<string> StatsDropChanceModifiersWarpData;

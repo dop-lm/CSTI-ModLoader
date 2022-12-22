@@ -19,9 +19,6 @@ namespace ModLoader
             obj = (TagFilterRef)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // Tag: CardTag
         public WarpperFunction.WarpType TagWarpType;
         public String TagWarpData;

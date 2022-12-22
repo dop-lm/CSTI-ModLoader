@@ -25,9 +25,6 @@ namespace ModLoader
             obj = (LiquidContentCondition)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // RequiredLiquid: CardData
         public WarpperFunction.WarpType RequiredLiquidWarpType;
         public String RequiredLiquidWarpData;

@@ -15,9 +15,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "ObjectiveCondition", ObjectiveConditionWarpType, ObjectiveConditionWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // ObjectiveCondition: Objective
         public WarpperFunction.WarpType ObjectiveConditionWarpType;
         public string ObjectiveConditionWarpData;

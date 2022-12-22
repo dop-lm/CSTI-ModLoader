@@ -25,9 +25,6 @@ namespace ModLoader
             obj = (BlueprintElement)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // RequiredCard: CardData
         public WarpperFunction.WarpType RequiredCardWarpType;
         public String RequiredCardWarpData;

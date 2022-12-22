@@ -13,8 +13,5 @@ namespace ModLoader
         public void WarpperCustomSelf(EndgameLogCategory obj)
         {
         }
-
-        // Object Name
-        public String ObjectName;
     }
 }

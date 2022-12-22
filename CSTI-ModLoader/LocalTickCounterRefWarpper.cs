@@ -15,9 +15,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "Counter", CounterWarpType, CounterWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // Counter: LocalTickCounter
         public WarpperFunction.WarpType CounterWarpType;
         public String CounterWarpData;

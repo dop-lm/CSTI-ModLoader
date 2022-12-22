@@ -22,9 +22,6 @@ namespace ModLoader
             obj = (CardBasedDropChanceModifier)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // CardOnBoard: CardData 
         public WarpperFunction.WarpType CardOnBoardWarpType;
         public String CardOnBoardWarpData;

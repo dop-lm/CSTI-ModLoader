@@ -19,9 +19,6 @@ namespace ModLoader
             obj = (CardStateChange)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // TransformInto: CardData
         public WarpperFunction.WarpType TransformIntoWarpType;
         public string TransformIntoWarpData;

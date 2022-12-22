@@ -13,8 +13,5 @@ namespace ModLoader
         public void WarpperCustomSelf(TimeObjective obj)
         {
         }
-
-        // Object Name
-        public String ObjectName;
     }
 }

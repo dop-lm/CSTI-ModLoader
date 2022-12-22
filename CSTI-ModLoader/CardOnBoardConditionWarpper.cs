@@ -21,9 +21,6 @@ namespace ModLoader
             obj = (CardOnBoardCondition)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // TriggerCard: CardData
         public WarpperFunction.WarpType TriggerCardWarpType;
         public String TriggerCardWarpData;

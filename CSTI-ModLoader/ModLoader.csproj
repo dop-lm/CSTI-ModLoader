@@ -53,6 +53,8 @@
     <Compile Include="AudioClipWarpper.cs" />
     <Compile Include="CardOrTagRefWarpper.cs" />
     <Compile Include="CardGeneralConditionWarpper.cs" />
+    <Compile Include="CharacterPerkWarpper.cs" />
+    <Compile Include="CompletableObjectWarpper.cs" />
     <Compile Include="ConditionalStatModifierWarpper.cs" />
     <Compile Include="CookingConditionsWarpper.cs" />
     <Compile Include="CookingRecipeWarpper.cs" />
@@ -73,7 +75,9 @@
     <Compile Include="ObjectiveSubObjectiveWarpper.cs" />
     <Compile Include="ObjectiveWarpper.cs" />
     <Compile Include="PassiveEffectWarpper.cs" />
+    <Compile Include="PlayerCharacterWarpper.cs" />
     <Compile Include="RemotePassiveEffectWarpper.cs" />
+    <Compile Include="SelfTriggeredActionWarpper.cs" />
     <Compile Include="StatModifierWarpper.cs" />
     <Compile Include="LiquidContentConditionWarpper.cs" />
     <Compile Include="SpriteWarpper.cs" />

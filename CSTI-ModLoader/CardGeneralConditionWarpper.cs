@@ -25,9 +25,6 @@ namespace ModLoader
             obj = (CardGeneralCondition)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // Card: CardData
         public WarpperFunction.WarpType CardWarpType;
         public String CardWarpData;

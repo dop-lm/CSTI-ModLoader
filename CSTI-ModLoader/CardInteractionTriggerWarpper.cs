@@ -21,9 +21,6 @@ namespace ModLoader
             obj = (CardInteractionTrigger)box;
         }
 
-        // Object Name
-        public String ObjectName;
-
         // TriggerCards: CardData[]
         public WarpperFunction.WarpType TriggerCardsWarpType;
         public List<string> TriggerCardsWarpData;

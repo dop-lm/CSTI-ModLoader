@@ -19,9 +19,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "OnFull", OnFullWarpType, OnFullWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // OverrideIcon: Sprite
         public WarpperFunction.WarpType OverrideIconWarpType;
         public string OverrideIconWarpData;

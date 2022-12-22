@@ -50,5 +50,8 @@ namespace ModLoader
 
         // Source Path
         public string SrcPath;
+
+        // Object Name
+        public String ObjectName;
     }
 }

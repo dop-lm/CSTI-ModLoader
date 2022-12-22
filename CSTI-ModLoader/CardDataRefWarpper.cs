@@ -17,9 +17,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "Card", CardWarpType, CardWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // Card: CardData
         public WarpperFunction.WarpType CardWarpType;
         public String CardWarpData;

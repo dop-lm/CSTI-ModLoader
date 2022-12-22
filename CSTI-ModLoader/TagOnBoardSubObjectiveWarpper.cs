@@ -17,9 +17,6 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "OnlyInEnvironment", OnlyInEnvironmentWarpType, OnlyInEnvironmentWarpData, SrcPath);
         }
 
-        // Object Name
-        public String ObjectName;
-
         // Tag: CardTag
         public WarpperFunction.WarpType TagWarpType;
         public string TagWarpData;
