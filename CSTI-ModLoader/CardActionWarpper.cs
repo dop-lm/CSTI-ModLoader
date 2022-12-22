@@ -15,17 +15,38 @@ namespace ModLoader
         public void WarpperCustomSelf(CardAction obj)
         {
             WarpperFunction.ClassWarpper(obj, "ActionLog", ActionLogWarpType, ActionLogWarpData, SrcPath);
+
             WarpperFunction.ClassWarpper(obj, "ActionSounds", ActionSoundsWarpType, ActionSoundsWarpData, SrcPath);
+
             WarpperFunction.ClassWarpper(obj, "ActionTags", ActionTagsWarpType, ActionTagsWarpData, SrcPath);
+
             WarpperFunction.ClassWarpper(obj, "RequiredStatValues", RequiredStatValuesWarpType, RequiredStatValuesWarpData, SrcPath);
+
             WarpperFunction.ClassWarpper(obj, "RequiredCardsOnBoard", RequiredCardsOnBoardWarpType, RequiredCardsOnBoardWarpData, SrcPath);
+
             WarpperFunction.ClassWarpper(obj, "RequiredTagsOnBoard", RequiredTagsOnBoardWarpType, RequiredTagsOnBoardWarpData, SrcPath);
+
             WarpperFunction.ClassWarpper(obj, "RequiredReceivingContainer", RequiredReceivingContainerWarpType, RequiredReceivingContainerWarpData, SrcPath);
+
             WarpperFunction.ClassWarpper(obj, "RequiredReceivingContainerTag", RequiredReceivingContainerTagWarpType, RequiredReceivingContainerTagWarpData, SrcPath);
+
             WarpperFunction.ClassWarpper(obj, "RequiredReceivingLiquidContent", RequiredReceivingLiquidContentWarpType, RequiredReceivingLiquidContentWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "ResetWhenDone", ResetWhenDoneWarpType, ResetWhenDoneWarpData, SrcPath);
+
             WarpperFunction.ClassWarpper(obj, "StatInterruptions", StatInterruptionsWarpType, StatInterruptionsWarpData, SrcPath);
+
             WarpperFunction.ClassWarpper(obj, "ProducedCards", ProducedCardsWarpType, ProducedCardsWarpData, SrcPath);
 
+            WarpperFunction.ClassWarpper(obj, "StatModifications", StatModificationsWarpType, StatModificationsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "ExtraDurabilityModifications", ExtraDurabilityModificationsWarpType, ExtraDurabilityModificationsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BlueprintsFullUnlock", BlueprintsFullUnlockWarpType, BlueprintsFullUnlockWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "ReceivingCardChanges", ReceivingCardChangesWarpType, ReceivingCardChangesWarpData, SrcPath);
+
+            //WarpperFunction.ClassWarpper(obj, "CustomWindowPrefab", CustomWindowPrefabWarpType, CustomWindowPrefabWarpData, SrcPath);
         }
 
         // Object Name
@@ -67,6 +88,10 @@ namespace ModLoader
         public WarpperFunction.WarpType RequiredReceivingLiquidContentWarpType;
         public String RequiredReceivingLiquidContentWarpData;
 
+        // ResetWhenDone: GameStat
+        public WarpperFunction.WarpType ResetWhenDoneWarpType;
+        public String ResetWhenDoneWarpData;
+
         // StatInterruptions: StatInterruptionCondition[]
         public WarpperFunction.WarpType StatInterruptionsWarpType;
         public List<String> StatInterruptionsWarpData;
@@ -75,10 +100,10 @@ namespace ModLoader
         public WarpperFunction.WarpType ProducedCardsWarpType;
         public List<String> ProducedCardsWarpData;
 
+
         // StatModifications: StatModifier[]
         public WarpperFunction.WarpType StatModificationsWarpType;
         public List<String> StatModificationsWarpData;
-
 
         // ExtraDurabilityModifications: ExtraDurabilityChange[]
         public WarpperFunction.WarpType ExtraDurabilityModificationsWarpType;

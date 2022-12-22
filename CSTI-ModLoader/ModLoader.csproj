@@ -31,18 +31,29 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AmbienceSettingsWarpper.cs" />
     <Compile Include="CardDataWarpper.cs" />
     <Compile Include="CardActionWarpper.cs" />
+    <Compile Include="CardInteractionTriggerWarpper.cs" />
     <Compile Include="CardOnBoardConditionWarpper.cs" />
+    <Compile Include="CardOnCardActionWarpper.cs" />
     <Compile Include="CardsDropCollectionWarpper.cs" />
     <Compile Include="CardBasedDropChanceModifierWarpper.cs" />
     <Compile Include="CardDropWapper.cs" />
     <Compile Include="CardDataRefWarpper.cs" />
+    <Compile Include="CardStateChangeWarpper.cs" />
     <Compile Include="CardTagWarpper.cs" />
     <Compile Include="ActionTagWarpper.cs" />
     <Compile Include="AudioClipWarpper.cs" />
     <Compile Include="CardOrTagRefWarpper.cs" />
+    <Compile Include="DurabilityStatWarpper.cs" />
+    <Compile Include="EndgameLogCategoryWarpper.cs" />
+    <Compile Include="EndgameLogWarpper.cs" />
+    <Compile Include="EquipmentTagWarpper.cs" />
     <Compile Include="ExtraDurabilityChangeWarpper.cs" />
+    <Compile Include="FromStatChangeActionWarpper.cs" />
+    <Compile Include="LiquidDropWarpper.cs" />
+    <Compile Include="PassiveEffectWarpper.cs" />
     <Compile Include="StatModifierWarpper.cs" />
     <Compile Include="LiquidContentConditionWarpper.cs" />
     <Compile Include="SpriteWarpper.cs" />

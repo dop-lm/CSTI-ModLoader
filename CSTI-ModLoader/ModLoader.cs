@@ -16,11 +16,13 @@ namespace ModLoader
         public static Dictionary<string, UnityEngine.AudioClip> AudioClipDict = new Dictionary<string, UnityEngine.AudioClip>();
 
         public static Dictionary<string, UniqueIDScriptable> AllGUIDDict = new Dictionary<string, UniqueIDScriptable>();
+        public static Dictionary<string, ScriptableObject> AllScriptableObjectDict = new Dictionary<string, ScriptableObject>();
         public static Dictionary<string, CardTag> CardTagDict = new Dictionary<string, CardTag>();
         public static Dictionary<string, EquipmentTag> EquipmentTagDict = new Dictionary<string, EquipmentTag>();
         public static Dictionary<string, ActionTag> ActionTagDict = new Dictionary<string, ActionTag>();
         public static Dictionary<string, ScriptableObject> WaitForWarpperDict = new Dictionary<string, ScriptableObject>();
         public static Dictionary<string, CardTabGroup> CardTabGroupDict = new Dictionary<string, CardTabGroup>();
+        public static Dictionary<string, EndgameLogCategory> EndgameLogCategoryDict = new Dictionary<string, EndgameLogCategory>();
 
         private void Awake()
         {
@@ -36,34 +38,55 @@ namespace ModLoader
         [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "LoadGameData")]
         public static void GameLoadLoadGameDataPostfix()
         {
-            for (int i = 0; i < GameLoad.Instance.DataBase.AllData.Count; i++)
+            foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(ScriptableObject)))
             {
-                if (!AllGUIDDict.ContainsKey(GameLoad.Instance.DataBase.AllData[i].UniqueID))
-                    AllGUIDDict.Add(GameLoad.Instance.DataBase.AllData[i].UniqueID, GameLoad.Instance.DataBase.AllData[i]);
-                else
-                    UnityEngine.Debug.LogWarning("AllGUIDDict Same Key was Add " + GameLoad.Instance.DataBase.AllData[i].UniqueID);
+                if (!AllScriptableObjectDict.ContainsKey(ele.name))
+                    AllScriptableObjectDict.Add(ele.name, ele as ScriptableObject);
+
+                if (ele is UniqueIDScriptable)
+                {
+                    if (!AllGUIDDict.ContainsKey((ele as UniqueIDScriptable).UniqueID))
+                        AllGUIDDict.Add((ele as UniqueIDScriptable).UniqueID, ele as UniqueIDScriptable);
+                    else
+                        UnityEngine.Debug.LogWarning("AllGUIDDict Same Key was Add " + (ele as UniqueIDScriptable).UniqueID);
+                }
+                else if (ele is CardTag)
+                {
+                    if (!CardTagDict.ContainsKey(ele.name))
+                        CardTagDict.Add(ele.name, ele as CardTag);
+                    else
+                        UnityEngine.Debug.LogWarning("CardTagDict Same Key was Add " + ele.name);
+                }
+                else if (ele is EquipmentTag)
+                {
+                    if (!EquipmentTagDict.ContainsKey(ele.name))
+                        EquipmentTagDict.Add(ele.name, ele as EquipmentTag);
+                    else
+                        UnityEngine.Debug.LogWarning("EquipmentTagDict Same Key was Add " + ele.name);
+                }
+                else if (ele is ActionTag)
+                {
+                    if (!ActionTagDict.ContainsKey(ele.name))
+                        ActionTagDict.Add(ele.name, ele as ActionTag);
+                    else
+                        UnityEngine.Debug.LogWarning("ActionTagDict Same Key was Add " + ele.name);
+                }
+                else if (ele is CardTabGroup)
+                {
+                    if (!CardTabGroupDict.ContainsKey(ele.name))
+                        CardTabGroupDict.Add(ele.name, ele as CardTabGroup);
+                    else
+                        UnityEngine.Debug.LogWarning("CardTabGroupDict Same Key was Add " + ele.name);
+                }
+                else if (ele is EndgameLogCategory)
+                {
+                    if (!EndgameLogCategoryDict.ContainsKey(ele.name))
+                        EndgameLogCategoryDict.Add(ele.name, ele as EndgameLogCategory);
+                    else
+                        UnityEngine.Debug.LogWarning("EndgameLogCategoryDict Same Key was Add " + ele.name);
+                }
             }
-            foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(CardTag)))
-            {
-                if (!CardTagDict.ContainsKey(ele.name))
-                    CardTagDict.Add(ele.name, ele as CardTag);
-                else
-                    UnityEngine.Debug.LogWarning("CardTagDict Same Key was Add " + ele.name);
-            }
-            foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(EquipmentTag)))
-            {
-                if (!EquipmentTagDict.ContainsKey(ele.name))
-                    EquipmentTagDict.Add(ele.name, ele as EquipmentTag);
-                else
-                    UnityEngine.Debug.LogWarning("EquipmentTagDict Same Key was Add " + ele.name);
-            }
-            foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(ActionTag)))
-            {
-                if (!ActionTagDict.ContainsKey(ele.name))
-                    ActionTagDict.Add(ele.name, ele as ActionTag);
-                else
-                    UnityEngine.Debug.LogWarning("ActionTagDict Same Key was Add " + ele.name);
-            }
+
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(UnityEngine.Sprite)))
             {
                 if (!SpriteDict.ContainsKey(ele.name))
@@ -78,14 +101,6 @@ namespace ModLoader
                 else
                     UnityEngine.Debug.LogWarning("AudioClipDict Same Key was Add " + ele.name);
             }
-            foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(CardTabGroup)))
-            {
-                if (!CardTabGroupDict.ContainsKey(ele.name))
-                    CardTabGroupDict.Add(ele.name, ele as CardTabGroup);
-                else
-                    UnityEngine.Debug.LogWarning("CardTabGroupDict Same Key was Add " + ele.name);
-            }
-
 
             // find all mod and init all data
             CardData card = CardData.CreateInstance<CardData>();

@@ -13,39 +13,61 @@ namespace ModLoader
     public class CardDataWarpper : WarpperBase
     {
         public CardDataWarpper(string SrcPath) : base(SrcPath) { }
-        public void WarpperCustomSelf(CardData instance)
+        public void WarpperCustomSelf(CardData obj)
         {
-            WarpperFunction.ClassWarpper(instance, "CardImage", CardImageWarpType, CardImageWarpData, SrcPath);
+            WarpperFunction.ClassWarpper(obj, "CardImage", CardImageWarpType, CardImageWarpData, SrcPath);
 
-            WarpperFunction.ClassWarpper(instance, "CardBackground", CardBackgroundWarpType, CardBackgroundWarpData, SrcPath);
+            WarpperFunction.ClassWarpper(obj, "CardBackground", CardBackgroundWarpType, CardBackgroundWarpData, SrcPath);
 
-            WarpperFunction.ClassWarpper(instance, "CardTags", CardTagsWarpType, CardTagsWarpData, SrcPath);
+            WarpperFunction.ClassWarpper(obj, "CardTags", CardTagsWarpType, CardTagsWarpData, SrcPath);
 
-            //WarpperFunction.EquipmentTagWarpper(instance, "EquipmentTags", EquipmentTagsWarpType, EquipmentTagsWarpData);
+            WarpperFunction.ClassWarpper(obj, "EquipmentTags", EquipmentTagsWarpType, EquipmentTagsWarpData, SrcPath);
 
-            //WarpperFunction.ListOrArrayJsonWarpper(instance, "LiquidValidContainers", LiquidValidContainersWarpType, LiquidValidContainersWarpData, "", SrcPath);
+            WarpperFunction.ClassWarpper(obj, "LiquidValidContainers", LiquidValidContainersWarpType, LiquidValidContainersWarpData, SrcPath);
 
-            //WarpperFunction.CardDataWarpper(instance, "SpawningBlockedBy", SpawningBlockedByWarpType, SpawningBlockedByWarpData);
+            WarpperFunction.ClassWarpper(obj, "SpawningBlockedBy", SpawningBlockedByWarpType, SpawningBlockedByWarpData, SrcPath);
 
-            //WarpperFunction.CardDataWarpper(instance, "CarriesOverTo", CarriesOverToWarpType, CarriesOverToWarpData);
+            WarpperFunction.ClassWarpper(obj, "CarriesOverTo", CarriesOverToWarpType, CarriesOverToWarpData, SrcPath);
 
-            //WarpperFunction.AudioClipWarpper(instance, "WhenCreatedSounds", WhenCreatedSoundsWarpType, WhenCreatedSoundsWarpData);
+            WarpperFunction.ClassWarpper(obj, "WhenCreatedSounds", WhenCreatedSoundsWarpType, WhenCreatedSoundsWarpData, SrcPath);
 
-            //WarpperFunction.AmbienceSettingsWarpper(instance, "Ambience", AmbienceWarpType, AmbienceWarpData);
+            WarpperFunction.ClassWarpper(obj, "Ambience", AmbienceWarpType, AmbienceWarpData, SrcPath);
 
-            //WarpperFunction.ListOrArrayJsonWarpper(instance, "VisualEffects", VisualEffectsWarpType, VisualEffectsWarpData, "", SrcPath);
+            //WarpperFunction.ClassWarpper(obj, "VisualEffects", VisualEffectsWarpType, VisualEffectsWarpData, SrcPath);
 
-            //WarpperFunction.SpriteWarpper(instance, "LocationsBackground", LocationsBackgroundWarpType, LocationsBackgroundWarpData);
+            WarpperFunction.ClassWarpper(obj, "LocationsBackground", LocationsBackgroundWarpType, LocationsBackgroundWarpData, SrcPath);
 
-            //WarpperFunction.SpriteWarpper(instance, "BaseBackground", BaseBackgroundWarpType, BaseBackgroundWarpData);
+            WarpperFunction.ClassWarpper(obj, "BaseBackground", BaseBackgroundWarpType, BaseBackgroundWarpData, SrcPath);
 
-            //WarpperFunction.WeatherSetWarpper(instance, "WeatherEffects", WeatherSetWarpType, WeatherSetWarpData);
+            //WarpperFunction.ClassWarpper(obj, "WeatherEffects", WeatherEffectsWarpType, WeatherEffectsWarpData, SrcPath);
 
-            //WarpperFunction.DurabilityStatWarpper(instance, "SpoilageTime", SpoilageTimeWarpType, WSpoilageTimeWarpData);
+            WarpperFunction.ClassWarpper(obj, "SpoilageTime", SpoilageTimeWarpType, SpoilageTimeWarpData, SrcPath);
 
-            WarpperFunction.ClassWarpper(instance, "DismantleActions", DismantleActionsWarpType, DismantleActionsWarpData, SrcPath);
+            WarpperFunction.ClassWarpper(obj, "UsageDurability", UsageDurabilityWarpType, UsageDurabilityWarpData, SrcPath);
 
-            WarpperFunction.ClassWarpper(instance, "EnvironmentImprovements", EnvironmentImprovementsWarpType, EnvironmentImprovementsWarpData, SrcPath);
+            WarpperFunction.ClassWarpper(obj, "FuelCapacity", FuelCapacityWarpType, FuelCapacityWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "Progress", ProgressWarpType, ProgressWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "SpecialDurability1", SpecialDurability1WarpType, SpecialDurability1WarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "SpecialDurability2", SpecialDurability2WarpType, SpecialDurability2WarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "SpecialDurability3", SpecialDurability3WarpType, SpecialDurability3WarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "SpecialDurability4", SpecialDurability4WarpType, SpecialDurability4WarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "CardInteractions", CardInteractionsWarpType, CardInteractionsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "OnStatsChangeActions", OnStatsChangeActionsWarpType, OnStatsChangeActionsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "DismantleActions", DismantleActionsWarpType, DismantleActionsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "EnvironmentImprovements", EnvironmentImprovementsWarpType, EnvironmentImprovementsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "PassiveStatEffects", PassiveStatEffectsWarpType, PassiveStatEffectsWarpData, SrcPath);
+
+            //WarpperFunction.ClassWarpper(obj, "PassiveEffects", PassiveEffectsWarpType, PassiveEffectsWarpData, SrcPath);
         }
 
         // Object Name

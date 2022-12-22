@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSTI-ModLoader", "CSTI-ModLoader\CSTI-ModLoader.csproj", "{34D91181-B67D-4226-B87D-C90488A16702}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSTI-ModLoader", "CSTI-ModLoader\ModLoader.csproj", "{34D91181-B67D-4226-B87D-C90488A16702}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
