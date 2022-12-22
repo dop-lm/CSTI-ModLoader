@@ -12,13 +12,15 @@ namespace ModLoader
 
         public void WarpperCustomSelf(ref PassiveEffect obj)
         {
-            //if (StatWarpType == WarpperFunction.WarpType.REFERENCE)
-            //{
-            //    if (ModLoader.AllGUIDDict.TryGetValue(StatWarpData, out var ele) && ele is GameStat)
-            //    {
-            //        obj.Stat = ele as GameStat;
-            //    }
-            //}
+            object box = obj;
+
+            WarpperFunction.ClassWarpper(box, "Conditions", ConditionsWarpType, ConditionsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(box, "StatModifiers", StatModifiersWarpType, StatModifiersWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(box, "GeneratedLiquid", GeneratedLiquidWarpType, GeneratedLiquidWarpData, SrcPath);
+
+            obj = (PassiveEffect)box;
         }
 
         // Object Name
@@ -31,5 +33,9 @@ namespace ModLoader
         // StatModifiers: StatModifier[]
         public WarpperFunction.WarpType StatModifiersWarpType;
         public List<String> StatModifiersWarpData;
+
+        // GeneratedLiquid: LiquidDrop
+        public WarpperFunction.WarpType GeneratedLiquidWarpType;
+        public String GeneratedLiquidWarpData;
     }
 }

@@ -1,20 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ModLoader
 {
-    public class CardDataRefWarpper : WarpperBase
+    public class CardFilterRefWarpper : WarpperBase
     {
-        public CardDataRefWarpper(string SrcPath) : base(SrcPath) { }
+        public CardFilterRefWarpper(string SrcPath) : base(SrcPath) { }
 
-        public void WarpperCustomSelf(CardDataRef obj)
+        public void WarpperCustomSelf(ref CardFilterRef obj)
         {
-            WarpperFunction.ClassWarpper(obj, "Card", CardWarpType, CardWarpData, SrcPath);
+            object box = obj;
+
+            WarpperFunction.ClassWarpper(box, "Card", CardWarpType, CardWarpData, SrcPath);
+
+            obj = (CardFilterRef)box;
         }
 
         // Object Name

@@ -63,11 +63,56 @@ namespace ModLoader
 
             WarpperFunction.ClassWarpper(obj, "DismantleActions", DismantleActionsWarpType, DismantleActionsWarpData, SrcPath);
 
-            WarpperFunction.ClassWarpper(obj, "EnvironmentImprovements", EnvironmentImprovementsWarpType, EnvironmentImprovementsWarpData, SrcPath);
-
             WarpperFunction.ClassWarpper(obj, "PassiveStatEffects", PassiveStatEffectsWarpType, PassiveStatEffectsWarpData, SrcPath);
 
-            //WarpperFunction.ClassWarpper(obj, "PassiveEffects", PassiveEffectsWarpType, PassiveEffectsWarpData, SrcPath);
+            WarpperFunction.ClassWarpper(obj, "PassiveEffects", PassiveEffectsWarpType, PassiveEffectsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "RemotePassiveEffects", RemotePassiveEffectsWarpType, RemotePassiveEffectsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "ActiveCounters", ActiveCountersWarpType, ActiveCountersWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "LocalCounterEffects", LocalCounterEffectsWarpType, LocalCounterEffectsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "DroppedOnDestroy", DroppedOnDestroyWarpType, DroppedOnDestroyWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "DefaultLiquidContained", DefaultLiquidContainedWarpType, DefaultLiquidContainedWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "DefaultLiquidImage", DefaultLiquidImageWarpType, DefaultLiquidImageWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "LiquidImages", LiquidImagesWarpType, LiquidImagesWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "ExclusivelyAcceptedLiquids", ExclusivelyAcceptedLiquidsWarpType, ExclusivelyAcceptedLiquidsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "NOTAcceptedLiquids", NOTAcceptedLiquidsWarpType, NOTAcceptedLiquidsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "ContainedLiquidTransform", ContainedLiquidTransformWarpType, ContainedLiquidTransformWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "InventorySlots", InventorySlotsWarpType, InventorySlotsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "InventoryFilter", InventoryFilterWarpType, InventoryFilterWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "CookingConditions", CookingConditionsWarpType, CookingConditionsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "CookingRecipes", CookingRecipesWarpType, CookingRecipesWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "CookingSprite", CookingSpriteWarpType, CookingSpriteWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "EffectsToInventoryContent", EffectsToInventoryContentWarpType, EffectsToInventoryContentWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "CardsOnBoard", CardsOnBoardWarpType, CardsOnBoardWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "TagsOnBoard", TagsOnBoardWarpType, TagsOnBoardWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "StatValues", StatValuesWarpType, StatValuesWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "TimeValues", TimeValuesWarpType, TimeValuesWarpData, SrcPath);
+
+            //WarpperFunction.ClassWarpper(obj, "CompletedObjectives", CompletedObjectivesWarpType, CompletedObjectivesWarpData, SrcPath);
+
+
+
+
+            WarpperFunction.ClassWarpper(obj, "EnvironmentImprovements", EnvironmentImprovementsWarpType, EnvironmentImprovementsWarpData, SrcPath);
         }
 
         // Object Name

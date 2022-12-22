@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace ModLoader
 {
-    public class EndgameLogCategoryWarpper : WarpperBase
+    public class TimeObjectiveWarpper : WarpperBase
     {
-        public EndgameLogCategoryWarpper(string SrcPath) : base(SrcPath) { }
+        public TimeObjectiveWarpper(string SrcPath) : base(SrcPath) { }
 
-        public void WarpperCustomSelf(EndgameLogCategory instance)
+        public void WarpperCustomSelf(TimeObjective obj)
         {
         }
 

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ModLoader
 {
-    internal class CardTabGroupWarpper : WarpperBase
+    public class CardTabGroupWarpper : WarpperBase
     {
         public CardTabGroupWarpper(string SrcPath) : base(SrcPath) { }
 

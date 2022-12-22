@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace ModLoader
 {
-    public class EndgameLogCategoryWarpper : WarpperBase
+    public class LocalTickCounterWarpper : WarpperBase
     {
-        public EndgameLogCategoryWarpper(string SrcPath) : base(SrcPath) { }
+        public LocalTickCounterWarpper(string SrcPath) : base(SrcPath) { }
 
-        public void WarpperCustomSelf(EndgameLogCategory instance)
+        public void WarpperCustomSelf(LocalTickCounter obj)
         {
         }
 

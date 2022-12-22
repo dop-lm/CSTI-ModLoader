@@ -1,4 +1,5 @@
-﻿using BepInEx;
+﻿using System;
+using BepInEx;
 using HarmonyLib;
 using System.Collections;
 using System.Collections.Generic;
@@ -23,7 +24,8 @@ namespace ModLoader
         public static Dictionary<string, ScriptableObject> WaitForWarpperDict = new Dictionary<string, ScriptableObject>();
         public static Dictionary<string, CardTabGroup> CardTabGroupDict = new Dictionary<string, CardTabGroup>();
         public static Dictionary<string, EndgameLogCategory> EndgameLogCategoryDict = new Dictionary<string, EndgameLogCategory>();
-
+        public static Dictionary<string, LocalTickCounter> LocalTickCounterDict = new Dictionary<string, LocalTickCounter>();
+        
         private void Awake()
         {
             // Plugin startup logic
@@ -78,13 +80,7 @@ namespace ModLoader
                     else
                         UnityEngine.Debug.LogWarning("CardTabGroupDict Same Key was Add " + ele.name);
                 }
-                else if (ele is EndgameLogCategory)
-                {
-                    if (!EndgameLogCategoryDict.ContainsKey(ele.name))
-                        EndgameLogCategoryDict.Add(ele.name, ele as EndgameLogCategory);
-                    else
-                        UnityEngine.Debug.LogWarning("EndgameLogCategoryDict Same Key was Add " + ele.name);
-                }
+                
             }
 
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(UnityEngine.Sprite)))
@@ -112,6 +108,7 @@ namespace ModLoader
             GameLoad.Instance.DataBase.AllData.Add(card);
             WaitForWarpperDict.Add(card.name, card);
 
+            DateTime before = DateTime.Now;
             foreach (var item in WaitForWarpperDict)
             {
                 if (item.Value is CardData)
@@ -122,6 +119,9 @@ namespace ModLoader
                     warpper.WarpperCustomSelf(card);
                 }
             }
+            DateTime after = DateTime.Now;
+            TimeSpan duration = after.Subtract(before);
+            Debug.Log("Time taken in Milliseconds: " + (duration.Milliseconds));
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CheatsManager), "CheatsActive", MethodType.Getter)]
