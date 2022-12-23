@@ -42,6 +42,7 @@ namespace ModLoader
         }
 
         private static Dictionary<string, UniqueIDScriptablePack> WaitForWarpperGUIDDict = new Dictionary<string, UniqueIDScriptablePack>();
+        private static List<Tuple<string, string>> WaitForLoadCSVList = new List<Tuple<string, string>>();
 
         private void Awake()
         {
@@ -173,6 +174,22 @@ namespace ModLoader
                         }
 
                         // Load Localization
+                        try
+                        {
+                            var files = Directory.GetFiles(dir + @"\Localization");
+                            foreach (var file in files)
+                            {
+                                if (file.EndsWith(".csv"))
+                                {
+                                    using (StreamReader sr = new StreamReader(file))
+                                        WaitForLoadCSVList.Add(new Tuple<string, string>(Path.GetFileName(file), sr.ReadToEnd()));
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            UnityEngine.Debug.LogError(ex.Message);
+                        }
 
                         // Load and init CardData
                         try
@@ -372,6 +389,28 @@ namespace ModLoader
             TimeSpan duration = after.Subtract(before);
             Debug.Log("Time taken in Milliseconds: " + (duration.Milliseconds));
         }
+        public static void LoadLocalization()
+        {
+            if (MBSingleton<LocalizationManager>.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "简体中文")
+            {
+                foreach (var pair in WaitForLoadCSVList)
+                {
+                    if (pair.Item1.Contains("SimpCn"))
+                    {
+                        var CurrentTexts = Traverse.Create(MBSingleton<LocalizationManager>.Instance).Field("CurrentTexts").GetValue() as Dictionary<string, string>;
+                        Dictionary<string, List<string>> dictionary = CSVParser.LoadFromString(pair.Item2, Delimiter.Comma);
+                        System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex("\\\\n");
+                        foreach (KeyValuePair<string, List<string>> keyValuePair in dictionary)
+                        {
+                            if (!CurrentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
+                            {
+                                CurrentTexts.Add(keyValuePair.Key, regex.Replace(keyValuePair.Value[1], "\n"));
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "LoadGameData")]
         public static void GameLoadLoadGameDataPostfix()
@@ -380,9 +419,15 @@ namespace ModLoader
 
             LoadMods();
 
+            LoadLocalization();
+
             WarpperAllMods();
         }
 
-
+        [HarmonyPostfix, HarmonyPatch(typeof(LocalizationManager), "LoadLanguage")]
+        public static void LocalizationManagerLoadLanguagePostfix()
+        {
+            LoadLocalization();
+        }
     }
 }
