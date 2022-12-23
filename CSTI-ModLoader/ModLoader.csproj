@@ -31,6 +31,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ActionReportWarpper.cs" />
+    <Compile Include="ActionSubObjectiveWarpper.cs" />
     <Compile Include="AmbienceSettingsWarpper.cs" />
     <Compile Include="BlueprintElementWarpper.cs" />
     <Compile Include="BlueprintStageWarpper.cs" />

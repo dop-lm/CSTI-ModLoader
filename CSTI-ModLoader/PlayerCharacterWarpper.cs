@@ -12,6 +12,26 @@ namespace ModLoader
 
         public void WarpperCustomSelf(PlayerCharacter obj)
         {
+            WarpperFunction.ClassWarpper(obj, "CharacterPortrait", CharacterPortraitWarpType, CharacterPortraitWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "Environment", EnvironmentWarpType, EnvironmentWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "Locations", LocationsWarpType, LocationsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "BaseAndItemCards", BaseAndItemCardsWarpType, BaseAndItemCardsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "StartingClothes", StartingClothesWarpType, StartingClothesWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "InitialStatModifiers", InitialStatModifiersWarpType, InitialStatModifiersWarpData, SrcPath);
+
+            //WarpperFunction.ClassWarpper(obj, "Journal", JournalWarpType, JournalWarpData, SrcPath);
+
+            //WarpperFunction.ClassWarpper(obj, "Guide", GuideWarpType, GuideWarpData, SrcPath);
+
+            //WarpperFunction.ClassWarpper(obj, "EasyPackage", EasyPackageWarpType, EasyPackageWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "CharacterPerks", CharacterPerksWarpType, CharacterPerksWarpData, SrcPath);
+
         }
 
         // CharacterPortrait: Sprite

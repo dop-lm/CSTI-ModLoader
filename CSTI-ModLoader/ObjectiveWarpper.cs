@@ -14,7 +14,17 @@ namespace ModLoader
         {
             base.WarpperCustomSelf(obj);
 
+            WarpperFunction.ClassWarpper(obj, "ObjectiveLog", ObjectiveLogWarpType, ObjectiveLogWarpData, SrcPath);
 
+            WarpperFunction.ClassWarpper(obj, "OnCompleteActions", OnCompleteActionsWarpType, OnCompleteActionsWarpData, SrcPath);
         }
+
+        // ObjectiveLog: EndgameLog
+        public WarpperFunction.WarpType ObjectiveLogWarpType;
+        public String ObjectiveLogWarpData;
+
+        // OnCompleteActions: List<CardAction>
+        public WarpperFunction.WarpType OnCompleteActionsWarpType;
+        public List<String> OnCompleteActionsWarpData;
     }
 }
