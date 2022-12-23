@@ -43,6 +43,7 @@ namespace ModLoader
 
         private static Dictionary<string, UniqueIDScriptablePack> WaitForWarpperGUIDDict = new Dictionary<string, UniqueIDScriptablePack>();
         private static List<Tuple<string, string>> WaitForLoadCSVList = new List<Tuple<string, string>>();
+        private static List<Tuple<string, string,  CardData>> WaitForAddBlueprintCard = new List<Tuple<string, string, CardData>>();
 
         private void Awake()
         {
@@ -355,6 +356,8 @@ namespace ModLoader
                     using (StreamReader sr = new StreamReader(item.Value.CardPath))
                         JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                     warpper.WarpperCustomSelf(item.Value.obj as CardData);
+                    if((item.Value.obj as CardData).CardType == CardTypes.Blueprint && warpper.BlueprintCardDataCardTabGroup != "" && warpper.BlueprintCardDataCardTabSubGroup != "")
+                        WaitForAddBlueprintCard.Add(new Tuple<string, string, CardData>(warpper.BlueprintCardDataCardTabGroup, warpper.BlueprintCardDataCardTabSubGroup, item.Value.obj as CardData));
                 }
                 else if (item.Value.obj is CharacterPerk)
                 {
@@ -389,7 +392,7 @@ namespace ModLoader
             TimeSpan duration = after.Subtract(before);
             Debug.Log("Time taken in Milliseconds: " + (duration.Milliseconds));
         }
-        public static void LoadLocalization()
+        private static void LoadLocalization()
         {
             if (MBSingleton<LocalizationManager>.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "简体中文")
             {
@@ -412,6 +415,29 @@ namespace ModLoader
             }
         }
 
+        private static void AddBlueprint(BlueprintModelsScreen instance)
+        {
+            foreach(var tuple in WaitForAddBlueprintCard)
+            { 
+                foreach (CardTabGroup group in instance.BlueprintTabs)
+                {
+                    if (group.name == tuple.Item1)
+                    {
+                        group.ShopSortingList.Add(tuple.Item3);
+                        foreach (CardTabGroup sub_group in group.SubGroups)
+                        {
+                            if (sub_group.name == tuple.Item2)
+                            {
+                                sub_group.IncludedCards.Add(tuple.Item3);
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
         [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "LoadGameData")]
         public static void GameLoadLoadGameDataPostfix()
         {
@@ -428,6 +454,13 @@ namespace ModLoader
         public static void LocalizationManagerLoadLanguagePostfix()
         {
             LoadLocalization();
+        }
+
+        [HarmonyPrefix, HarmonyPatch(typeof(BlueprintModelsScreen), "Awake")]
+        public static void BlueprintModelsScreenAwakePrefix(BlueprintModelsScreen __instance)
+        {
+            // only init once
+            AddBlueprint(__instance);
         }
     }
 }

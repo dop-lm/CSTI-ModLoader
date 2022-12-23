@@ -150,6 +150,10 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "DefaultEnvCards", DefaultEnvCardsWarpType, DefaultEnvCardsWarpData, SrcPath);
         }
 
+        // BlueprintTab: CardTabGroup
+        public String BlueprintCardDataCardTabGroup;
+        public String BlueprintCardDataCardTabSubGroup;
+
         // CardImage: Sprite
         public WarpperFunction.WarpType CardImageWarpType;
         public String CardImageWarpData;
