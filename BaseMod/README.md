@@ -27,4 +27,4 @@ NewCard.json为新建CardData的基础数据，建议先从游戏原始Json数�
 
 ## Resource
 
-自定义资源的存放文件夹，ModLoader会加载UnityEditor打包的AssetBundle资源文件，需要以".ab"结尾，其中的音效和图片都会被载入，也可以使用自定义的jpg、jpeg、png格式的图片，只需要对应图片房到Resource\Picture文件夹底下
+自定义资源的存放文件夹，ModLoader会加载UnityEditor打包的AssetBundle资源文件，需要以".ab"结尾，其中的音效和图片都会被载入，也可以使用自定义的jpg、jpeg、png格式的图片，只需要对应图片放到Resource\Picture文件夹底下
