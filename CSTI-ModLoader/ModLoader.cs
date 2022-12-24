@@ -10,7 +10,7 @@ using UnityEngine;
 namespace ModLoader
 {
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.0")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.1")]
     public class ModLoader : BaseUnityPlugin
     {
         public static Dictionary<string, UnityEngine.Sprite> SpriteDict = new Dictionary<string, UnityEngine.Sprite>();
@@ -166,6 +166,30 @@ namespace ModLoader
                                                 UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModeName, obj.name);
                                         }
                                     }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            UnityEngine.Debug.LogError(ex.Message);
+                        }
+
+                        // Load Resource Custom Pictures
+                        try
+                        {
+                            var files = Directory.GetFiles(dir + @"\Resource\Picture");
+                            foreach (var file in files)
+                            {
+                                if (file.EndsWith(".jpg") || file.EndsWith(".jpeg") || file.EndsWith(".png"))
+                                {
+                                    var sprite_name = Path.GetFileNameWithoutExtension(file);
+                                    Texture2D t2d = new Texture2D(2, 2);
+                                    ImageConversion.LoadImage(t2d, System.IO.File.ReadAllBytes(file));
+                                    Sprite sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height), Vector2.zero);
+                                    if (!SpriteDict.ContainsKey(sprite_name))
+                                        SpriteDict.Add(sprite_name, sprite);
+                                    else
+                                        UnityEngine.Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModeName, sprite_name);
                                 }
                             }
                         }

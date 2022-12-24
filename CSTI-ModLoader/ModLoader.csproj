@@ -137,6 +137,10 @@
       <HintPath>..\..\..\..\..\..\Software\Steam\steamapps\common\Card Survival Tropical Island\Card Survival - Tropical Island_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>..\..\..\..\..\..\Software\Steam\steamapps\common\Card Survival Tropical Island\Card Survival - Tropical Island_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.JSONSerializeModule">
       <HintPath>..\..\..\..\..\..\Software\Steam\steamapps\common\Card Survival Tropical Island\Card Survival - Tropical Island_Data\Managed\UnityEngine.JSONSerializeModule.dll</HintPath>
       <Private>False</Private>
