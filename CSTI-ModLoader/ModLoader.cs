@@ -6,13 +6,20 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-
 namespace ModLoader
 {
+    public class ModInfo
+    {
+        public string Name;
+        public string Version;
+        public string ModLoaderVerison;
+    }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.1")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.2")]
     public class ModLoader : BaseUnityPlugin
     {
+        public static System.Version PluginVersion;
+
         public static Dictionary<string, UnityEngine.Sprite> SpriteDict = new Dictionary<string, UnityEngine.Sprite>();
         public static Dictionary<string, UnityEngine.AudioClip> AudioClipDict = new Dictionary<string, UnityEngine.AudioClip>();
         public static Dictionary<string, WeatherSpecialEffect> WeatherSpecialEffectDict = new Dictionary<string, WeatherSpecialEffect>();
@@ -49,7 +56,8 @@ namespace ModLoader
         {
             // Plugin startup logic
             Harmony.CreateAndPatchAll(typeof(ModLoader));
-            Logger.LogInfo("Plugin ModLoader is loaded!");
+            PluginVersion = System.Version.Parse(this.Info.Metadata.Version.ToString());
+            Logger.LogInfo("Plugin ModLoader is loaded! ");
         }
 
         private static void LoadGameResource()
@@ -136,9 +144,22 @@ namespace ModLoader
                     //  Check if is a Mod Directory
                     if (File.Exists(dir + @"\ModInfo.json"))
                     {
+                        ModInfo Info = new ModInfo();
                         string ModeName = Path.GetFileName(dir);
 
-                        // Check ModEditor Verison
+                        try
+                        {
+                            // Check Verison
+                            using (StreamReader sr = new StreamReader(dir + @"\ModInfo.json"))
+                                JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
+                            System.Version ModRequestVersion = System.Version.Parse(Info.ModLoaderVerison);
+                            if (PluginVersion.CompareTo(ModRequestVersion) < 0)
+                                UnityEngine.Debug.LogWarningFormat("ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModeName, ModRequestVersion);
+                        }
+                        catch (Exception ex)
+                        {
+                            UnityEngine.Debug.LogError(ex.Message);
+                        }
 
                         // Load Resource
                         try
