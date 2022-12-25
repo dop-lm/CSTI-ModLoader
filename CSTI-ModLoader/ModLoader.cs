@@ -160,7 +160,7 @@ namespace ModLoader
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogError(ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Check Version Error {1}", ModeName, ex.Message);
                         }
 
                         // Load Resource
@@ -194,7 +194,7 @@ namespace ModLoader
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogError(ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load Resource Error {1}", ModeName, ex.Message);
                         }
 
                         // Load Resource Custom Pictures
@@ -236,7 +236,7 @@ namespace ModLoader
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogError(ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load Localization Error {1}", ModeName, ex.Message);
                         }
 
                         // Load and init CardData
@@ -265,7 +265,7 @@ namespace ModLoader
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogError(ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load CardData Error {1}", ModeName, ex.Message);
                         }
 
                         // Load CharacterPerk
@@ -294,7 +294,7 @@ namespace ModLoader
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogError(ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load CharacterPerk Error {1}", ModeName, ex.Message);
                         }
 
                         // Load GameStat
@@ -323,7 +323,7 @@ namespace ModLoader
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogError(ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load GameStat Error {1}", ModeName, ex.Message);
                         }
 
                         // Load Objective
@@ -352,7 +352,7 @@ namespace ModLoader
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogError(ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load Objective Error {1}", ModeName, ex.Message);
                         }
 
                         // Load SelfTriggeredAction
@@ -381,7 +381,7 @@ namespace ModLoader
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogError(ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load SelfTriggeredAction Error {1}", ModeName, ex.Message);
                         }
                     }
                 }

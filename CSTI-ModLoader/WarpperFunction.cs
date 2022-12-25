@@ -187,7 +187,7 @@ namespace ModLoader
             {
                 var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
                 var field = obj.GetType().GetField(field_name, bindingFlags);
-
+         
                 var instance = field.GetValue(obj);
                 if (!instance.GetType().IsClass)
                 {
@@ -238,16 +238,17 @@ namespace ModLoader
                     {
                         var ele_type = field.FieldType.GetGenericArguments().Single();
                         var ele = Activator.CreateInstance(ele_type);
+                        var new_warpper = Activator.CreateInstance(warpper.GetType(), warpper.SrcPath);
                         if (!ele.GetType().IsClass)
                         {
                             using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
                             {
                                 string json_data = sr.ReadToEnd();
                                 ele = UnityEngine.JsonUtility.FromJson(json_data, ele_type);
-                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, warpper);
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, new_warpper);
                             }
                             var temp_obj = new object[] { ele };
-                            warpper.GetType().GetMethod("WarpperCustomSelf").Invoke(warpper, temp_obj);
+                            new_warpper.GetType().GetMethod("WarpperCustomSelf").Invoke(new_warpper, temp_obj);
                             field.FieldType.GetMethod("Add").Invoke(instance, temp_obj);
                         }
                         else
@@ -256,9 +257,9 @@ namespace ModLoader
                             {
                                 string json_data = sr.ReadToEnd();
                                 UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
-                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, warpper);
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, new_warpper);
                             }
-                            warpper.GetType().GetMethod("WarpperCustomSelf", bindingFlags, null, new Type[] { ele_type }, null).Invoke(warpper, new object[] { ele });
+                            new_warpper.GetType().GetMethod("WarpperCustomSelf", bindingFlags, null, new Type[] { ele_type }, null).Invoke(new_warpper, new object[] { ele });
                             field.FieldType.GetMethod("Add").Invoke(instance, new object[] { ele });
                         }
                     }
@@ -271,16 +272,17 @@ namespace ModLoader
                     {
                         var ele_type = field.FieldType.GetElementType();
                         var ele = Activator.CreateInstance(ele_type);
+                        var new_warpper = Activator.CreateInstance(warpper.GetType(), warpper.SrcPath);
                         if (!ele.GetType().IsClass)
                         {
                             using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
                             {
                                 string json_data = sr.ReadToEnd();
                                 ele = UnityEngine.JsonUtility.FromJson(json_data, ele_type);
-                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, warpper);
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, new_warpper);
                             }
                             var temp_obj = new object[] { ele };
-                            warpper.GetType().GetMethod("WarpperCustomSelf").Invoke(warpper, temp_obj);
+                            new_warpper.GetType().GetMethod("WarpperCustomSelf").Invoke(new_warpper, temp_obj);
                             instance.SetValue(temp_obj[0], i);
                         }
                         else
@@ -289,9 +291,9 @@ namespace ModLoader
                             {
                                 string json_data = sr.ReadToEnd();
                                 UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
-                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, warpper);
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, new_warpper);
                             }
-                            warpper.GetType().GetMethod("WarpperCustomSelf", bindingFlags, null, new Type[] { ele_type }, null).Invoke(warpper, new object[] { ele });
+                            new_warpper.GetType().GetMethod("WarpperCustomSelf", bindingFlags, null, new Type[] { ele_type }, null).Invoke(new_warpper, new object[] { ele });
                             instance.SetValue(ele, i);
                         }
                     }
