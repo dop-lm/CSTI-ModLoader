@@ -31,9 +31,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ActionModifierWarpper.cs" />
     <Compile Include="ActionReportWarpper.cs" />
     <Compile Include="ActionSubObjectiveWarpper.cs" />
     <Compile Include="AmbienceSettingsWarpper.cs" />
+    <Compile Include="AmtFeedbackInfoWarpper.cs" />
     <Compile Include="BlueprintElementWarpper.cs" />
     <Compile Include="BlueprintStageWarpper.cs" />
     <Compile Include="CardDataWarpper.cs" />
@@ -83,7 +85,10 @@
     <Compile Include="StatModifierWarpper.cs" />
     <Compile Include="LiquidContentConditionWarpper.cs" />
     <Compile Include="SpriteWarpper.cs" />
+    <Compile Include="StatStatusWarpper.cs" />
     <Compile Include="StatSubObjectiveWarpper.cs" />
+    <Compile Include="StatTimeOfDayModifierWarpper.cs" />
+    <Compile Include="StatusEndgameLogWarpper.cs" />
     <Compile Include="TagFilterRefWarpper.cs" />
     <Compile Include="TagOnBoardSubObjectiveWarpper.cs" />
     <Compile Include="TimeObjectiveWarpper.cs" />

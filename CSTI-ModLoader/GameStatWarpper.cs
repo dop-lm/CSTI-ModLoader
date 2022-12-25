@@ -12,7 +12,21 @@ namespace ModLoader
 
         public void WarpperCustomSelf(GameStat obj)
         {
+            WarpperFunction.ClassWarpper(obj, "TimeOfDayMods", TimeOfDayModsWarpType, TimeOfDayModsWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "RequiredPerks", RequiredPerksWarpType, RequiredPerksWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "DefaultStatusIcon", DefaultStatusIconWarpType, DefaultStatusIconWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "Statuses", StatusesWarpType, StatusesWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "FeedbackInfo", FeedbackInfoWarpType, FeedbackInfoWarpData, SrcPath);
+
+            WarpperFunction.ClassWarpper(obj, "NotEnoughIcon", NotEnoughIconWarpType, NotEnoughIconWarpData, SrcPath);
         }
+
+        // VisibleGameStatTab: StatListTab
+        public String VisibleGameStatStatListTab;
 
         // TimeOfDayMods: StatTimeOfDayModifier[]
         public WarpperFunction.WarpType TimeOfDayModsWarpType;
@@ -34,9 +48,9 @@ namespace ModLoader
         public WarpperFunction.WarpType FeedbackInfoWarpType;
         public String FeedbackInfoWarpData;
 
-        // OverrideFeedbackPrefab: UIFeedbackStepsBase
-        public WarpperFunction.WarpType OverrideFeedbackPrefabWarpType;
-        public String OverrideFeedbackPrefabWarpData;
+        //// OverrideFeedbackPrefab: UIFeedbackStepsBase
+        //public WarpperFunction.WarpType OverrideFeedbackPrefabWarpType;
+        //public String OverrideFeedbackPrefabWarpData;
 
         // NotEnoughIcon: Sprite
         public WarpperFunction.WarpType NotEnoughIconWarpType;

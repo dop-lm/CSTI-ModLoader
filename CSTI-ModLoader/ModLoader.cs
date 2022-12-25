@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using System.Reflection;
 
 namespace ModLoader
 {
@@ -15,7 +16,7 @@ namespace ModLoader
         public string ModLoaderVerison;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.2")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.3")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -51,6 +52,7 @@ namespace ModLoader
         private static Dictionary<string, UniqueIDScriptablePack> WaitForWarpperGUIDDict = new Dictionary<string, UniqueIDScriptablePack>();
         private static List<Tuple<string, string>> WaitForLoadCSVList = new List<Tuple<string, string>>();
         private static List<Tuple<string, string,  CardData>> WaitForAddBlueprintCard = new List<Tuple<string, string, CardData>>();
+        private static List<Tuple<string, GameStat>> WaitForAddVisibleGameStat = new List<Tuple<string, GameStat>>();
 
         private void Awake()
         {
@@ -417,6 +419,9 @@ namespace ModLoader
                     using (StreamReader sr = new StreamReader(item.Value.CardPath))
                         JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                     warpper.WarpperCustomSelf(item.Value.obj as GameStat);
+                    if (warpper.VisibleGameStatStatListTab != "")
+                        WaitForAddVisibleGameStat.Add(new Tuple<string, GameStat>(warpper.VisibleGameStatStatListTab, item.Value.obj as GameStat));
+
                 }
                 else if (item.Value.obj is Objective)
                 {
@@ -460,11 +465,11 @@ namespace ModLoader
             }
         }
 
-        private static void AddBlueprint(BlueprintModelsScreen instance)
+        private static void AddBlueprintCardData(GraphicsManager instance)
         {
             foreach(var tuple in WaitForAddBlueprintCard)
             { 
-                foreach (CardTabGroup group in instance.BlueprintTabs)
+                foreach (CardTabGroup group in instance.BlueprintModelsPopup.BlueprintTabs)
                 {
                     if (group.name == tuple.Item1)
                     {
@@ -483,29 +488,81 @@ namespace ModLoader
             }
         }
 
+        private static void AddVisibleGameStat(GraphicsManager instance)
+        {
+            foreach (var tuple in WaitForAddVisibleGameStat)
+            {
+                var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                var StatList = instance.AllStatsList.GetType().GetField("Tabs", bindingFlags).GetValue(instance.AllStatsList) as StatListTab[];
+                if(StatList == null)
+                    Debug.LogError("AddVisibleGameStat NULL");
+                else
+                    Debug.LogError("AddVisibleGameStat " + StatList.Length);
+
+                foreach (StatListTab list in StatList)
+                {
+                    if (list.name == tuple.Item1)
+                    {
+                        list.ContainedStats.Add(tuple.Item2);
+                        break;
+                    }
+                }
+            }
+        }
+
         [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "LoadGameData")]
         public static void GameLoadLoadGameDataPostfix()
         {
-            LoadGameResource();
+            try
+            {
+                LoadGameResource();
 
-            LoadMods();
+                LoadMods();
 
-            LoadLocalization();
+                LoadLocalization();
 
-            WarpperAllMods();
+                WarpperAllMods();
+            }
+            catch(Exception ex)
+            {
+                Debug.LogError(ex.Message);
+            }
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(LocalizationManager), "LoadLanguage")]
         public static void LocalizationManagerLoadLanguagePostfix()
         {
-            LoadLocalization();
+            try
+            {
+                LoadLocalization();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError(ex.Message);
+            }
         }
 
-        [HarmonyPrefix, HarmonyPatch(typeof(BlueprintModelsScreen), "Awake")]
-        public static void BlueprintModelsScreenAwakePrefix(BlueprintModelsScreen __instance)
+        //[HarmonyPrefix, HarmonyPatch(typeof(BlueprintModelsScreen), "Awake")]
+        //public static void BlueprintModelsScreenAwakePrefix(BlueprintModelsScreen __instance)
+        //{
+        //    // only init once
+        //    AddBlueprint(__instance);
+        //}
+
+        [HarmonyPostfix, HarmonyPatch(typeof(GraphicsManager), "Init")]
+        public static void GraphicsManagerAwakePostfix(GraphicsManager __instance)
         {
-            // only init once
-            AddBlueprint(__instance);
+            try
+            {
+                // only init once
+                AddBlueprintCardData(__instance);
+
+                AddVisibleGameStat(__instance);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError(ex.Message);
+            }
         }
     }
 }
