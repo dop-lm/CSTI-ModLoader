@@ -60,6 +60,36 @@ namespace ModLoader
             WarpperFunction.ObjectReferenceWarpper(obj, data, field_name, ModLoader.AllGUIDDict);
         }
 
+        public virtual void WarpperAdd(System.Object obj, string data, string field_name)
+        {
+#if DEBUG
+            UnityEngine.Debug.Log(string.Format("{0} WarpperAdd Single {1}.{2}", this.GetType().Name, obj.GetType().Name, field_name));
+#endif
+            WarpperFunction.ObjectAddWarpper(obj, data, field_name, this);
+        }
+        public virtual void WarpperAdd(System.Object obj, List<string> data, string field_name)
+        {
+#if DEBUG
+            UnityEngine.Debug.Log(string.Format("{0} WarpperAdd List {1}.{2}", this.GetType().Name, obj.GetType().Name, field_name));
+#endif
+            WarpperFunction.ObjectAddWarpper(obj, data, field_name, this);
+        }
+
+        public virtual void WarpperModify(System.Object obj, string data, string field_name)
+        {
+#if DEBUG
+            UnityEngine.Debug.Log(string.Format("{0} ObjectWarpperModify Single {1}.{2}", this.GetType().Name, obj.GetType().Name, field_name));
+#endif
+            WarpperFunction.ObjectWarpperModify(obj, data, field_name, this);
+        }
+        public virtual void WarpperModify(System.Object obj, List<string> data, string field_name)
+        {
+#if DEBUG
+            UnityEngine.Debug.Log(string.Format("{0} ObjectWarpperModify List {1}.{2}", this.GetType().Name, obj.GetType().Name, field_name));
+#endif
+            WarpperFunction.ObjectWarpperModify(obj, data, field_name, this);
+        }
+
         // Source Path
         public string SrcPath;
 

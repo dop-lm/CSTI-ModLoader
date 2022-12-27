@@ -16,7 +16,7 @@ namespace ModLoader
         public string ModLoaderVerison;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.3")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.4")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -50,12 +50,13 @@ namespace ModLoader
         }
 
         private static Dictionary<string, UniqueIDScriptablePack> WaitForWarpperGUIDDict = new Dictionary<string, UniqueIDScriptablePack>();
+        private static List<UniqueIDScriptablePack> WaitForWarpperGameSourceGUIDList = new List<UniqueIDScriptablePack>();
         private static List<Tuple<string, string>> WaitForLoadCSVList = new List<Tuple<string, string>>();
         private static List<Tuple<string, string,  CardData>> WaitForAddBlueprintCard = new List<Tuple<string, string, CardData>>();
         private static List<Tuple<string, GameStat>> WaitForAddVisibleGameStat = new List<Tuple<string, GameStat>>();
 
         private void Awake()
-        {
+        {   
             // Plugin startup logic
             Harmony.CreateAndPatchAll(typeof(ModLoader));
             PluginVersion = System.Version.Parse(this.Info.Metadata.Version.ToString());
@@ -218,7 +219,7 @@ namespace ModLoader
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogError(ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Pictures Error {1}", ModeName, ex.Message);
                         }
 
                         // Load Localization
@@ -266,6 +267,26 @@ namespace ModLoader
                         catch (Exception ex)
                         {
                             UnityEngine.Debug.LogErrorFormat("{0} Load CardData Error {1}", ModeName, ex.Message);
+                        }
+
+                        // Load GameSourceModify
+                        try
+                        {
+                            var modify_dirs = Directory.GetDirectories(dir + @"\GameSourceModify");
+                            foreach (var modify_dir in modify_dirs)
+                            {
+                                var modify_files = Directory.GetFiles(modify_dir);
+                                if (modify_files.Length == 1 && modify_files[0].EndsWith(".json"))
+                                {
+                                    string Guid = Path.GetFileNameWithoutExtension(modify_files[0]);
+                                    if (AllGUIDDict.TryGetValue(Guid, out var obj))
+                                        WaitForWarpperGameSourceGUIDList.Add(new UniqueIDScriptablePack(obj, modify_dir, modify_files[0]));
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            UnityEngine.Debug.LogErrorFormat("{0} Load GameSourceModify Error {1}", ModeName, ex.Message);
                         }
 
                         // Load CharacterPerk
@@ -397,69 +418,84 @@ namespace ModLoader
             DateTime before = DateTime.Now;
             foreach (var item in WaitForWarpperGUIDDict)
             {
-                if (item.Value.obj is CardData)
+                try
                 {
-                    CardDataWarpper warpper = new CardDataWarpper(item.Value.CardDir);
-                    using (StreamReader sr = new StreamReader(item.Value.CardPath))
-                        JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
-                    warpper.WarpperCustomSelf(item.Value.obj as CardData);
-                    if((item.Value.obj as CardData).CardType == CardTypes.Blueprint && warpper.BlueprintCardDataCardTabGroup != "" && warpper.BlueprintCardDataCardTabSubGroup != "")
-                        WaitForAddBlueprintCard.Add(new Tuple<string, string, CardData>(warpper.BlueprintCardDataCardTabGroup, warpper.BlueprintCardDataCardTabSubGroup, item.Value.obj as CardData));
-                }
-                else if (item.Value.obj is CharacterPerk)
-                {
-                    CharacterPerkWarpper warpper = new CharacterPerkWarpper(item.Value.CardDir);
-                    using (StreamReader sr = new StreamReader(item.Value.CardPath))
-                        JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
-                    warpper.WarpperCustomSelf(item.Value.obj as CharacterPerk);
-                }
-                else if (item.Value.obj is GameStat)
-                {
-                    GameStatWarpper warpper = new GameStatWarpper(item.Value.CardDir);
-                    using (StreamReader sr = new StreamReader(item.Value.CardPath))
-                        JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
-                    warpper.WarpperCustomSelf(item.Value.obj as GameStat);
-                    if (warpper.VisibleGameStatStatListTab != "")
-                        WaitForAddVisibleGameStat.Add(new Tuple<string, GameStat>(warpper.VisibleGameStatStatListTab, item.Value.obj as GameStat));
+                    if (item.Value.obj is CardData)
+                    {
+                        CardDataWarpper warpper = new CardDataWarpper(item.Value.CardDir);
+                        using (StreamReader sr = new StreamReader(item.Value.CardPath))
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
+                        warpper.WarpperCustomSelf(item.Value.obj as CardData);
+                        if ((item.Value.obj as CardData).CardType == CardTypes.Blueprint && warpper.BlueprintCardDataCardTabGroup != "" && warpper.BlueprintCardDataCardTabSubGroup != "")
+                            WaitForAddBlueprintCard.Add(new Tuple<string, string, CardData>(warpper.BlueprintCardDataCardTabGroup, warpper.BlueprintCardDataCardTabSubGroup, item.Value.obj as CardData));
+                    }
+                    else if (item.Value.obj is CharacterPerk)
+                    {
+                        CharacterPerkWarpper warpper = new CharacterPerkWarpper(item.Value.CardDir);
+                        using (StreamReader sr = new StreamReader(item.Value.CardPath))
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
+                        warpper.WarpperCustomSelf(item.Value.obj as CharacterPerk);
+                    }
+                    else if (item.Value.obj is GameStat)
+                    {
+                        GameStatWarpper warpper = new GameStatWarpper(item.Value.CardDir);
+                        using (StreamReader sr = new StreamReader(item.Value.CardPath))
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
+                        warpper.WarpperCustomSelf(item.Value.obj as GameStat);
+                        if (warpper.VisibleGameStatStatListTab != "")
+                            WaitForAddVisibleGameStat.Add(new Tuple<string, GameStat>(warpper.VisibleGameStatStatListTab, item.Value.obj as GameStat));
 
+                    }
+                    else if (item.Value.obj is Objective)
+                    {
+                        ObjectiveWarpper warpper = new ObjectiveWarpper(item.Value.CardDir);
+                        using (StreamReader sr = new StreamReader(item.Value.CardPath))
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
+                        warpper.WarpperCustomSelf(item.Value.obj as Objective);
+                    }
+                    else if (item.Value.obj is SelfTriggeredAction)
+                    {
+                        SelfTriggeredActionWarpper warpper = new SelfTriggeredActionWarpper(item.Value.CardDir);
+                        using (StreamReader sr = new StreamReader(item.Value.CardPath))
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
+                        warpper.WarpperCustomSelf(item.Value.obj as SelfTriggeredAction);
+                    }
                 }
-                else if (item.Value.obj is Objective)
+                catch (Exception ex)
                 {
-                    ObjectiveWarpper warpper = new ObjectiveWarpper(item.Value.CardDir);
-                    using (StreamReader sr = new StreamReader(item.Value.CardPath))
-                        JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
-                    warpper.WarpperCustomSelf(item.Value.obj as Objective);
-                }
-                else if (item.Value.obj is SelfTriggeredAction)
-                {
-                    SelfTriggeredActionWarpper warpper = new SelfTriggeredActionWarpper(item.Value.CardDir);
-                    using (StreamReader sr = new StreamReader(item.Value.CardPath))
-                        JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
-                    warpper.WarpperCustomSelf(item.Value.obj as SelfTriggeredAction);
+                    Debug.LogError("WarpperAllMods " + ex.Message);
                 }
             }
             DateTime after = DateTime.Now;
             TimeSpan duration = after.Subtract(before);
             Debug.Log("Time taken in Milliseconds: " + (duration.Milliseconds));
         }
+
         private static void LoadLocalization()
         {
             if (MBSingleton<LocalizationManager>.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "简体中文")
             {
                 foreach (var pair in WaitForLoadCSVList)
                 {
-                    if (pair.Item1.Contains("SimpCn"))
+                    try
                     {
-                        var CurrentTexts = Traverse.Create(MBSingleton<LocalizationManager>.Instance).Field("CurrentTexts").GetValue() as Dictionary<string, string>;
-                        Dictionary<string, List<string>> dictionary = CSVParser.LoadFromString(pair.Item2, Delimiter.Comma);
-                        System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex("\\\\n");
-                        foreach (KeyValuePair<string, List<string>> keyValuePair in dictionary)
+                        if (pair.Item1.Contains("SimpCn"))
                         {
-                            if (!CurrentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
+                            var CurrentTexts = Traverse.Create(MBSingleton<LocalizationManager>.Instance).Field("CurrentTexts").GetValue() as Dictionary<string, string>;
+                            Dictionary<string, List<string>> dictionary = CSVParser.LoadFromString(pair.Item2, Delimiter.Comma);
+                            System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex("\\\\n");
+                            foreach (KeyValuePair<string, List<string>> keyValuePair in dictionary)
                             {
-                                CurrentTexts.Add(keyValuePair.Key, regex.Replace(keyValuePair.Value[1], "\n"));
+                                if (!CurrentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
+                                {
+                                    CurrentTexts.Add(keyValuePair.Key, regex.Replace(keyValuePair.Value[1], "\n"));
+                                }
                             }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError("LoadLocalization " + ex.Message);
                     }
                 }
             }
@@ -468,22 +504,29 @@ namespace ModLoader
         private static void AddBlueprintCardData(GraphicsManager instance)
         {
             foreach(var tuple in WaitForAddBlueprintCard)
-            { 
-                foreach (CardTabGroup group in instance.BlueprintModelsPopup.BlueprintTabs)
+            {
+                try
                 {
-                    if (group.name == tuple.Item1)
+                    foreach (CardTabGroup group in instance.BlueprintModelsPopup.BlueprintTabs)
                     {
-                        group.ShopSortingList.Add(tuple.Item3);
-                        foreach (CardTabGroup sub_group in group.SubGroups)
+                        if (group.name == tuple.Item1)
                         {
-                            if (sub_group.name == tuple.Item2)
+                            group.ShopSortingList.Add(tuple.Item3);
+                            foreach (CardTabGroup sub_group in group.SubGroups)
                             {
-                                sub_group.IncludedCards.Add(tuple.Item3);
-                                break;
+                                if (sub_group.name == tuple.Item2)
+                                {
+                                    sub_group.IncludedCards.Add(tuple.Item3);
+                                    break;
+                                }
                             }
+                            break;
                         }
-                        break;
                     }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError("AddBlueprintCardData " + ex.Message);
                 }
             }
         }
@@ -492,20 +535,72 @@ namespace ModLoader
         {
             foreach (var tuple in WaitForAddVisibleGameStat)
             {
-                var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-                var StatList = instance.AllStatsList.GetType().GetField("Tabs", bindingFlags).GetValue(instance.AllStatsList) as StatListTab[];
-                if(StatList == null)
-                    Debug.LogError("AddVisibleGameStat NULL");
-                else
-                    Debug.LogError("AddVisibleGameStat " + StatList.Length);
-
-                foreach (StatListTab list in StatList)
+                try
                 {
-                    if (list.name == tuple.Item1)
+                    var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                    var StatList = instance.AllStatsList.GetType().GetField("Tabs", bindingFlags).GetValue(instance.AllStatsList) as StatListTab[];
+                    foreach (StatListTab list in StatList)
                     {
-                        list.ContainedStats.Add(tuple.Item2);
-                        break;
+                        if (list.name == tuple.Item1)
+                        {
+                            list.ContainedStats.Add(tuple.Item2);
+                            break;
+                        }
                     }
+                }
+                catch(Exception ex)
+                {
+                    Debug.LogError("AddVisibleGameStat " + ex.Message);
+                }
+            }
+        }
+
+        private static void WarpperAllGameSrouces()
+        {
+            foreach (var item in WaitForWarpperGameSourceGUIDList)
+            {
+                try
+                {
+                    if (item.obj is CardData)
+                    {
+                        CardDataWarpper warpper = new CardDataWarpper(item.CardDir);
+                        using (StreamReader sr = new StreamReader(item.CardPath))
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
+                        warpper.WarpperCustomSelf(item.obj as CardData);
+                    }
+                    else if (item.obj is CharacterPerk)
+                    {
+                        CharacterPerkWarpper warpper = new CharacterPerkWarpper(item.CardDir);
+                        using (StreamReader sr = new StreamReader(item.CardPath))
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
+                        warpper.WarpperCustomSelf(item.obj as CharacterPerk);
+                    }
+                    else if (item.obj is GameStat)
+                    {
+                        GameStatWarpper warpper = new GameStatWarpper(item.CardDir);
+                        using (StreamReader sr = new StreamReader(item.CardPath))
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
+                        warpper.WarpperCustomSelf(item.obj as GameStat);
+
+                    }
+                    else if (item.obj is Objective)
+                    {
+                        ObjectiveWarpper warpper = new ObjectiveWarpper(item.CardDir);
+                        using (StreamReader sr = new StreamReader(item.CardPath))
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
+                        warpper.WarpperCustomSelf(item.obj as Objective);
+                    }
+                    else if (item.obj is SelfTriggeredAction)
+                    {
+                        SelfTriggeredActionWarpper warpper = new SelfTriggeredActionWarpper(item.CardDir);
+                        using (StreamReader sr = new StreamReader(item.CardPath))
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
+                        warpper.WarpperCustomSelf(item.obj as SelfTriggeredAction);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError("WarpperAllGameSrouces " + ex.Message);
                 }
             }
         }
@@ -522,6 +617,8 @@ namespace ModLoader
                 LoadLocalization();
 
                 WarpperAllMods();
+
+                WarpperAllGameSrouces();
             }
             catch(Exception ex)
             {

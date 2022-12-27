@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Reflection;
 using UnityEngine;
 using System.Runtime.Remoting;
+using System.Collections;
 
 namespace ModLoader
 {
@@ -17,7 +18,9 @@ namespace ModLoader
             NONE,
             COPY,
             CUSTOM,
-            REFERENCE
+            REFERENCE,
+            ADD,
+            MODIFY
         }
 
         public static void ClassWarpper(System.Object obj, string field_name, WarpType warp_type, string data, string src_dir)
@@ -36,6 +39,10 @@ namespace ModLoader
                 method_name = "WarpperCustom";
             else if (warp_type == WarpType.REFERENCE)
                 method_name = "WarpperReference";
+            else if (warp_type == WarpType.ADD)
+                method_name = "WarpperAdd";
+            else if (warp_type == WarpType.MODIFY)
+                method_name = "WarpperModify";
             else
             {
                 UnityEngine.Debug.LogWarning("ClassWarpper Unkown Warp Type");
@@ -79,6 +86,10 @@ namespace ModLoader
                 method_name = "WarpperCustom";
             else if (warp_type == WarpType.REFERENCE)
                 method_name = "WarpperReference";
+            else if (warp_type == WarpType.ADD)
+                method_name = "WarpperAdd";
+            else if (warp_type == WarpType.MODIFY)
+                method_name = "WarpperModify";
             else
             {
                 UnityEngine.Debug.LogWarning("ClassWarpper Unkown Warp Type");
@@ -234,6 +245,7 @@ namespace ModLoader
                 if (field.FieldType.IsGenericType && (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
                 {
                     var instance = field.GetValue(obj);
+                    field.FieldType.GetMethod("Clear").Invoke(instance, null);
                     for (int i = 0; i < data.Count; i++)
                     {
                         var ele_type = field.FieldType.GetGenericArguments().Single();
@@ -362,6 +374,231 @@ namespace ModLoader
             catch (Exception ex)
             {
                 UnityEngine.Debug.LogError(string.Format("Error: ObjectReferenceWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+            }
+        }
+
+        public static void ObjectAddWarpper(System.Object obj, string data, string field_name, WarpperBase warpper)
+        {
+            UnityEngine.Debug.LogError(string.Format("Error: ObjectAddWarpper {0}.{1} {2}", obj.GetType().Name, field_name, "AddWarpper Only Vaild in List or Array Filed"));
+        }
+
+        public static void ObjectAddWarpper(System.Object obj, List<string> data, string field_name, WarpperBase warpper)
+        {
+            //if (!obj.GetType().IsClass)
+            //{
+            //    UnityEngine.Debug.LogWarning("ObjectAddWarpper Object IsNotClass");
+            //    return;
+            //}
+
+            try
+            {
+                var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                var field = obj.GetType().GetField(field_name, bindingFlags);
+                if (field.FieldType.IsGenericType && (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
+                {
+                    var instance = field.GetValue(obj) as IList;
+                    for (int i = 0; i < data.Count; i++)
+                    {
+                        var ele_type = field.FieldType.GetGenericArguments().Single();
+                        var ele = Activator.CreateInstance(ele_type);
+                        var new_warpper = Activator.CreateInstance(warpper.GetType(), warpper.SrcPath);
+                        if (!ele.GetType().IsClass)
+                        {
+                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            {
+                                string json_data = sr.ReadToEnd();
+                                ele = UnityEngine.JsonUtility.FromJson(json_data, ele_type);
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, new_warpper);
+                            }
+                            var temp_obj = new object[] { ele };
+                            new_warpper.GetType().GetMethod("WarpperCustomSelf").Invoke(new_warpper, temp_obj);
+                            instance.Add(temp_obj[0]);
+                        }
+                        else
+                        {
+                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            {
+                                string json_data = sr.ReadToEnd();
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, new_warpper);
+                            }
+                            new_warpper.GetType().GetMethod("WarpperCustomSelf", bindingFlags, null, new Type[] { ele_type }, null).Invoke(new_warpper, new object[] { ele });
+                            instance.Add(ele);
+                        }
+                    }
+                }
+                else if (field.FieldType.IsArray)
+                {
+                    var instance = field.GetValue(obj) as Array;
+                    int start_idx = instance.Length;
+                    ArrayResize(ref instance, data.Count + instance.Length);
+                    for (int i = 0; i < data.Count; i++)
+                    {
+                        var ele_type = field.FieldType.GetElementType();
+                        var ele = Activator.CreateInstance(ele_type);
+                        var new_warpper = Activator.CreateInstance(warpper.GetType(), warpper.SrcPath);
+                        if (!ele.GetType().IsClass)
+                        {
+                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            {
+                                string json_data = sr.ReadToEnd();
+                                ele = UnityEngine.JsonUtility.FromJson(json_data, ele_type);
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, new_warpper);
+                            }
+                            var temp_obj = new object[] { ele };
+                            new_warpper.GetType().GetMethod("WarpperCustomSelf").Invoke(new_warpper, temp_obj);
+                            instance.SetValue(temp_obj[0], i + start_idx);
+                        }
+                        else
+                        {
+                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            {
+                                string json_data = sr.ReadToEnd();
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, new_warpper);
+                            }
+                            new_warpper.GetType().GetMethod("WarpperCustomSelf", bindingFlags, null, new Type[] { ele_type }, null).Invoke(new_warpper, new object[] { ele });
+                            instance.SetValue(ele, i + start_idx);
+                        }
+                    }
+                    field.SetValue(obj, instance);
+                }
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogError(string.Format("Error: ObjectAddWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+            }
+        }
+
+        public static void ObjectWarpperModify(System.Object obj, string data, string field_name, WarpperBase warpper)
+        {
+            //if (!obj.GetType().IsClass)
+            //{
+            //    UnityEngine.Debug.LogWarning("ObjectWarpperModify Object IsNotClass");
+            //    return;
+            //}
+            try
+            {
+                var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                var field = obj.GetType().GetField(field_name, bindingFlags);
+
+                var instance = field.GetValue(obj);
+                if (!instance.GetType().IsClass)
+                {
+                    using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data))
+                    {
+                        string json_data = sr.ReadToEnd();
+                        UnityEngine.JsonUtility.FromJsonOverwrite(json_data, instance);
+                        UnityEngine.JsonUtility.FromJsonOverwrite(json_data, warpper);
+                    }
+                    var temp_obj = new object[] { instance };
+                    warpper.GetType().GetMethod("WarpperCustomSelf").Invoke(warpper, temp_obj);
+                    field.SetValue(obj, temp_obj[0]);
+                }
+                else
+                {
+                    using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data))
+                    {
+                        string json_data = sr.ReadToEnd();
+                        UnityEngine.JsonUtility.FromJsonOverwrite(json_data, instance);
+                        UnityEngine.JsonUtility.FromJsonOverwrite(json_data, warpper);
+                    }
+                    warpper.GetType().GetMethod("WarpperCustomSelf", bindingFlags, null, new Type[] { field.FieldType }, null).Invoke(warpper, new object[] { instance });
+                    field.SetValue(obj, instance);
+                }
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogError(string.Format("Error: ObjectWarpperModify {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+            }
+        }
+
+        public static void ObjectWarpperModify(System.Object obj, List<string> data, string field_name, WarpperBase warpper)
+        {
+            //if (!obj.GetType().IsClass)
+            //{
+            //    UnityEngine.Debug.LogWarning("ObjectWarpperModify Object IsNotClass");
+            //    return;
+            //}
+
+            try
+            {
+                var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                var field = obj.GetType().GetField(field_name, bindingFlags);
+                if (field.FieldType.IsGenericType && (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
+                {
+                    var instance = field.GetValue(obj) as IList;
+                    for (int i = 0; i < data.Count; i++)
+                    {
+                        if (data[i] == "")
+                            continue;
+                        var ele_type = field.FieldType.GetGenericArguments().Single();
+                        var ele = instance[i];
+                        var new_warpper = Activator.CreateInstance(warpper.GetType(), warpper.SrcPath);
+                        if (!ele.GetType().IsClass)
+                        {
+                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            {
+                                string json_data = sr.ReadToEnd();
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, new_warpper);
+                            }
+                            var temp_obj = new object[] { ele };
+                            new_warpper.GetType().GetMethod("WarpperCustomSelf").Invoke(new_warpper, temp_obj);
+                        }
+                        else
+                        {
+                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            {
+                                string json_data = sr.ReadToEnd();
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, new_warpper);
+                            }
+                            new_warpper.GetType().GetMethod("WarpperCustomSelf", bindingFlags, null, new Type[] { ele_type }, null).Invoke(new_warpper, new object[] { ele });
+                        }
+                        instance[i] = ele;
+                    }
+                }
+                else if (field.FieldType.IsArray)
+                {
+                    var instance = field.GetValue(obj) as Array;
+                    for (int i = 0; i < data.Count; i++)
+                    {
+                        if (data[i] == "")
+                            continue;
+                        var ele_type = field.FieldType.GetElementType();
+                        var ele = instance.GetValue(i);
+                        var new_warpper = Activator.CreateInstance(warpper.GetType(), warpper.SrcPath);
+                        if (!ele.GetType().IsClass)
+                        {
+                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            {
+                                string json_data = sr.ReadToEnd();
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, new_warpper);
+                            }
+                            var temp_obj = new object[] { ele };
+                            new_warpper.GetType().GetMethod("WarpperCustomSelf").Invoke(new_warpper, temp_obj);
+                            instance.SetValue(temp_obj[0], i);
+                        }
+                        else
+                        {
+                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            {
+                                string json_data = sr.ReadToEnd();
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
+                                UnityEngine.JsonUtility.FromJsonOverwrite(json_data, new_warpper);
+                            }
+                            new_warpper.GetType().GetMethod("WarpperCustomSelf", bindingFlags, null, new Type[] { ele_type }, null).Invoke(new_warpper, new object[] { ele });
+                            instance.SetValue(ele, i);
+                        }
+                    }
+                    field.SetValue(obj, instance);
+                }
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogError(string.Format("Error: ObjectWarpperModify {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
             }
         }
 
