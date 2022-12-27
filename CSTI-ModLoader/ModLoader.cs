@@ -251,6 +251,7 @@ namespace ModLoader
                                 if (File.Exists(CardPath))
                                 {
                                     CardData card = CardData.CreateInstance<CardData>();
+                                    JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                                     using (StreamReader sr = new StreamReader(CardPath))
                                         JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card); 
                                     card.name = CardName;
@@ -300,6 +301,7 @@ namespace ModLoader
                                 if (File.Exists(CardPath))
                                 {
                                     CharacterPerk card = CharacterPerk.CreateInstance<CharacterPerk>();
+                                    JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                                     using (StreamReader sr = new StreamReader(CardPath))
                                         JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
                                     card.name = CardName;
@@ -329,6 +331,7 @@ namespace ModLoader
                                 if (File.Exists(CardPath))
                                 {
                                     GameStat card = GameStat.CreateInstance<GameStat>();
+                                    JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                                     using (StreamReader sr = new StreamReader(CardPath))
                                         JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
                                     card.name = CardName;
@@ -358,6 +361,7 @@ namespace ModLoader
                                 if (File.Exists(CardPath))
                                 {
                                     Objective card = Objective.CreateInstance<Objective>();
+                                    JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                                     using (StreamReader sr = new StreamReader(CardPath))
                                         JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
                                     card.name = CardName;
@@ -387,6 +391,7 @@ namespace ModLoader
                                 if (File.Exists(CardPath))
                                 {
                                     SelfTriggeredAction card = SelfTriggeredAction.CreateInstance<SelfTriggeredAction>();
+                                    JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                                     using (StreamReader sr = new StreamReader(CardPath))
                                         JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
                                     card.name = CardName;
