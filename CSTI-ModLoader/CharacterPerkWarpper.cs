@@ -31,6 +31,9 @@ namespace ModLoader
             WarpperFunction.ClassWarpper(obj, "ActionModifiers", ActionModifiersWarpType, ActionModifiersWarpData, SrcPath);
         }
 
+        // PerkGroup: PerkGroup
+        public String CharacterPerkPerkGroup;
+
         // PerkIcon: Sprite
         public WarpperFunction.WarpType PerkIconWarpType;
         public String PerkIconWarpData;
