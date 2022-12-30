@@ -16,7 +16,7 @@ namespace ModLoader
         public string ModLoaderVerison;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.6")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.7")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;

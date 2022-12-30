@@ -57,11 +57,11 @@ namespace ModLoader
 
         // Drops: CardDrop[]
         public WarpperFunction.WarpType DropsWarpType;
-        public string DropsWarpData;
+        public List<string> DropsWarpData;
 
         // StatModifications: StatModifier[]
         public WarpperFunction.WarpType StatModificationsWarpType;
-        public string StatModificationsWarpData;
+        public List<string> StatModificationsWarpData;
 
         // DropsAsCollection: CardsDropCollection[]
         public WarpperFunction.WarpType DropsAsCollectionWarpType;
