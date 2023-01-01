@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using System.Reflection;
+using UnityEngine.Networking;
+using System.Threading.Tasks;
 
 namespace ModLoader
 {
@@ -16,7 +18,7 @@ namespace ModLoader
         public string ModLoaderVerison;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.7")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.8")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -169,9 +171,15 @@ namespace ModLoader
 
                         try
                         {
-                            // Check Verison
+                            // Load Mod Info
                             using (StreamReader sr = new StreamReader(dir + @"\ModInfo.json"))
                                 JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
+
+                            // Check Name
+                            if (!Info.Name.IsNullOrWhiteSpace())
+                                ModeName = Info.Name;
+
+                            // Check Verison
                             System.Version ModRequestVersion = System.Version.Parse(Info.ModLoaderVerison);
                             if (PluginVersion.CompareTo(ModRequestVersion) < 0)
                                 UnityEngine.Debug.LogWarningFormat("ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModeName, ModRequestVersion);
@@ -237,6 +245,43 @@ namespace ModLoader
                         catch (Exception ex)
                         {
                             UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Pictures Error {1}", ModeName, ex.Message);
+                        }
+
+                        // Load Resource Custom Audio
+                        try
+                        {
+                            var files = Directory.GetFiles(dir + @"\Resource\Audio");
+
+                            foreach (var file in files)
+                            {
+                                if (file.EndsWith(".wav"))
+                                {
+                                    var audio_name = Path.GetFileNameWithoutExtension(file);
+                                    var request = UnityEngine.Networking.UnityWebRequestMultimedia.GetAudioClip(file, AudioType.WAV);
+                                    request.SendWebRequest();
+                                    int retry_cnt = 10;
+                                    while (!request.isDone && retry_cnt > 0)
+                                    {
+                                        Task.Delay(5);
+                                        retry_cnt--;
+                                    }
+                                    if (request.isNetworkError)
+                                        Debug.Log(request.error);
+                                    else
+                                    {
+                                        AudioClip clip = DownloadHandlerAudioClip.GetContent(request);
+                                        clip.name = audio_name;
+                                        if (!AudioClipDict.ContainsKey(audio_name))
+                                            AudioClipDict.Add(audio_name, clip);
+                                        else
+                                            UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModeName, audio_name);
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Audio Error {1}", ModeName, ex.Message);
                         }
 
                         // Load Localization
@@ -729,6 +774,7 @@ namespace ModLoader
         [HarmonyPostfix, HarmonyPatch(typeof(GraphicsManager), "Init")]
         public static void GraphicsManagerAwakePostfix(GraphicsManager __instance)
         {
+            
             try
             {
                 // only init once
