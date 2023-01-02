@@ -24,6 +24,8 @@ namespace ModLoader
 
             WarpperFunction.ClassWarpper(box, "CardFilters", CardFiltersWarpType, CardFiltersWarpData, SrcPath);
 
+            WarpperFunction.ClassWarpper(box, "TagFilters", TagFiltersWarpType, TagFiltersWarpData, SrcPath);
+
             obj = (CardFilter)box;
         }
 

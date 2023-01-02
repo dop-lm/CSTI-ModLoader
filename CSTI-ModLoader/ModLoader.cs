@@ -8,9 +8,12 @@ using UnityEngine;
 using System.Reflection;
 using UnityEngine.Networking;
 using System.Threading.Tasks;
+using System.Net;
+using System.Text;
 
 namespace ModLoader
 {
+
     public class ModInfo
     {
         public string Name;
@@ -18,7 +21,7 @@ namespace ModLoader
         public string ModLoaderVerison;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.8")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.9")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -65,6 +68,94 @@ namespace ModLoader
             Harmony.CreateAndPatchAll(typeof(ModLoader));
             PluginVersion = System.Version.Parse(this.Info.Metadata.Version.ToString());
             Logger.LogInfo("Plugin ModLoader is loaded! ");
+        }
+
+        static IEnumerator GetDataRequest(string ModName, string file)
+        {
+            var audio_name = Path.GetFileNameWithoutExtension(file);
+            var request = UnityEngine.Networking.UnityWebRequestMultimedia.GetAudioClip(file, AudioType.WAV);
+
+            yield return request.SendWebRequest();
+
+            if (request.isNetworkError)
+                Debug.LogErrorFormat("Load Resource Custom Audio Error {0}", request.error);
+            else
+            {
+                AudioClip clip = DownloadHandlerAudioClip.GetContent(request);
+                clip.name = audio_name;
+                if (!AudioClipDict.ContainsKey(audio_name))
+                    AudioClipDict.Add(audio_name, clip);
+                else
+                    UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, audio_name);
+            }
+        }
+
+        public static AudioClip GetAudioClipFromWav(string file)
+        {
+            AudioClip clip = null;
+            var raw_data = System.IO.File.ReadAllBytes(file);
+            var raw_string = Encoding.ASCII.GetString(raw_data);
+            var clip_name = Path.GetFileNameWithoutExtension(file);
+
+            if (raw_string.Substring(0, 4) == "RIFF")
+            {
+                if (raw_string.Substring(8, 4) == "WAVE")
+                {
+                    int index = 4; //ChunkId
+                    var ChunkSize = BitConverter.ToUInt32(raw_data, 4);
+                    index += 4;
+                    index += 4; // WAVE
+
+                    UInt16 NumChannels = 0;
+                    UInt32 SampleRate = 0;
+                    UInt16 BitsPerSample = 0;
+                    UInt16 BolckAlign = 0;
+
+                    while (index < raw_data.Length)
+                    {
+                        var SubchunkID = raw_string.Substring(index, 4);
+                        var SubchunkSize = BitConverter.ToUInt32(raw_data, index + 4);
+
+                        index += 8;
+                        if (SubchunkID == "fmt ")
+                        {
+                            var AudioFormat = BitConverter.ToUInt16(raw_data, index);
+                            NumChannels = BitConverter.ToUInt16(raw_data, index + 2);
+                            SampleRate = BitConverter.ToUInt32(raw_data, index + 4);
+                            var ByteRate = BitConverter.ToUInt32(raw_data, index + 8);
+                            BolckAlign = BitConverter.ToUInt16(raw_data, index + 12);
+                            BitsPerSample = BitConverter.ToUInt16(raw_data, index + 14);
+                            index += (int)SubchunkSize;
+                        }
+                        else if (SubchunkID == "data")
+                        {
+                            var data_len = (raw_data.Length - index);
+                            var data = new float[data_len / BolckAlign];
+
+                            for (int i = 0; i < data.Length; i++)
+                            {
+                                if (BitsPerSample == 8)
+                                    data[i] = BitConverter.ToChar(raw_data, index + BolckAlign * i) / ((float)Char.MaxValue);
+                                else if (BitsPerSample == 16)
+                                    data[i] = (BitConverter.ToInt16(raw_data, index + BolckAlign * i)) / ((float)Int16.MaxValue);
+                                else if (BitsPerSample == 32)
+                                    data[i] = BitConverter.ToInt32(raw_data, index + BolckAlign * i) / ((float)Int32.MaxValue);
+                            }
+
+                            clip = AudioClip.Create(clip_name, data.Length, 1, (int)SampleRate, false);
+                            clip.SetData(data, 0);
+
+                            index += (int)SubchunkSize;
+                            break;
+                        }
+                        else
+                        {
+                            index += (int)SubchunkSize;
+                        }
+                    }
+                }
+            }
+            return clip;
         }
 
         private static void LoadGameResource()
@@ -167,7 +258,7 @@ namespace ModLoader
                     if (File.Exists(dir + @"\ModInfo.json"))
                     {
                         ModInfo Info = new ModInfo();
-                        string ModeName = Path.GetFileName(dir);
+                        string ModName = Path.GetFileName(dir);
 
                         try
                         {
@@ -177,16 +268,16 @@ namespace ModLoader
 
                             // Check Name
                             if (!Info.Name.IsNullOrWhiteSpace())
-                                ModeName = Info.Name;
+                                ModName = Info.Name;
 
                             // Check Verison
                             System.Version ModRequestVersion = System.Version.Parse(Info.ModLoaderVerison);
                             if (PluginVersion.CompareTo(ModRequestVersion) < 0)
-                                UnityEngine.Debug.LogWarningFormat("ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModeName, ModRequestVersion);
+                                UnityEngine.Debug.LogWarningFormat("ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModName, ModRequestVersion);
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogErrorFormat("{0} Check Version Error {1}", ModeName, ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Check Version Error {1}", ModName, ex.Message);
                         }
 
                         // Load Resource
@@ -205,14 +296,14 @@ namespace ModLoader
                                             if (!SpriteDict.ContainsKey(obj.name))
                                                 SpriteDict.Add(obj.name, obj as UnityEngine.Sprite);
                                             else
-                                                UnityEngine.Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModeName, obj.name);
+                                                UnityEngine.Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModName, obj.name);
                                         }
                                         if (obj.GetType() == typeof(UnityEngine.AudioClip))
                                         {
                                             if (!AudioClipDict.ContainsKey(obj.name))
                                                 AudioClipDict.Add(obj.name, obj as UnityEngine.AudioClip);
                                             else
-                                                UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModeName, obj.name);
+                                                UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, obj.name);
                                         }
                                     }
                                 }
@@ -220,7 +311,7 @@ namespace ModLoader
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load Resource Error {1}", ModeName, ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load Resource Error {1}", ModName, ex.Message);
                         }
 
                         // Load Resource Custom Pictures
@@ -238,13 +329,13 @@ namespace ModLoader
                                     if (!SpriteDict.ContainsKey(sprite_name))
                                         SpriteDict.Add(sprite_name, sprite);
                                     else
-                                        UnityEngine.Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModeName, sprite_name);
+                                        UnityEngine.Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModName, sprite_name);
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Pictures Error {1}", ModeName, ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Pictures Error {1}", ModName, ex.Message);
                         }
 
                         // Load Resource Custom Audio
@@ -256,32 +347,21 @@ namespace ModLoader
                             {
                                 if (file.EndsWith(".wav"))
                                 {
-                                    var audio_name = Path.GetFileNameWithoutExtension(file);
-                                    var request = UnityEngine.Networking.UnityWebRequestMultimedia.GetAudioClip(file, AudioType.WAV);
-                                    request.SendWebRequest();
-                                    int retry_cnt = 10;
-                                    while (!request.isDone && retry_cnt > 0)
+                                    var clip = GetAudioClipFromWav(file);
+                                    if (clip)
                                     {
-                                        Task.Delay(5);
-                                        retry_cnt--;
-                                    }
-                                    if (request.isNetworkError)
-                                        Debug.Log(request.error);
-                                    else
-                                    {
-                                        AudioClip clip = DownloadHandlerAudioClip.GetContent(request);
-                                        clip.name = audio_name;
-                                        if (!AudioClipDict.ContainsKey(audio_name))
-                                            AudioClipDict.Add(audio_name, clip);
+                                        if (!AudioClipDict.ContainsKey(clip.name))
+                                            AudioClipDict.Add(clip.name, clip);
                                         else
-                                            UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModeName, audio_name);
+                                            UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, clip.name);
                                     }
+                                    //MBSingleton<GameLoad>.Instance.StartCoroutine(GetDataRequest(ModName, file));
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Audio Error {1}", ModeName, ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Audio Error {1}", ModName, ex.Message);
                         }
 
                         // Load Localization
@@ -299,7 +379,7 @@ namespace ModLoader
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load Localization Error {1}", ModeName, ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load Localization Error {1}", ModName, ex.Message);
                         }
 
                         // Load and init CardData
@@ -318,25 +398,25 @@ namespace ModLoader
                                         JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                                         using (StreamReader sr = new StreamReader(CardPath))
                                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                                        card.name = ModeName + "_" + CardName;
+                                        card.name = ModName + "_" + CardName;
                                         card.Init();
                                         AllGUIDDict.Add(card.UniqueID, card);
                                         GameLoad.Instance.DataBase.AllData.Add(card);
                                         if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
                                             WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
                                         else
-                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModeName, card.UniqueID);
+                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
                                     }
                                     catch (Exception ex)
                                     {
-                                        UnityEngine.Debug.LogErrorFormat("{0} Load CardData {1} Error {2}", ModeName, CardName, ex.Message);
+                                        UnityEngine.Debug.LogErrorFormat("{0} Load CardData {1} Error {2}", ModName, CardName, ex.Message);
                                     }
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load CardData Error {1}", ModeName, ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load CardData Error {1}", ModName, ex.Message);
                         }
 
                         // Load GameSourceModify
@@ -356,7 +436,7 @@ namespace ModLoader
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load GameSourceModify Error {1}", ModeName, ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load GameSourceModify Error {1}", ModName, ex.Message);
                         }
 
                         // Load CharacterPerk
@@ -375,25 +455,25 @@ namespace ModLoader
                                         JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                                         using (StreamReader sr = new StreamReader(CardPath))
                                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                                        card.name = ModeName + "_" + CardName;
+                                        card.name = ModName + "_" + CardName;
                                         card.Init();
                                         AllGUIDDict.Add(card.UniqueID, card);
                                         GameLoad.Instance.DataBase.AllData.Add(card);
                                         if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
                                             WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
                                         else
-                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModeName, card.UniqueID);
+                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
                                     }
                                     catch (Exception ex)
                                     {
-                                        UnityEngine.Debug.LogErrorFormat("{0} Load CharacterPerk {1} Error {2}", ModeName, CardName, ex.Message);
+                                        UnityEngine.Debug.LogErrorFormat("{0} Load CharacterPerk {1} Error {2}", ModName, CardName, ex.Message);
                                     }
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load CharacterPerk Error {1}", ModeName, ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load CharacterPerk Error {1}", ModName, ex.Message);
                         }
 
                         // Load GameStat
@@ -412,25 +492,25 @@ namespace ModLoader
                                         JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                                         using (StreamReader sr = new StreamReader(CardPath))
                                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                                        card.name = ModeName + "_" + CardName;
+                                        card.name = ModName + "_" + CardName;
                                         card.Init();
                                         AllGUIDDict.Add(card.UniqueID, card);
                                         GameLoad.Instance.DataBase.AllData.Add(card);
                                         if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
                                             WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
                                         else
-                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModeName, card.UniqueID);
+                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
                                     }
                                     catch (Exception ex)
                                     {
-                                        UnityEngine.Debug.LogErrorFormat("{0} Load GameStat {1} Error {2}", ModeName, CardName, ex.Message);
+                                        UnityEngine.Debug.LogErrorFormat("{0} Load GameStat {1} Error {2}", ModName, CardName, ex.Message);
                                     }
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load GameStat Error {1}", ModeName, ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load GameStat Error {1}", ModName, ex.Message);
                         }
 
                         // Load Objective
@@ -449,25 +529,25 @@ namespace ModLoader
                                         JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                                         using (StreamReader sr = new StreamReader(CardPath))
                                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                                        card.name = ModeName + "_" + CardName;
+                                        card.name = ModName + "_" + CardName;
                                         card.Init();
                                         AllGUIDDict.Add(card.UniqueID, card);
                                         GameLoad.Instance.DataBase.AllData.Add(card);
                                         if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
                                             WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
                                         else
-                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModeName, card.UniqueID);
+                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
                                     }
                                     catch (Exception ex)
                                     {
-                                        UnityEngine.Debug.LogErrorFormat("{0} Load Objective {1} Error {2}", ModeName, CardName, ex.Message);
+                                        UnityEngine.Debug.LogErrorFormat("{0} Load Objective {1} Error {2}", ModName, CardName, ex.Message);
                                     }
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load Objective Error {1}", ModeName, ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load Objective Error {1}", ModName, ex.Message);
                         }
 
                         // Load SelfTriggeredAction
@@ -486,25 +566,25 @@ namespace ModLoader
                                         JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                                         using (StreamReader sr = new StreamReader(CardPath))
                                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                                        card.name = ModeName + "_" + CardName;
+                                        card.name = ModName + "_" + CardName;
                                         card.Init();
                                         AllGUIDDict.Add(card.UniqueID, card);
                                         GameLoad.Instance.DataBase.AllData.Add(card);
                                         if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
                                             WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
                                         else
-                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModeName, card.UniqueID);
+                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
                                     }
                                     catch (Exception ex)
                                     {
-                                        UnityEngine.Debug.LogErrorFormat("{0} Load SelfTriggeredAction {1} Error {2}", ModeName, CardName, ex.Message);
+                                        UnityEngine.Debug.LogErrorFormat("{0} Load SelfTriggeredAction {1} Error {2}", ModName, CardName, ex.Message);
                                     }
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load SelfTriggeredAction Error {1}", ModeName, ex.Message);
+                            UnityEngine.Debug.LogErrorFormat("{0} Load SelfTriggeredAction Error {1}", ModName, ex.Message);
                         }
                     }
                 }
@@ -517,7 +597,6 @@ namespace ModLoader
 
         private static void WarpperAllMods()
         {
-            DateTime before = DateTime.Now;
             foreach (var item in WaitForWarpperGUIDDict)
             {
                 try
@@ -570,9 +649,6 @@ namespace ModLoader
                     Debug.LogError("WarpperAllMods " + ex.Message);
                 }
             }
-            DateTime after = DateTime.Now;
-            TimeSpan duration = after.Subtract(before);
-            Debug.Log("Time taken in Milliseconds: " + (duration.Milliseconds));
         }
 
         private static void LoadLocalization()
@@ -733,6 +809,8 @@ namespace ModLoader
         {
             try
             {
+                DateTime before = DateTime.Now;
+
                 LoadGameResource();
 
                 LoadMods();
@@ -744,6 +822,10 @@ namespace ModLoader
                 WarpperAllGameSrouces();
 
                 AddPerkGroup();
+
+                DateTime after = DateTime.Now;
+                TimeSpan duration = after.Subtract(before);
+                Debug.Log("ModLoader Time taken in Milliseconds: " + (duration.Milliseconds));
             }
             catch(Exception ex)
             {
