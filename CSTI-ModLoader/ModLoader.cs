@@ -10,6 +10,9 @@ using UnityEngine.Networking;
 using System.Threading.Tasks;
 using System.Net;
 using System.Text;
+using LitJson;
+using static System.Net.Mime.MediaTypeNames;
+using System.Linq;
 
 namespace ModLoader
 {
@@ -19,19 +22,22 @@ namespace ModLoader
         public string Name;
         public string Version;
         public string ModLoaderVerison;
+        public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.0.9")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.1.0")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
+
+        public static List<Type> ReferenceTypeList = new List<Type>();
 
         public static Dictionary<string, UnityEngine.Sprite> SpriteDict = new Dictionary<string, UnityEngine.Sprite>();
         public static Dictionary<string, UnityEngine.AudioClip> AudioClipDict = new Dictionary<string, UnityEngine.AudioClip>();
         public static Dictionary<string, WeatherSpecialEffect> WeatherSpecialEffectDict = new Dictionary<string, WeatherSpecialEffect>();
 
         public static Dictionary<string, UniqueIDScriptable> AllGUIDDict = new Dictionary<string, UniqueIDScriptable>();
-        public static Dictionary<string, ScriptableObject> AllScriptableObjectDict = new Dictionary<string, ScriptableObject>();
+        //public static Dictionary<string, ScriptableObject> AllScriptableObjectDict = new Dictionary<string, ScriptableObject>();
         public static Dictionary<string, CardTag> CardTagDict = new Dictionary<string, CardTag>();
         public static Dictionary<string, EquipmentTag> EquipmentTagDict = new Dictionary<string, EquipmentTag>();
         public static Dictionary<string, ActionTag> ActionTagDict = new Dictionary<string, ActionTag>();
@@ -40,6 +46,9 @@ namespace ModLoader
         public static Dictionary<string, LocalTickCounter> LocalTickCounterDict = new Dictionary<string, LocalTickCounter>();
         public static Dictionary<string, WeatherSet> WeatherSetDict = new Dictionary<string, WeatherSet>();
         public static Dictionary<string, PerkGroup> PerkGroupDict = new Dictionary<string, PerkGroup>();
+
+        public static Dictionary<string, ScriptableObject> AllCardOrTagDict = new Dictionary<string, ScriptableObject>();
+        public static Dictionary<string, Dictionary<string, ScriptableObject>> AllScriptableObjectWithoutGUIDDict = new Dictionary<string, Dictionary<string, ScriptableObject>>();
 
         private struct UniqueIDScriptablePack
         {
@@ -56,7 +65,9 @@ namespace ModLoader
         }
 
         private static Dictionary<string, UniqueIDScriptablePack> WaitForWarpperGUIDDict = new Dictionary<string, UniqueIDScriptablePack>();
+        private static Dictionary<string, UniqueIDScriptablePack> WaitForWarpperEditorGUIDDict = new Dictionary<string, UniqueIDScriptablePack>();
         private static List<UniqueIDScriptablePack> WaitForWarpperGameSourceGUIDList = new List<UniqueIDScriptablePack>();
+
         private static List<Tuple<string, string>> WaitForLoadCSVList = new List<Tuple<string, string>>();
         private static List<Tuple<string, string,  CardData>> WaitForAddBlueprintCard = new List<Tuple<string, string, CardData>>();
         private static List<Tuple<string, GameStat>> WaitForAddVisibleGameStat = new List<Tuple<string, GameStat>>();
@@ -126,7 +137,7 @@ namespace ModLoader
                             BolckAlign = BitConverter.ToUInt16(raw_data, index + 12);
                             BitsPerSample = BitConverter.ToUInt16(raw_data, index + 14);
                             index += (int)SubchunkSize;
-                        }
+                        }   
                         else if (SubchunkID == "data")
                         {
                             var data_len = (raw_data.Length - index);
@@ -160,12 +171,26 @@ namespace ModLoader
 
         private static void LoadGameResource()
         {
+            ReferenceTypeList.Add(typeof(ScriptableObject));
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(ScriptableObject)))
             {
                 try
                 {
-                    if (!AllScriptableObjectDict.ContainsKey(ele.name))
-                        AllScriptableObjectDict.Add(ele.name, ele as ScriptableObject);
+                    if (!AllCardOrTagDict.ContainsKey(ele.name))
+                        AllCardOrTagDict.Add(ele.name, ele as ScriptableObject);
+                    else
+                        UnityEngine.Debug.LogWarning("AllCardOrTagDict Same Key was Add " + (ele as UniqueIDScriptable).name);
+
+                    if (!(ele is UniqueIDScriptable))
+                    {
+                        if (!AllScriptableObjectWithoutGUIDDict.ContainsKey(ele.GetType().Name))
+                            AllScriptableObjectWithoutGUIDDict.Add(ele.GetType().Name, new Dictionary<string, ScriptableObject>());
+                        else
+                        {
+                            if(AllScriptableObjectWithoutGUIDDict.TryGetValue(ele.GetType().Name, out var type_dict))
+                                type_dict.Add(ele.name, ele as ScriptableObject);
+                        }
+                    }
 
                     if (ele is UniqueIDScriptable)
                     {
@@ -224,6 +249,7 @@ namespace ModLoader
                 }
             }
 
+            ReferenceTypeList.Add(typeof(Sprite));
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(UnityEngine.Sprite)))
             {
                 if (!SpriteDict.ContainsKey(ele.name))
@@ -231,6 +257,7 @@ namespace ModLoader
                 else
                     UnityEngine.Debug.LogWarning("SpriteDict Same Key was Add " + ele.name);
             }
+            ReferenceTypeList.Add(typeof(AudioClip));
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(UnityEngine.AudioClip)))
             {
                 if (!AudioClipDict.ContainsKey(ele.name))
@@ -238,6 +265,7 @@ namespace ModLoader
                 else
                     UnityEngine.Debug.LogWarning("AudioClipDict Same Key was Add " + ele.name);
             }
+            ReferenceTypeList.Add(typeof(WeatherSpecialEffect));
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(WeatherSpecialEffect)))
             {
                 if (!WeatherSpecialEffectDict.ContainsKey(ele.name))
@@ -255,341 +283,394 @@ namespace ModLoader
                 foreach (var dir in dirs)
                 {
                     //  Check if is a Mod Directory
-                    if (File.Exists(dir + @"\ModInfo.json"))
+                    if (!File.Exists(dir + @"\ModInfo.json"))
+                        continue;
+
+                    ModInfo Info = new ModInfo();
+                    string ModName = Path.GetFileName(dir);
+
+                    try
                     {
-                        ModInfo Info = new ModInfo();
-                        string ModName = Path.GetFileName(dir);
+                        // Load Mod Info
+                        using (StreamReader sr = new StreamReader(dir + @"\ModInfo.json"))
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
 
-                        try
+                        // Check Name
+                        if (!Info.Name.IsNullOrWhiteSpace())
+                            ModName = Info.Name;
+
+                        // Check Verison
+                        System.Version ModRequestVersion = System.Version.Parse(Info.ModLoaderVerison);
+                        if (PluginVersion.CompareTo(ModRequestVersion) < 0)
+                            UnityEngine.Debug.LogWarningFormat("ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModName, ModRequestVersion);
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Check Version Error {1}", ModName, ex.Message);
+                    }
+
+                    // Load Resource
+                    try
+                    {
+                        var files = Directory.GetFiles(dir + @"\Resource");
+                        foreach (var file in files)
                         {
-                            // Load Mod Info
-                            using (StreamReader sr = new StreamReader(dir + @"\ModInfo.json"))
-                                JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
-
-                            // Check Name
-                            if (!Info.Name.IsNullOrWhiteSpace())
-                                ModName = Info.Name;
-
-                            // Check Verison
-                            System.Version ModRequestVersion = System.Version.Parse(Info.ModLoaderVerison);
-                            if (PluginVersion.CompareTo(ModRequestVersion) < 0)
-                                UnityEngine.Debug.LogWarningFormat("ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModName, ModRequestVersion);
-                        }
-                        catch (Exception ex)
-                        {
-                            UnityEngine.Debug.LogErrorFormat("{0} Check Version Error {1}", ModName, ex.Message);
-                        }
-
-                        // Load Resource
-                        try
-                        {
-                            var files = Directory.GetFiles(dir + @"\Resource");
-                            foreach (var file in files)
+                            if (!file.EndsWith(".ab"))
+                                continue;
+                            AssetBundle ab = AssetBundle.LoadFromFile(file);
+                            foreach (var obj in ab.LoadAllAssets())
                             {
-                                if (file.EndsWith(".ab"))
+                                if (obj.GetType() == typeof(UnityEngine.Sprite))
                                 {
-                                    AssetBundle ab = AssetBundle.LoadFromFile(file);
-                                    foreach (var obj in ab.LoadAllAssets())
-                                    {
-                                        if(obj.GetType() == typeof(UnityEngine.Sprite))
-                                        {
-                                            if (!SpriteDict.ContainsKey(obj.name))
-                                                SpriteDict.Add(obj.name, obj as UnityEngine.Sprite);
-                                            else
-                                                UnityEngine.Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModName, obj.name);
-                                        }
-                                        if (obj.GetType() == typeof(UnityEngine.AudioClip))
-                                        {
-                                            if (!AudioClipDict.ContainsKey(obj.name))
-                                                AudioClipDict.Add(obj.name, obj as UnityEngine.AudioClip);
-                                            else
-                                                UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, obj.name);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load Resource Error {1}", ModName, ex.Message);
-                        }
-
-                        // Load Resource Custom Pictures
-                        try
-                        {
-                            var files = Directory.GetFiles(dir + @"\Resource\Picture");
-                            foreach (var file in files)
-                            {
-                                if (file.EndsWith(".jpg") || file.EndsWith(".jpeg") || file.EndsWith(".png"))
-                                {
-                                    var sprite_name = Path.GetFileNameWithoutExtension(file);
-                                    Texture2D t2d = new Texture2D(2, 2);
-                                    ImageConversion.LoadImage(t2d, System.IO.File.ReadAllBytes(file));
-                                    Sprite sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height), Vector2.zero);
-                                    if (!SpriteDict.ContainsKey(sprite_name))
-                                        SpriteDict.Add(sprite_name, sprite);
+                                    if (!SpriteDict.ContainsKey(obj.name))
+                                        SpriteDict.Add(obj.name, obj as UnityEngine.Sprite);
                                     else
-                                        UnityEngine.Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModName, sprite_name);
+                                        UnityEngine.Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModName, obj.name);
                                 }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Pictures Error {1}", ModName, ex.Message);
-                        }
-
-                        // Load Resource Custom Audio
-                        try
-                        {
-                            var files = Directory.GetFiles(dir + @"\Resource\Audio");
-
-                            foreach (var file in files)
-                            {
-                                if (file.EndsWith(".wav"))
+                                if (obj.GetType() == typeof(UnityEngine.AudioClip))
                                 {
-                                    var clip = GetAudioClipFromWav(file);
-                                    if (clip)
-                                    {
-                                        if (!AudioClipDict.ContainsKey(clip.name))
-                                            AudioClipDict.Add(clip.name, clip);
-                                        else
-                                            UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, clip.name);
-                                    }
-                                    //MBSingleton<GameLoad>.Instance.StartCoroutine(GetDataRequest(ModName, file));
+                                    if (!AudioClipDict.ContainsKey(obj.name))
+                                        AudioClipDict.Add(obj.name, obj as UnityEngine.AudioClip);
+                                    else
+                                        UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, obj.name);
                                 }
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Audio Error {1}", ModName, ex.Message);
-                        }
-
-                        // Load Localization
-                        try
-                        {
-                            var files = Directory.GetFiles(dir + @"\Localization");
-                            foreach (var file in files)
-                            {
-                                if (file.EndsWith(".csv"))
-                                {
-                                    using (StreamReader sr = new StreamReader(file))
-                                        WaitForLoadCSVList.Add(new Tuple<string, string>(Path.GetFileName(file), sr.ReadToEnd()));
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load Localization Error {1}", ModName, ex.Message);
-                        }
-
-                        // Load and init CardData
-                        try
-                        {
-                            var card_dirs = Directory.GetDirectories(dir + @"\CardData");
-                            foreach (var card_dir in card_dirs)
-                            {
-                                string CardName = Path.GetFileName(card_dir); ;
-                                string CardPath = card_dir + @"\" + CardName + ".json";
-                                if (File.Exists(CardPath))
-                                {
-                                    try
-                                    {
-                                        CardData card = CardData.CreateInstance<CardData>();
-                                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                                        using (StreamReader sr = new StreamReader(CardPath))
-                                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                                        card.name = ModName + "_" + CardName;
-                                        card.Init();
-                                        AllGUIDDict.Add(card.UniqueID, card);
-                                        GameLoad.Instance.DataBase.AllData.Add(card);
-                                        if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
-                                            WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
-                                        else
-                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        UnityEngine.Debug.LogErrorFormat("{0} Load CardData {1} Error {2}", ModName, CardName, ex.Message);
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load CardData Error {1}", ModName, ex.Message);
-                        }
-
-                        // Load GameSourceModify
-                        try
-                        {
-                            var modify_dirs = Directory.GetDirectories(dir + @"\GameSourceModify");
-                            foreach (var modify_dir in modify_dirs)
-                            {
-                                var modify_files = Directory.GetFiles(modify_dir);
-                                if (modify_files.Length == 1 && modify_files[0].EndsWith(".json"))
-                                {
-                                    string Guid = Path.GetFileNameWithoutExtension(modify_files[0]);
-                                    if (AllGUIDDict.TryGetValue(Guid, out var obj))
-                                        WaitForWarpperGameSourceGUIDList.Add(new UniqueIDScriptablePack(obj, modify_dir, modify_files[0]));
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load GameSourceModify Error {1}", ModName, ex.Message);
-                        }
-
-                        // Load CharacterPerk
-                        try
-                        {
-                            var card_dirs = Directory.GetDirectories(dir + @"\CharacterPerk");
-                            foreach (var card_dir in card_dirs)
-                            {
-                                string CardName = Path.GetFileName(card_dir); ;
-                                string CardPath = card_dir + @"\" + CardName + ".json";
-                                if (File.Exists(CardPath))
-                                {
-                                    try
-                                    {
-                                        CharacterPerk card = CharacterPerk.CreateInstance<CharacterPerk>();
-                                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                                        using (StreamReader sr = new StreamReader(CardPath))
-                                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                                        card.name = ModName + "_" + CardName;
-                                        card.Init();
-                                        AllGUIDDict.Add(card.UniqueID, card);
-                                        GameLoad.Instance.DataBase.AllData.Add(card);
-                                        if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
-                                            WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
-                                        else
-                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        UnityEngine.Debug.LogErrorFormat("{0} Load CharacterPerk {1} Error {2}", ModName, CardName, ex.Message);
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load CharacterPerk Error {1}", ModName, ex.Message);
-                        }
-
-                        // Load GameStat
-                        try
-                        {
-                            var card_dirs = Directory.GetDirectories(dir + @"\GameStat");
-                            foreach (var card_dir in card_dirs)
-                            {
-                                string CardName = Path.GetFileName(card_dir); ;
-                                string CardPath = card_dir + @"\" + CardName + ".json";
-                                if (File.Exists(CardPath))
-                                {
-                                    try
-                                    {
-                                        GameStat card = GameStat.CreateInstance<GameStat>();
-                                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                                        using (StreamReader sr = new StreamReader(CardPath))
-                                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                                        card.name = ModName + "_" + CardName;
-                                        card.Init();
-                                        AllGUIDDict.Add(card.UniqueID, card);
-                                        GameLoad.Instance.DataBase.AllData.Add(card);
-                                        if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
-                                            WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
-                                        else
-                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        UnityEngine.Debug.LogErrorFormat("{0} Load GameStat {1} Error {2}", ModName, CardName, ex.Message);
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load GameStat Error {1}", ModName, ex.Message);
-                        }
-
-                        // Load Objective
-                        try
-                        {
-                            var card_dirs = Directory.GetDirectories(dir + @"\Objective");
-                            foreach (var card_dir in card_dirs)
-                            {
-                                string CardName = Path.GetFileName(card_dir); ;
-                                string CardPath = card_dir + @"\" + CardName + ".json";
-                                if (File.Exists(CardPath))
-                                {
-                                    try
-                                    {
-                                        Objective card = Objective.CreateInstance<Objective>();
-                                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                                        using (StreamReader sr = new StreamReader(CardPath))
-                                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                                        card.name = ModName + "_" + CardName;
-                                        card.Init();
-                                        AllGUIDDict.Add(card.UniqueID, card);
-                                        GameLoad.Instance.DataBase.AllData.Add(card);
-                                        if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
-                                            WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
-                                        else
-                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        UnityEngine.Debug.LogErrorFormat("{0} Load Objective {1} Error {2}", ModName, CardName, ex.Message);
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load Objective Error {1}", ModName, ex.Message);
-                        }
-
-                        // Load SelfTriggeredAction
-                        try
-                        {
-                            var card_dirs = Directory.GetDirectories(dir + @"\SelfTriggeredAction");
-                            foreach (var card_dir in card_dirs)
-                            {
-                                string CardName = Path.GetFileName(card_dir); ;
-                                string CardPath = card_dir + @"\" + CardName + ".json";
-                                if (File.Exists(CardPath))
-                                {
-                                    try
-                                    {
-                                        SelfTriggeredAction card = SelfTriggeredAction.CreateInstance<SelfTriggeredAction>();
-                                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                                        using (StreamReader sr = new StreamReader(CardPath))
-                                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                                        card.name = ModName + "_" + CardName;
-                                        card.Init();
-                                        AllGUIDDict.Add(card.UniqueID, card);
-                                        GameLoad.Instance.DataBase.AllData.Add(card);
-                                        if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
-                                            WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
-                                        else
-                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        UnityEngine.Debug.LogErrorFormat("{0} Load SelfTriggeredAction {1} Error {2}", ModName, CardName, ex.Message);
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            UnityEngine.Debug.LogErrorFormat("{0} Load SelfTriggeredAction Error {1}", ModName, ex.Message);
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Load Resource Error {1}", ModName, ex.Message);
+                    }
+
+                    // Load Resource Custom Pictures
+                    try
+                    {
+                        var files = Directory.GetFiles(dir + @"\Resource\Picture");
+                        foreach (var file in files)
+                        {
+                            if (!file.EndsWith(".jpg") && !file.EndsWith(".jpeg") && !file.EndsWith(".png"))
+                                continue;
+                            var sprite_name = Path.GetFileNameWithoutExtension(file);
+                            Texture2D t2d = new Texture2D(2, 2);
+                            ImageConversion.LoadImage(t2d, System.IO.File.ReadAllBytes(file));
+                            Sprite sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height), Vector2.zero);
+                            sprite.name = sprite_name;
+                            if (!SpriteDict.ContainsKey(sprite_name))
+                                SpriteDict.Add(sprite_name, sprite);
+                            else
+                                UnityEngine.Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModName, sprite_name);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Pictures Error {1}", ModName, ex.Message);
+                    }
+
+                    // Load Resource Custom Audio
+                    try
+                    {
+                        var files = Directory.GetFiles(dir + @"\Resource\Audio");
+
+                        foreach (var file in files)
+                        {
+                            if (!file.EndsWith(".wav"))
+                                continue;
+                            var clip = GetAudioClipFromWav(file);
+                            if (clip)
+                            {
+                                if (!AudioClipDict.ContainsKey(clip.name))
+                                    AudioClipDict.Add(clip.name, clip);
+                                else
+                                    UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, clip.name);
+                            }
+                            //MBSingleton<GameLoad>.Instance.StartCoroutine(GetDataRequest(ModName, file));
+
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Audio Error {1}", ModName, ex.Message);
+                    }
+
+                    // Load Localization
+                    try
+                    {
+                        var files = Directory.GetFiles(dir + @"\Localization");
+                        foreach (var file in files)
+                        {
+                            if (!file.EndsWith(".csv"))
+                                continue;
+                            using (StreamReader sr = new StreamReader(file))
+                                WaitForLoadCSVList.Add(new Tuple<string, string>(Path.GetFileName(file), sr.ReadToEnd()));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Load Localization Error {1}", ModName, ex.Message);
+                    }
+
+                    // Load and init UniqueIDScriptable
+                    try
+                    {
+                        var subclasses = from assembly in AppDomain.CurrentDomain.GetAssemblies()
+                                         from type in assembly.GetTypes()
+                                         where type.IsSubclassOf(typeof(UniqueIDScriptable))
+                                         select type;
+
+                        foreach (var type in subclasses)
+                        {
+                            if (!Directory.Exists(dir + @"\" + type.Name))
+                                continue;
+                            if (Info.ModEditorVersion.IsNullOrWhiteSpace())
+                            {
+                                var card_dirs = Directory.GetDirectories(dir + @"\" + type.Name);
+                                foreach (var card_dir in card_dirs)
+                                {
+                                    string CardName = Path.GetFileName(card_dir); ;
+                                    string CardPath = card_dir + @"\" + CardName + ".json";
+                                    if (File.Exists(CardPath))
+                                    {
+                                        try
+                                        {
+                                            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                                            var card = type.GetMethod("CreateInstance", bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(Type) }, null).Invoke(null, new object[] { type });
+                                            JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                                            using (StreamReader sr = new StreamReader(CardPath))
+                                                JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
+
+                                            type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(card, new object[] { ModName + "_" + CardName });
+                                            type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
+
+                                            var card_guid = type.GetField("UniqueID", bindingFlags).GetValue(card) as string;
+                                            AllGUIDDict.Add(card_guid, card as UniqueIDScriptable);
+                                            GameLoad.Instance.DataBase.AllData.Add(card as UniqueIDScriptable);
+
+                                            if (!WaitForWarpperGUIDDict.ContainsKey(card_guid))
+                                                WaitForWarpperGUIDDict.Add(card_guid, new UniqueIDScriptablePack(card as UniqueIDScriptable, card_dir, CardPath));
+                                            else
+                                                UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card_guid);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            UnityEngine.Debug.LogErrorFormat("{0} Load {1} {2} Error {3}", type.Name, ModName, CardName, ex.Message);
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                var files = Directory.GetFiles(dir + @"\" + type.Name);
+                                foreach (var file in files)
+                                {
+                                    if (!file.EndsWith(".json"))
+                                        continue;
+                                    string CardName = Path.GetFileNameWithoutExtension(file);
+                                    string CardPath = file;
+                                    try
+                                    {
+                                        var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                                        var card = type.GetMethod("CreateInstance", bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(Type) }, null).Invoke(null, new object[] { type });
+                                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                                        using (StreamReader sr = new StreamReader(CardPath))
+                                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
+
+                                        type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(card, new object[] { ModName + "_" + CardName });
+                                        type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
+
+                                        var card_guid = type.GetField("UniqueID", bindingFlags).GetValue(card) as string;
+                                        AllGUIDDict.Add(card_guid, card as UniqueIDScriptable);
+                                        GameLoad.Instance.DataBase.AllData.Add(card as UniqueIDScriptable);
+
+                                        if (!WaitForWarpperEditorGUIDDict.ContainsKey(card_guid))
+                                            WaitForWarpperEditorGUIDDict.Add(card_guid, new UniqueIDScriptablePack(card as UniqueIDScriptable, "", CardPath));
+                                        else
+                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperEditorGUIDDict Same Key was Add {1}", ModName, card_guid);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        UnityEngine.Debug.LogErrorFormat("{0} EditorLoad {1} {2} Error {3}", type.Name, ModName, CardName, ex.Message);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Load UniqueIDScriptable Error {1}", ModName, ex.Message);
+                    }
+
+                    // Load GameSourceModify
+                    try
+                    {
+                        var modify_dirs = Directory.GetDirectories(dir + @"\GameSourceModify");
+                        foreach (var modify_dir in modify_dirs)
+                        {
+                            var modify_files = Directory.GetFiles(modify_dir);
+                            if (modify_files.Length == 1 && modify_files[0].EndsWith(".json"))
+                            {
+                                string Guid = Path.GetFileNameWithoutExtension(modify_files[0]);
+                                if (AllGUIDDict.TryGetValue(Guid, out var obj))
+                                    WaitForWarpperGameSourceGUIDList.Add(new UniqueIDScriptablePack(obj, modify_dir, modify_files[0]));
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Load GameSourceModify Error {1}", ModName, ex.Message);
+                    }
+
+                    //// Load CharacterPerk
+                    //try
+                    //{
+                    //    var card_dirs = Directory.GetDirectories(dir + @"\CharacterPerk");
+                    //    foreach (var card_dir in card_dirs)
+                    //    {
+                    //        string CardName = Path.GetFileName(card_dir); ;
+                    //        string CardPath = card_dir + @"\" + CardName + ".json";
+                    //        if (File.Exists(CardPath))
+                    //        {
+                    //            try
+                    //            {
+                    //                CharacterPerk card = CharacterPerk.CreateInstance<CharacterPerk>();
+                    //                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                    //                using (StreamReader sr = new StreamReader(CardPath))
+                    //                    JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
+                    //                card.name = ModName + "_" + CardName;
+                    //                card.Init();
+                    //                AllGUIDDict.Add(card.UniqueID, card);
+                    //                GameLoad.Instance.DataBase.AllData.Add(card);
+                    //                if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
+                    //                    WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
+                    //                else
+                    //                    UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
+                    //            }
+                    //            catch (Exception ex)
+                    //            {
+                    //                UnityEngine.Debug.LogErrorFormat("{0} Load CharacterPerk {1} Error {2}", ModName, CardName, ex.Message);
+                    //            }
+                    //        }
+                    //    }
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    UnityEngine.Debug.LogErrorFormat("{0} Load CharacterPerk Error {1}", ModName, ex.Message);
+                    //}
+
+                    //// Load GameStat
+                    //try
+                    //{
+                    //    var card_dirs = Directory.GetDirectories(dir + @"\GameStat");
+                    //    foreach (var card_dir in card_dirs)
+                    //    {
+                    //        string CardName = Path.GetFileName(card_dir); ;
+                    //        string CardPath = card_dir + @"\" + CardName + ".json";
+                    //        if (File.Exists(CardPath))
+                    //        {
+                    //            try
+                    //            {
+                    //                GameStat card = GameStat.CreateInstance<GameStat>();
+                    //                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                    //                using (StreamReader sr = new StreamReader(CardPath))
+                    //                    JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
+                    //                card.name = ModName + "_" + CardName;
+                    //                card.Init();
+                    //                AllGUIDDict.Add(card.UniqueID, card);
+                    //                GameLoad.Instance.DataBase.AllData.Add(card);
+                    //                if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
+                    //                    WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
+                    //                else
+                    //                    UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
+                    //            }
+                    //            catch (Exception ex)
+                    //            {
+                    //                UnityEngine.Debug.LogErrorFormat("{0} Load GameStat {1} Error {2}", ModName, CardName, ex.Message);
+                    //            }
+                    //        }
+                    //    }
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    UnityEngine.Debug.LogErrorFormat("{0} Load GameStat Error {1}", ModName, ex.Message);
+                    //}
+
+                    //// Load Objective
+                    //try
+                    //{
+                    //    var card_dirs = Directory.GetDirectories(dir + @"\Objective");
+                    //    foreach (var card_dir in card_dirs)
+                    //    {
+                    //        string CardName = Path.GetFileName(card_dir); ;
+                    //        string CardPath = card_dir + @"\" + CardName + ".json";
+                    //        if (File.Exists(CardPath))
+                    //        {
+                    //            try
+                    //            {
+                    //                Objective card = Objective.CreateInstance<Objective>();
+                    //                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                    //                using (StreamReader sr = new StreamReader(CardPath))
+                    //                    JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
+                    //                card.name = ModName + "_" + CardName;
+                    //                card.Init();
+                    //                AllGUIDDict.Add(card.UniqueID, card);
+                    //                GameLoad.Instance.DataBase.AllData.Add(card);
+                    //                if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
+                    //                    WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
+                    //                else
+                    //                    UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
+                    //            }
+                    //            catch (Exception ex)
+                    //            {
+                    //                UnityEngine.Debug.LogErrorFormat("{0} Load Objective {1} Error {2}", ModName, CardName, ex.Message);
+                    //            }
+                    //        }
+                    //    }
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    UnityEngine.Debug.LogErrorFormat("{0} Load Objective Error {1}", ModName, ex.Message);
+                    //}
+
+                    //// Load SelfTriggeredAction
+                    //try
+                    //{
+                    //    var card_dirs = Directory.GetDirectories(dir + @"\SelfTriggeredAction");
+                    //    foreach (var card_dir in card_dirs)
+                    //    {
+                    //        string CardName = Path.GetFileName(card_dir); ;
+                    //        string CardPath = card_dir + @"\" + CardName + ".json";
+                    //        if (File.Exists(CardPath))
+                    //        {
+                    //            try
+                    //            {
+                    //                SelfTriggeredAction card = SelfTriggeredAction.CreateInstance<SelfTriggeredAction>();
+                    //                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                    //                using (StreamReader sr = new StreamReader(CardPath))
+                    //                    JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
+                    //                card.name = ModName + "_" + CardName;
+                    //                card.Init();
+                    //                AllGUIDDict.Add(card.UniqueID, card);
+                    //                GameLoad.Instance.DataBase.AllData.Add(card);
+                    //                if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
+                    //                    WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
+                    //                else
+                    //                    UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
+                    //            }
+                    //            catch (Exception ex)
+                    //            {
+                    //                UnityEngine.Debug.LogErrorFormat("{0} Load SelfTriggeredAction {1} Error {2}", ModName, CardName, ex.Message);
+                    //            }
+                    //        }
+                    //    }
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    UnityEngine.Debug.LogErrorFormat("{0} Load SelfTriggeredAction Error {1}", ModName, ex.Message);
+                    //}
+
+
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 UnityEngine.Debug.LogError(ex.Message);
             }
@@ -597,6 +678,7 @@ namespace ModLoader
 
         private static void WarpperAllMods()
         {
+            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
             foreach (var item in WaitForWarpperGUIDDict)
             {
                 try
@@ -609,6 +691,11 @@ namespace ModLoader
                         warpper.WarpperCustomSelf(item.Value.obj as CardData);
                         if ((item.Value.obj as CardData).CardType == CardTypes.Blueprint && !warpper.BlueprintCardDataCardTabGroup.IsNullOrWhiteSpace() && !warpper.BlueprintCardDataCardTabSubGroup.IsNullOrWhiteSpace())
                             WaitForAddBlueprintCard.Add(new Tuple<string, string, CardData>(warpper.BlueprintCardDataCardTabGroup, warpper.BlueprintCardDataCardTabSubGroup, item.Value.obj as CardData));
+                        var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
+                        if (FillDropsList != null)
+                        {
+                            FillDropsList.Invoke(item.Value.obj, null);
+                        }
                     }
                     else if (item.Value.obj is CharacterPerk)
                     {
@@ -647,6 +734,48 @@ namespace ModLoader
                 catch (Exception ex)
                 {
                     Debug.LogError("WarpperAllMods " + ex.Message);
+                }
+            }
+        }
+
+        private static void WarpperAllEditorMods()
+        {
+            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+            foreach (var item in WaitForWarpperEditorGUIDDict)
+            {
+                try
+                {
+                    JsonData json = new JsonData();
+                    using (StreamReader sr = new StreamReader(item.Value.CardPath))
+                        json = JsonMapper.ToObject(sr.ReadToEnd());
+                    WarpperFunction.JsonCommonWarpper(item.Value.obj, json);
+                    if (item.Value.obj is CardData)
+                    {
+                        if ((item.Value.obj as CardData).CardType == CardTypes.Blueprint &&
+                            json.ContainsKey("BlueprintCardDataCardTabGroup") && json["BlueprintCardDataCardTabGroup"].IsString && !json["BlueprintCardDataCardTabGroup"].ToString().IsNullOrWhiteSpace() &&
+                            json.ContainsKey("BlueprintCardDataCardTabSubGroup") && json["BlueprintCardDataCardTabSubGroup"].IsString && !json["BlueprintCardDataCardTabSubGroup"].ToString().IsNullOrWhiteSpace())
+                            WaitForAddBlueprintCard.Add(new Tuple<string, string, CardData>(json["BlueprintCardDataCardTabGroup"].ToString(), json["BlueprintCardDataCardTabSubGroup"].ToString(), item.Value.obj as CardData));
+
+                        var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
+                        if (FillDropsList != null)
+                        {
+                            FillDropsList.Invoke(item.Value.obj, null);
+                        }
+                    }
+                    else if (item.Value.obj is CharacterPerk)
+                    {
+                        if (json.ContainsKey("CharacterPerkPerkGroup") && json["CharacterPerkPerkGroup"].IsString && !json["CharacterPerkPerkGroup"].ToString().IsNullOrWhiteSpace())
+                            WaitForAddPerkGroup.Add(new Tuple<string, CharacterPerk>(json["CharacterPerkPerkGroup"].ToString(), item.Value.obj as CharacterPerk));
+                    }
+                    else if (item.Value.obj is GameStat)
+                    {
+                        if (json.ContainsKey("VisibleGameStatStatListTab") && json["VisibleGameStatStatListTab"].IsString && !json["VisibleGameStatStatListTab"].ToString().IsNullOrWhiteSpace())
+                            WaitForAddVisibleGameStat.Add(new Tuple<string, GameStat>(json["VisibleGameStatStatListTab"].ToString(), item.Value.obj as GameStat));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError("WarpperAllEditorMods " + ex.Message);
                 }
             }
         }
@@ -818,6 +947,8 @@ namespace ModLoader
                 LoadLocalization();
 
                 WarpperAllMods();
+
+                WarpperAllEditorMods();
 
                 WarpperAllGameSrouces();
 

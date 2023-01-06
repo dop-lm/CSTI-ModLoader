@@ -8,6 +8,7 @@ using System.Reflection;
 using UnityEngine;
 using System.Runtime.Remoting;
 using System.Collections;
+using LitJson;
 
 namespace ModLoader
 {
@@ -21,6 +22,175 @@ namespace ModLoader
             REFERENCE,
             ADD,
             MODIFY
+        }
+
+        public static void JsonCommonWarpper(System.Object obj, LitJson.JsonData json)
+        {
+            if(!json.IsObject)
+                return;
+
+            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+            var obj_type = obj.GetType();
+            foreach (var key in json.Keys)
+            {
+                try
+                {
+                    if (key.EndsWith("WarpType"))
+                    {
+                        if (!json[key].IsInt || !json.ContainsKey(key.Substring(0, key.Length - 8) + "WarpData"))
+                            continue;
+                        if ((int)json[key] == (int)WarpType.REFERENCE)
+                        {
+                            var field_name = key.Substring(0, key.Length - 8);
+                            var field = obj_type.GetField(field_name, bindingFlags);
+                            var field_type = field.FieldType;
+
+                            if (json[field_name + "WarpData"].IsString)
+                            {
+                                if (field_type.IsSubclassOf(typeof(UniqueIDScriptable)))
+                                {
+                                    ObjectReferenceWarpper(obj, json[field_name + "WarpData"].ToString(), field_name, ModLoader.AllGUIDDict);
+                                }
+                                else if (field_type.IsSubclassOf(typeof(ScriptableObject)))
+                                {
+                                    if (ModLoader.AllScriptableObjectWithoutGUIDDict.TryGetValue(field_type.Name, out var type_dict))
+                                        ObjectReferenceWarpper(obj, json[field_name + "WarpData"].ToString(), field_name, type_dict);
+                                    else
+                                        UnityEngine.Debug.LogWarning("Error: CommonWarpper No Such Dict " + field_type.Name);
+                                }
+                                else if (field_type == typeof(UnityEngine.Sprite))
+                                {
+    
+                                    ObjectReferenceWarpper(obj, json[field_name + "WarpData"].ToString(), field_name, ModLoader.SpriteDict);
+                                }
+                                else if (field_type == typeof(UnityEngine.AudioClip))
+                                {
+                                    ObjectReferenceWarpper(obj, json[field_name + "WarpData"].ToString(), field_name, ModLoader.AudioClipDict);
+                                }
+                                else
+                                {
+                                    UnityEngine.Debug.LogWarning("Error: CommonWarpper Unexpect Object Type " + field_type.Name);
+                                }
+                            }
+                            else if (json[field_name + "WarpData"].IsArray)
+                            {
+                                Type sub_field_type = null;
+                                if (field.FieldType.IsGenericType && (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
+                                {
+                                    sub_field_type = field.FieldType.GetGenericArguments().Single();
+                                }
+                                else if (field.FieldType.IsArray)
+                                {
+                                    sub_field_type = field.FieldType.GetElementType();
+                                }
+                                else
+                                {
+                                    UnityEngine.Debug.LogWarning("Error: CommonWarpper Wrong WarpData Format " + field_type.Name);
+                                }
+
+                                List<string> list_data = new List<string>();
+                                for (int i = 0; i < json[field_name + "WarpData"].Count; i++)
+                                {
+                                    if (json[field_name + "WarpData"][i].IsString)
+                                        list_data.Add(json[field_name + "WarpData"][i].ToString());
+                                }
+
+                                if (list_data.Count != json[field_name + "WarpData"].Count)
+                                    UnityEngine.Debug.LogWarning("Error: CommonWarpper Wrong WarpData Format " + sub_field_type.Name);
+
+                                if (sub_field_type.IsSubclassOf(typeof(UniqueIDScriptable)))
+                                {
+                                    ObjectReferenceWarpper(obj, list_data, field_name, ModLoader.AllGUIDDict);
+                                }
+                                else if (sub_field_type.IsSubclassOf(typeof(ScriptableObject)))
+                                {
+                                    if (ModLoader.AllScriptableObjectWithoutGUIDDict.TryGetValue(sub_field_type.Name, out var type_dict))
+                                        ObjectReferenceWarpper(obj, list_data, field_name, type_dict);
+                                    else
+                                        UnityEngine.Debug.LogWarning("Error: CommonWarpper No Such Dict " + sub_field_type.Name);
+                                }
+                                else if (sub_field_type == typeof(UnityEngine.Sprite))
+                                {
+                                    ObjectReferenceWarpper(obj, list_data, field_name, ModLoader.SpriteDict);
+                                }
+                                else if (sub_field_type == typeof(UnityEngine.AudioClip))
+                                {
+                                    ObjectReferenceWarpper(obj, list_data, field_name, ModLoader.AudioClipDict);
+                                }
+                                else
+                                {
+                                    UnityEngine.Debug.LogWarning("Error: CommonWarpper Unexpect List Object Type  " + sub_field_type.Name);
+                                }
+                            }
+                            else
+                            {
+                                UnityEngine.Debug.LogWarning("Error: CommonWarpper Wrong WarpData Format " + field_type.Name);
+                            }
+                        }
+                        else if ((int)json[key] == (int)WarpType.ADD)
+                        {
+
+                        }
+                        else if ((int)json[key] == (int)WarpType.MODIFY)
+                        {
+
+                        }
+                    }
+                    else if (key.EndsWith("WarpData"))
+                        continue;
+                    else 
+                    {
+                        if ((json[key].IsObject))
+                        {
+                            var field_name = key;
+                            var field = obj_type.GetField(field_name, bindingFlags);
+                            if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
+                                continue;
+                            var sub_obj = field.GetValue(obj);
+                            JsonCommonWarpper(sub_obj, json[key]);
+                            field.SetValue(obj, sub_obj);
+                        }
+                        else if (json[key].IsArray)
+                        {
+                            var field_name = key;
+                            var field = obj_type.GetField(field_name, bindingFlags);
+
+                            for (int i = 0; i < json[key].Count; i++)
+                            {
+                                if (json[key][i].IsObject)
+                                {
+                                    if (field.FieldType.IsGenericType && (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
+                                    {
+                                        var ele_type = field.FieldType.GetGenericArguments().Single();
+                                        if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
+                                            break;
+                                        var list = field.GetValue(obj) as IList;
+                                        var ele = list[i];
+                                        JsonCommonWarpper(ele, json[key][i]);
+                                        list[i] = ele;
+                                        field.SetValue(obj, list);
+                                    }
+                                    else if (field.FieldType.IsArray)
+                                    {
+                                        var ele_type = field.FieldType.GetElementType();
+                                        if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
+                                            break;
+                                        var array = field.GetValue(obj) as Array;
+                                        var ele = array.GetValue(i);
+                                        JsonCommonWarpper(ele, json[key][i]);
+                                        array.SetValue(ele, i);
+                                        field.SetValue(obj, array);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch(Exception ex)
+                {
+                    UnityEngine.Debug.LogError(string.Format("Error: CommonWarpper {0}  {1}", obj_type.Name, ex.Message));
+                }
+            }
         }
 
         public static void ClassWarpper(System.Object obj, string field_name, WarpType warp_type, string data, string src_dir)
