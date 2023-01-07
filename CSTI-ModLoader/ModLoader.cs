@@ -25,7 +25,7 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.1.0")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.1.1")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -79,6 +79,15 @@ namespace ModLoader
             Harmony.CreateAndPatchAll(typeof(ModLoader));
             PluginVersion = System.Version.Parse(this.Info.Metadata.Version.ToString());
             Logger.LogInfo("Plugin ModLoader is loaded! ");
+        }
+
+        public static string CombinePaths(params string[] paths)
+        {
+            if (paths == null)
+            {
+                throw new ArgumentNullException("paths");
+            }
+            return paths.Aggregate(Path.Combine);
         }
 
         static IEnumerator GetDataRequest(string ModName, string file)
@@ -194,6 +203,14 @@ namespace ModLoader
 
                     if (ele is UniqueIDScriptable)
                     {
+                        if(ele is CardData)
+                        {
+                            if (!AllCardOrTagDict.ContainsKey((ele as CardData).UniqueID))
+                                AllCardOrTagDict.Add((ele as CardData).UniqueID, ele as CardData);
+                            else
+                                UnityEngine.Debug.LogWarning("AllCardOrTagDict Same Key was Add " + (ele as CardData).UniqueID);
+                        }
+
                         if (ele is PerkGroup)
                         {
                             if (!PerkGroupDict.ContainsKey((ele as PerkGroup).UniqueID))
@@ -279,11 +296,11 @@ namespace ModLoader
         {
             try
             {
-                var dirs = Directory.GetDirectories(BepInEx.Paths.BepInExRootPath + @"\plugins");
+                var dirs = Directory.GetDirectories(Path.Combine(BepInEx.Paths.BepInExRootPath, "plugins"));
                 foreach (var dir in dirs)
                 {
                     //  Check if is a Mod Directory
-                    if (!File.Exists(dir + @"\ModInfo.json"))
+                    if (!File.Exists(CombinePaths(dir, "ModInfo.json")))
                         continue;
 
                     ModInfo Info = new ModInfo();
@@ -292,7 +309,7 @@ namespace ModLoader
                     try
                     {
                         // Load Mod Info
-                        using (StreamReader sr = new StreamReader(dir + @"\ModInfo.json"))
+                        using (StreamReader sr = new StreamReader(CombinePaths(dir, "ModInfo.json")))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
 
                         // Check Name
@@ -312,7 +329,7 @@ namespace ModLoader
                     // Load Resource
                     try
                     {
-                        var files = Directory.GetFiles(dir + @"\Resource");
+                        var files = Directory.GetFiles(CombinePaths(dir, "Resource"));
                         foreach (var file in files)
                         {
                             if (!file.EndsWith(".ab"))
@@ -345,7 +362,7 @@ namespace ModLoader
                     // Load Resource Custom Pictures
                     try
                     {
-                        var files = Directory.GetFiles(dir + @"\Resource\Picture");
+                        var files = Directory.GetFiles(CombinePaths(dir, "Resource", "Picture"));
                         foreach (var file in files)
                         {
                             if (!file.EndsWith(".jpg") && !file.EndsWith(".jpeg") && !file.EndsWith(".png"))
@@ -369,8 +386,7 @@ namespace ModLoader
                     // Load Resource Custom Audio
                     try
                     {
-                        var files = Directory.GetFiles(dir + @"\Resource\Audio");
-
+                        var files = Directory.GetFiles(CombinePaths(dir, "Resource", "Audio"));
                         foreach (var file in files)
                         {
                             if (!file.EndsWith(".wav"))
@@ -395,7 +411,7 @@ namespace ModLoader
                     // Load Localization
                     try
                     {
-                        var files = Directory.GetFiles(dir + @"\Localization");
+                        var files = Directory.GetFiles(CombinePaths(dir, "Localization"));
                         foreach (var file in files)
                         {
                             if (!file.EndsWith(".csv"))
@@ -419,15 +435,15 @@ namespace ModLoader
 
                         foreach (var type in subclasses)
                         {
-                            if (!Directory.Exists(dir + @"\" + type.Name))
+                            if (!Directory.Exists(CombinePaths(dir, type.Name)))
                                 continue;
                             if (Info.ModEditorVersion.IsNullOrWhiteSpace())
                             {
-                                var card_dirs = Directory.GetDirectories(dir + @"\" + type.Name);
+                                var card_dirs = Directory.GetDirectories(CombinePaths(dir, type.Name));
                                 foreach (var card_dir in card_dirs)
                                 {
                                     string CardName = Path.GetFileName(card_dir); ;
-                                    string CardPath = card_dir + @"\" + CardName + ".json";
+                                    string CardPath = CombinePaths(card_dir, CardName + ".json");
                                     if (File.Exists(CardPath))
                                     {
                                         try
@@ -459,7 +475,7 @@ namespace ModLoader
                             }
                             else
                             {
-                                var files = Directory.GetFiles(dir + @"\" + type.Name);
+                                var files = Directory.GetFiles(CombinePaths(dir, type.Name));
                                 foreach (var file in files)
                                 {
                                     if (!file.EndsWith(".json"))
@@ -502,7 +518,7 @@ namespace ModLoader
                     // Load GameSourceModify
                     try
                     {
-                        var modify_dirs = Directory.GetDirectories(dir + @"\GameSourceModify");
+                        var modify_dirs = Directory.GetDirectories(CombinePaths(dir, "GameSourceModify"));
                         foreach (var modify_dir in modify_dirs)
                         {
                             var modify_files = Directory.GetFiles(modify_dir);
@@ -518,156 +534,6 @@ namespace ModLoader
                     {
                         UnityEngine.Debug.LogErrorFormat("{0} Load GameSourceModify Error {1}", ModName, ex.Message);
                     }
-
-                    //// Load CharacterPerk
-                    //try
-                    //{
-                    //    var card_dirs = Directory.GetDirectories(dir + @"\CharacterPerk");
-                    //    foreach (var card_dir in card_dirs)
-                    //    {
-                    //        string CardName = Path.GetFileName(card_dir); ;
-                    //        string CardPath = card_dir + @"\" + CardName + ".json";
-                    //        if (File.Exists(CardPath))
-                    //        {
-                    //            try
-                    //            {
-                    //                CharacterPerk card = CharacterPerk.CreateInstance<CharacterPerk>();
-                    //                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                    //                using (StreamReader sr = new StreamReader(CardPath))
-                    //                    JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                    //                card.name = ModName + "_" + CardName;
-                    //                card.Init();
-                    //                AllGUIDDict.Add(card.UniqueID, card);
-                    //                GameLoad.Instance.DataBase.AllData.Add(card);
-                    //                if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
-                    //                    WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
-                    //                else
-                    //                    UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
-                    //            }
-                    //            catch (Exception ex)
-                    //            {
-                    //                UnityEngine.Debug.LogErrorFormat("{0} Load CharacterPerk {1} Error {2}", ModName, CardName, ex.Message);
-                    //            }
-                    //        }
-                    //    }
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    UnityEngine.Debug.LogErrorFormat("{0} Load CharacterPerk Error {1}", ModName, ex.Message);
-                    //}
-
-                    //// Load GameStat
-                    //try
-                    //{
-                    //    var card_dirs = Directory.GetDirectories(dir + @"\GameStat");
-                    //    foreach (var card_dir in card_dirs)
-                    //    {
-                    //        string CardName = Path.GetFileName(card_dir); ;
-                    //        string CardPath = card_dir + @"\" + CardName + ".json";
-                    //        if (File.Exists(CardPath))
-                    //        {
-                    //            try
-                    //            {
-                    //                GameStat card = GameStat.CreateInstance<GameStat>();
-                    //                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                    //                using (StreamReader sr = new StreamReader(CardPath))
-                    //                    JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                    //                card.name = ModName + "_" + CardName;
-                    //                card.Init();
-                    //                AllGUIDDict.Add(card.UniqueID, card);
-                    //                GameLoad.Instance.DataBase.AllData.Add(card);
-                    //                if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
-                    //                    WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
-                    //                else
-                    //                    UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
-                    //            }
-                    //            catch (Exception ex)
-                    //            {
-                    //                UnityEngine.Debug.LogErrorFormat("{0} Load GameStat {1} Error {2}", ModName, CardName, ex.Message);
-                    //            }
-                    //        }
-                    //    }
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    UnityEngine.Debug.LogErrorFormat("{0} Load GameStat Error {1}", ModName, ex.Message);
-                    //}
-
-                    //// Load Objective
-                    //try
-                    //{
-                    //    var card_dirs = Directory.GetDirectories(dir + @"\Objective");
-                    //    foreach (var card_dir in card_dirs)
-                    //    {
-                    //        string CardName = Path.GetFileName(card_dir); ;
-                    //        string CardPath = card_dir + @"\" + CardName + ".json";
-                    //        if (File.Exists(CardPath))
-                    //        {
-                    //            try
-                    //            {
-                    //                Objective card = Objective.CreateInstance<Objective>();
-                    //                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                    //                using (StreamReader sr = new StreamReader(CardPath))
-                    //                    JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                    //                card.name = ModName + "_" + CardName;
-                    //                card.Init();
-                    //                AllGUIDDict.Add(card.UniqueID, card);
-                    //                GameLoad.Instance.DataBase.AllData.Add(card);
-                    //                if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
-                    //                    WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
-                    //                else
-                    //                    UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
-                    //            }
-                    //            catch (Exception ex)
-                    //            {
-                    //                UnityEngine.Debug.LogErrorFormat("{0} Load Objective {1} Error {2}", ModName, CardName, ex.Message);
-                    //            }
-                    //        }
-                    //    }
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    UnityEngine.Debug.LogErrorFormat("{0} Load Objective Error {1}", ModName, ex.Message);
-                    //}
-
-                    //// Load SelfTriggeredAction
-                    //try
-                    //{
-                    //    var card_dirs = Directory.GetDirectories(dir + @"\SelfTriggeredAction");
-                    //    foreach (var card_dir in card_dirs)
-                    //    {
-                    //        string CardName = Path.GetFileName(card_dir); ;
-                    //        string CardPath = card_dir + @"\" + CardName + ".json";
-                    //        if (File.Exists(CardPath))
-                    //        {
-                    //            try
-                    //            {
-                    //                SelfTriggeredAction card = SelfTriggeredAction.CreateInstance<SelfTriggeredAction>();
-                    //                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                    //                using (StreamReader sr = new StreamReader(CardPath))
-                    //                    JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
-                    //                card.name = ModName + "_" + CardName;
-                    //                card.Init();
-                    //                AllGUIDDict.Add(card.UniqueID, card);
-                    //                GameLoad.Instance.DataBase.AllData.Add(card);
-                    //                if (!WaitForWarpperGUIDDict.ContainsKey(card.UniqueID))
-                    //                    WaitForWarpperGUIDDict.Add(card.UniqueID, new UniqueIDScriptablePack(card, card_dir, CardPath));
-                    //                else
-                    //                    UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card.UniqueID);
-                    //            }
-                    //            catch (Exception ex)
-                    //            {
-                    //                UnityEngine.Debug.LogErrorFormat("{0} Load SelfTriggeredAction {1} Error {2}", ModName, CardName, ex.Message);
-                    //            }
-                    //        }
-                    //    }
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    UnityEngine.Debug.LogErrorFormat("{0} Load SelfTriggeredAction Error {1}", ModName, ex.Message);
-                    //}
-
-
                 }
             }
             catch (Exception ex)

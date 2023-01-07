@@ -67,10 +67,14 @@ namespace ModLoader
                                 {
                                     ObjectReferenceWarpper(obj, json[field_name + "WarpData"].ToString(), field_name, ModLoader.AudioClipDict);
                                 }
+                                else if (field_type == typeof(ScriptableObject))
+                                {
+                                    ObjectReferenceWarpper(obj, json[field_name + "WarpData"].ToString(), field_name, ModLoader.AllCardOrTagDict);
+                                }
                                 else
                                 {
                                     UnityEngine.Debug.LogWarning("Error: CommonWarpper Unexpect Object Type " + field_type.Name);
-                                }
+                                } 
                             }
                             else if (json[field_name + "WarpData"].IsArray)
                             {
@@ -116,6 +120,10 @@ namespace ModLoader
                                 else if (sub_field_type == typeof(UnityEngine.AudioClip))
                                 {
                                     ObjectReferenceWarpper(obj, list_data, field_name, ModLoader.AudioClipDict);
+                                }
+                                else if (sub_field_type == typeof(ScriptableObject))
+                                {
+                                    ObjectReferenceWarpper(obj, list_data, field_name, ModLoader.AllCardOrTagDict);
                                 }
                                 else
                                 {
@@ -230,7 +238,7 @@ namespace ModLoader
                 //}
 
                 Type warpper_type = Type.GetType("ModLoader." + field.FieldType.Name + "Warpper");
-                var warpper = Activator.CreateInstance(warpper_type, src_dir + "\\" + field_name);
+                var warpper = Activator.CreateInstance(warpper_type, ModLoader.CombinePaths(src_dir, field_name));
                 var temp_obj = new object[] { obj, data, field_name };
                 warpper_type.GetMethod(method_name, bindingFlags, null, new Type[] { obj.GetType(), typeof(string), typeof(string) }, null).Invoke(warpper, temp_obj);
             }
@@ -292,7 +300,7 @@ namespace ModLoader
                 }
 
                 Type warpper_type = Type.GetType("ModLoader." + ele_type.Name + "Warpper");
-                var warpper = Activator.CreateInstance(warpper_type, src_dir + "\\" + field_name);
+                var warpper = Activator.CreateInstance(warpper_type, ModLoader.CombinePaths(src_dir, field_name));
                 var temp_obj = new object[] { obj, data, field_name };
                 warpper_type.GetMethod(method_name, bindingFlags, null, new Type[] { obj.GetType(), typeof(List<string>), typeof(string) }, null).Invoke(warpper, temp_obj);
             }
@@ -372,7 +380,7 @@ namespace ModLoader
                 var instance = field.GetValue(obj);
                 if (!instance.GetType().IsClass)
                 {
-                    using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data))
+                    using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data)))
                     {
                         string json_data = sr.ReadToEnd();
                         instance = UnityEngine.JsonUtility.FromJson(json_data, field.FieldType);
@@ -384,7 +392,7 @@ namespace ModLoader
                 }
                 else
                 {
-                    using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data))
+                    using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data)))
                     {
                         string json_data = sr.ReadToEnd();
                         UnityEngine.JsonUtility.FromJsonOverwrite(json_data, instance);
@@ -423,7 +431,7 @@ namespace ModLoader
                         var new_warpper = Activator.CreateInstance(warpper.GetType(), warpper.SrcPath);
                         if (!ele.GetType().IsClass)
                         {
-                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data[i])))
                             {
                                 string json_data = sr.ReadToEnd();
                                 ele = UnityEngine.JsonUtility.FromJson(json_data, ele_type);
@@ -435,7 +443,7 @@ namespace ModLoader
                         }
                         else
                         {
-                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data[i])))
                             {
                                 string json_data = sr.ReadToEnd();
                                 UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
@@ -457,7 +465,7 @@ namespace ModLoader
                         var new_warpper = Activator.CreateInstance(warpper.GetType(), warpper.SrcPath);
                         if (!ele.GetType().IsClass)
                         {
-                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data[i])))
                             {
                                 string json_data = sr.ReadToEnd();
                                 ele = UnityEngine.JsonUtility.FromJson(json_data, ele_type);
@@ -469,7 +477,7 @@ namespace ModLoader
                         }
                         else
                         {
-                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data[i])))
                             {
                                 string json_data = sr.ReadToEnd();
                                 UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
@@ -574,7 +582,7 @@ namespace ModLoader
                         var new_warpper = Activator.CreateInstance(warpper.GetType(), warpper.SrcPath);
                         if (!ele.GetType().IsClass)
                         {
-                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data[i])))
                             {
                                 string json_data = sr.ReadToEnd();
                                 ele = UnityEngine.JsonUtility.FromJson(json_data, ele_type);
@@ -586,7 +594,7 @@ namespace ModLoader
                         }
                         else
                         {
-                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data[i])))
                             {
                                 string json_data = sr.ReadToEnd();
                                 UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
@@ -609,7 +617,7 @@ namespace ModLoader
                         var new_warpper = Activator.CreateInstance(warpper.GetType(), warpper.SrcPath);
                         if (!ele.GetType().IsClass)
                         {
-                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data[i])))
                             {
                                 string json_data = sr.ReadToEnd();
                                 ele = UnityEngine.JsonUtility.FromJson(json_data, ele_type);
@@ -621,7 +629,7 @@ namespace ModLoader
                         }
                         else
                         {
-                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data[i])))
                             {
                                 string json_data = sr.ReadToEnd();
                                 UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
@@ -655,7 +663,7 @@ namespace ModLoader
                 var instance = field.GetValue(obj);
                 if (!instance.GetType().IsClass)
                 {
-                    using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data))
+                    using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data)))
                     {
                         string json_data = sr.ReadToEnd();
                         UnityEngine.JsonUtility.FromJsonOverwrite(json_data, instance);
@@ -667,7 +675,7 @@ namespace ModLoader
                 }
                 else
                 {
-                    using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data))
+                    using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data)))
                     {
                         string json_data = sr.ReadToEnd();
                         UnityEngine.JsonUtility.FromJsonOverwrite(json_data, instance);
@@ -707,7 +715,7 @@ namespace ModLoader
                         var new_warpper = Activator.CreateInstance(warpper.GetType(), warpper.SrcPath);
                         if (!ele.GetType().IsClass)
                         {
-                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data[i])))
                             {
                                 string json_data = sr.ReadToEnd();
                                 UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
@@ -718,7 +726,7 @@ namespace ModLoader
                         }
                         else
                         {
-                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data[i])))
                             {
                                 string json_data = sr.ReadToEnd();
                                 UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
@@ -741,7 +749,7 @@ namespace ModLoader
                         var new_warpper = Activator.CreateInstance(warpper.GetType(), warpper.SrcPath);
                         if (!ele.GetType().IsClass)
                         {
-                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data[i])))
                             {
                                 string json_data = sr.ReadToEnd();
                                 UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
@@ -753,7 +761,7 @@ namespace ModLoader
                         }
                         else
                         {
-                            using (StreamReader sr = new StreamReader(warpper.SrcPath + "\\" + data[i]))
+                            using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(warpper.SrcPath, data[i])))
                             {
                                 string json_data = sr.ReadToEnd();
                                 UnityEngine.JsonUtility.FromJsonOverwrite(json_data, ele);
