@@ -56,7 +56,7 @@ namespace ModLoader
                                     if (ModLoader.AllScriptableObjectWithoutGUIDDict.TryGetValue(field_type.Name, out var type_dict))
                                         ObjectReferenceWarpper(obj, json[field_name + "WarpData"].ToString(), field_name, type_dict);
                                     else
-                                        UnityEngine.Debug.LogWarning("Error: CommonWarpper No Such Dict " + field_type.Name);
+                                        ModLoader.LogErrorWithModInfo("CommonWarpper No Such Dict " + field_type.Name);
                                 }
                                 else if (field_type == typeof(UnityEngine.Sprite))
                                 {
@@ -73,7 +73,7 @@ namespace ModLoader
                                 }
                                 else
                                 {
-                                    UnityEngine.Debug.LogWarning("Error: CommonWarpper Unexpect Object Type " + field_type.Name);
+                                    ModLoader.LogErrorWithModInfo("CommonWarpper Unexpect Object Type " + field_type.Name);
                                 } 
                             }
                             else if (json[field_name + "WarpData"].IsArray)
@@ -89,7 +89,7 @@ namespace ModLoader
                                 }
                                 else
                                 {
-                                    UnityEngine.Debug.LogWarning("Error: CommonWarpper Wrong WarpData Format " + field_type.Name);
+                                    ModLoader.LogErrorWithModInfo("CommonWarpper Wrong WarpData Format " + field_type.Name);
                                 }
 
                                 List<string> list_data = new List<string>();
@@ -100,7 +100,7 @@ namespace ModLoader
                                 }
 
                                 if (list_data.Count != json[field_name + "WarpData"].Count)
-                                    UnityEngine.Debug.LogWarning("Error: CommonWarpper Wrong WarpData Format " + sub_field_type.Name);
+                                    ModLoader.LogErrorWithModInfo("CommonWarpper Wrong WarpData Format " + field_type.Name);
 
                                 if (sub_field_type.IsSubclassOf(typeof(UniqueIDScriptable)))
                                 {
@@ -111,7 +111,7 @@ namespace ModLoader
                                     if (ModLoader.AllScriptableObjectWithoutGUIDDict.TryGetValue(sub_field_type.Name, out var type_dict))
                                         ObjectReferenceWarpper(obj, list_data, field_name, type_dict);
                                     else
-                                        UnityEngine.Debug.LogWarning("Error: CommonWarpper No Such Dict " + sub_field_type.Name);
+                                        ModLoader.LogErrorWithModInfo("CommonWarpper No Such Dict " + field_type.Name);
                                 }
                                 else if (sub_field_type == typeof(UnityEngine.Sprite))
                                 {
@@ -127,12 +127,12 @@ namespace ModLoader
                                 }
                                 else
                                 {
-                                    UnityEngine.Debug.LogWarning("Error: CommonWarpper Unexpect List Object Type  " + sub_field_type.Name);
+                                    ModLoader.LogErrorWithModInfo("CommonWarpper Unexpect List Object Type " + sub_field_type.Name);
                                 }
                             }
                             else
                             {
-                                UnityEngine.Debug.LogWarning("Error: CommonWarpper Wrong WarpData Format " + field_type.Name);
+                                ModLoader.LogErrorWithModInfo("CommonWarpper Wrong WarpData Format " + field_type.Name);
                             }
                         }
                         else if ((int)json[key] == (int)WarpType.ADD)
@@ -196,7 +196,7 @@ namespace ModLoader
                 }
                 catch(Exception ex)
                 {
-                    UnityEngine.Debug.LogError(string.Format("Error: CommonWarpper {0}  {1}", obj_type.Name, ex.Message));
+                    ModLoader.LogErrorWithModInfo(string.Format("CommonWarpper {0} {1} {2}", obj_type.Name, ex.Message));
                 }
             }
         }
@@ -244,7 +244,7 @@ namespace ModLoader
             }
             catch(Exception ex)
             {
-                UnityEngine.Debug.LogError(string.Format("Error: ClassWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+                ModLoader.LogErrorWithModInfo(string.Format("ClassWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
             }
         }
 
@@ -306,7 +306,7 @@ namespace ModLoader
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogError(string.Format("Error: ClassWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+                ModLoader.LogErrorWithModInfo(string.Format("ClassWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
             }
         }
 
@@ -326,14 +326,14 @@ namespace ModLoader
                     var field = obj.GetType().GetField(field_name, bindingFlags);
                     if (field != ele.GetType().GetField(field_name, bindingFlags))
                     {
-                        UnityEngine.Debug.LogError("UniqueIDScriptableCopyWarpper WarpperCopy Single " + obj.GetType().Name + "." + field_name + "Field not Same");
+                        ModLoader.LogErrorWithModInfo("UniqueIDScriptableCopyWarpper WarpperCopy Single " + obj.GetType().Name + "." + field_name + "Field not Same");
                         return;
                     }
                     field.SetValue(obj, field.GetValue(ele));
                 }
                 catch (Exception ex)
                 {
-                    UnityEngine.Debug.LogError(string.Format("Error: UniqueIDScriptableCopyWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+                    ModLoader.LogErrorWithModInfo(string.Format("UniqueIDScriptableCopyWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
                 }
             }
         }
@@ -353,14 +353,14 @@ namespace ModLoader
                     var field = obj.GetType().GetField(field_name, bindingFlags);
                     if (field != ele.GetType().GetField(field_name, bindingFlags))
                     {
-                        UnityEngine.Debug.LogError("UniqueIDScriptableCopyWarpper WarpperCopy List " + obj.GetType().Name + "." + field_name + "Field not Same");
+                        ModLoader.LogErrorWithModInfo("UniqueIDScriptableCopyWarpper WarpperCopy List " + obj.GetType().Name + "." + field_name + "Field not Same");
                         return;
                     }
                     field.SetValue(obj, field.GetValue(ele));
                 }
                 catch (Exception ex)
                 {
-                    UnityEngine.Debug.LogError(string.Format("Error: UniqueIDScriptableCopyWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+                    ModLoader.LogErrorWithModInfo(string.Format("UniqueIDScriptableCopyWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
                 }
         }
         }
@@ -404,7 +404,7 @@ namespace ModLoader
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogError(string.Format("Error: ObjectCustomWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+                ModLoader.LogErrorWithModInfo(string.Format("ObjectCustomWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
             }
         }
 
@@ -492,7 +492,7 @@ namespace ModLoader
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogError(string.Format("Error: ObjectCustomWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+                ModLoader.LogErrorWithModInfo(string.Format("ObjectCustomWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
             }
         }
 
@@ -513,7 +513,7 @@ namespace ModLoader
                 }
                 catch (Exception ex)
                 {
-                    UnityEngine.Debug.LogError(string.Format("Error: ObjectReferenceWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+                    ModLoader.LogErrorWithModInfo(string.Format("ObjectReferenceWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
                 }
             }
         }
@@ -551,13 +551,13 @@ namespace ModLoader
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogError(string.Format("Error: ObjectReferenceWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+                ModLoader.LogErrorWithModInfo(string.Format("ObjectReferenceWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
             }
         }
 
         public static void ObjectAddWarpper(System.Object obj, string data, string field_name, WarpperBase warpper)
         {
-            UnityEngine.Debug.LogError(string.Format("Error: ObjectAddWarpper {0}.{1} {2}", obj.GetType().Name, field_name, "AddWarpper Only Vaild in List or Array Filed"));
+            ModLoader.LogErrorWithModInfo(string.Format("ObjectAddWarpper {0}.{1} {2}", obj.GetType().Name, field_name, "AddWarpper Only Vaild in List or Array Filed"));
         }
 
         public static void ObjectAddWarpper(System.Object obj, List<string> data, string field_name, WarpperBase warpper)
@@ -644,7 +644,7 @@ namespace ModLoader
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogError(string.Format("Error: ObjectAddWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+                ModLoader.LogErrorWithModInfo(string.Format("ObjectAddWarpper {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
             }
         }
 
@@ -687,7 +687,7 @@ namespace ModLoader
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogError(string.Format("Error: ObjectWarpperModify {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+                ModLoader.LogErrorWithModInfo(string.Format("ObjectWarpperModify {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
             }
         }
 
@@ -776,7 +776,7 @@ namespace ModLoader
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogError(string.Format("Error: ObjectWarpperModify {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
+                ModLoader.LogErrorWithModInfo(string.Format("ObjectWarpperModify {0}.{1} {2}", obj.GetType().Name, field_name, ex.Message));
             }
         }
 

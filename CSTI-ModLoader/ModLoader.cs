@@ -50,19 +50,22 @@ namespace ModLoader
         public static Dictionary<string, ScriptableObject> AllCardOrTagDict = new Dictionary<string, ScriptableObject>();
         public static Dictionary<string, Dictionary<string, ScriptableObject>> AllScriptableObjectWithoutGUIDDict = new Dictionary<string, Dictionary<string, ScriptableObject>>();
 
-        private struct UniqueIDScriptablePack
+        public struct UniqueIDScriptablePack
         {
-            public UniqueIDScriptablePack(UniqueIDScriptable obj, string CardDir, string CardPath)
+            public UniqueIDScriptablePack(UniqueIDScriptable obj, string CardDir, string CardPath, string ModName)
             {
                 this.obj = obj;
                 this.CardDir = CardDir;
                 this.CardPath = CardPath;
+                this.ModName = ModName;
             }
-
             public UniqueIDScriptable obj;
             public string CardDir;
             public string CardPath;
+            public string ModName;
         }
+
+        public static UniqueIDScriptablePack ProcessingUniqueIDScriptablePack = new UniqueIDScriptablePack();
 
         private static Dictionary<string, UniqueIDScriptablePack> WaitForWarpperGUIDDict = new Dictionary<string, UniqueIDScriptablePack>();
         private static Dictionary<string, UniqueIDScriptablePack> WaitForWarpperEditorGUIDDict = new Dictionary<string, UniqueIDScriptablePack>();
@@ -88,6 +91,11 @@ namespace ModLoader
                 throw new ArgumentNullException("paths");
             }
             return paths.Aggregate(Path.Combine);
+        }
+
+        public static void LogErrorWithModInfo(string error_info)
+        {
+            Debug.LogError(string.Format("{0}.{1} Error: {2}", ProcessingUniqueIDScriptablePack.ModName, ProcessingUniqueIDScriptablePack.obj.name, error_info));
         }
 
         static IEnumerator GetDataRequest(string ModName, string file)
@@ -462,7 +470,7 @@ namespace ModLoader
                                             GameLoad.Instance.DataBase.AllData.Add(card as UniqueIDScriptable);
 
                                             if (!WaitForWarpperGUIDDict.ContainsKey(card_guid))
-                                                WaitForWarpperGUIDDict.Add(card_guid, new UniqueIDScriptablePack(card as UniqueIDScriptable, card_dir, CardPath));
+                                                WaitForWarpperGUIDDict.Add(card_guid, new UniqueIDScriptablePack(card as UniqueIDScriptable, card_dir, CardPath, ModName));
                                             else
                                                 UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperGUIDDict Same Key was Add {1}", ModName, card_guid);
                                         }
@@ -498,7 +506,7 @@ namespace ModLoader
                                         GameLoad.Instance.DataBase.AllData.Add(card as UniqueIDScriptable);
 
                                         if (!WaitForWarpperEditorGUIDDict.ContainsKey(card_guid))
-                                            WaitForWarpperEditorGUIDDict.Add(card_guid, new UniqueIDScriptablePack(card as UniqueIDScriptable, "", CardPath));
+                                            WaitForWarpperEditorGUIDDict.Add(card_guid, new UniqueIDScriptablePack(card as UniqueIDScriptable, "", CardPath, ModName));
                                         else
                                             UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperEditorGUIDDict Same Key was Add {1}", ModName, card_guid);
                                     }
@@ -526,7 +534,7 @@ namespace ModLoader
                             {
                                 string Guid = Path.GetFileNameWithoutExtension(modify_files[0]);
                                 if (AllGUIDDict.TryGetValue(Guid, out var obj))
-                                    WaitForWarpperGameSourceGUIDList.Add(new UniqueIDScriptablePack(obj, modify_dir, modify_files[0]));
+                                    WaitForWarpperGameSourceGUIDList.Add(new UniqueIDScriptablePack(obj, modify_dir, modify_files[0], ModName));
                             }
                         }
                     }
@@ -549,6 +557,8 @@ namespace ModLoader
             {
                 try
                 {
+                    ProcessingUniqueIDScriptablePack = item.Value;
+
                     if (item.Value.obj is CardData)
                     {
                         CardDataWarpper warpper = new CardDataWarpper(item.Value.CardDir);
@@ -611,6 +621,8 @@ namespace ModLoader
             {
                 try
                 {
+                    ProcessingUniqueIDScriptablePack = item.Value;
+
                     JsonData json = new JsonData();
                     using (StreamReader sr = new StreamReader(item.Value.CardPath))
                         json = JsonMapper.ToObject(sr.ReadToEnd());
@@ -755,6 +767,8 @@ namespace ModLoader
             {
                 try
                 {
+                    ProcessingUniqueIDScriptablePack = item;
+
                     if (item.obj is CardData)
                     {
                         CardDataWarpper warpper = new CardDataWarpper(item.CardDir);
