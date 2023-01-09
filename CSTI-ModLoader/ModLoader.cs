@@ -25,7 +25,7 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.1.1")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.1.2")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -70,6 +70,7 @@ namespace ModLoader
         private static Dictionary<string, UniqueIDScriptablePack> WaitForWarpperGUIDDict = new Dictionary<string, UniqueIDScriptablePack>();
         private static Dictionary<string, UniqueIDScriptablePack> WaitForWarpperEditorGUIDDict = new Dictionary<string, UniqueIDScriptablePack>();
         private static List<UniqueIDScriptablePack> WaitForWarpperGameSourceGUIDList = new List<UniqueIDScriptablePack>();
+        private static List<UniqueIDScriptablePack> WaitForWarpperEditorGameSourceGUIDList = new List<UniqueIDScriptablePack>();
 
         private static List<Tuple<string, string>> WaitForLoadCSVList = new List<Tuple<string, string>>();
         private static List<Tuple<string, string,  CardData>> WaitForAddBlueprintCard = new List<Tuple<string, string, CardData>>();
@@ -526,15 +527,35 @@ namespace ModLoader
                     // Load GameSourceModify
                     try
                     {
-                        var modify_dirs = Directory.GetDirectories(CombinePaths(dir, "GameSourceModify"));
-                        foreach (var modify_dir in modify_dirs)
+                        if (Info.ModEditorVersion.IsNullOrWhiteSpace())
                         {
-                            var modify_files = Directory.GetFiles(modify_dir);
-                            if (modify_files.Length == 1 && modify_files[0].EndsWith(".json"))
+                            var modify_dirs = Directory.GetDirectories(CombinePaths(dir, "GameSourceModify"));
+                            foreach (var modify_dir in modify_dirs)
                             {
-                                string Guid = Path.GetFileNameWithoutExtension(modify_files[0]);
-                                if (AllGUIDDict.TryGetValue(Guid, out var obj))
-                                    WaitForWarpperGameSourceGUIDList.Add(new UniqueIDScriptablePack(obj, modify_dir, modify_files[0], ModName));
+                                var modify_files = Directory.GetFiles(modify_dir);
+                                if (modify_files.Length == 1 && modify_files[0].EndsWith(".json"))
+                                {
+                                    string Guid = Path.GetFileNameWithoutExtension(modify_files[0]);
+                                    if (AllGUIDDict.TryGetValue(Guid, out var obj))
+                                        WaitForWarpperGameSourceGUIDList.Add(new UniqueIDScriptablePack(obj, modify_dir, modify_files[0], ModName));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var modify_dirs = Directory.GetDirectories(CombinePaths(dir, "GameSourceModify"));
+                            foreach (var modify_dir in modify_dirs)
+                            {
+                                var modify_files = Directory.GetFiles(modify_dir);
+                                foreach (var file in modify_files)
+                                {
+                                    if (file.EndsWith(".json"))
+                                    {
+                                        string Guid = Path.GetFileNameWithoutExtension(file);
+                                        if (AllGUIDDict.TryGetValue(Guid, out var obj))
+                                            WaitForWarpperEditorGameSourceGUIDList.Add(new UniqueIDScriptablePack(obj, modify_dir, file, ModName));
+                                    }
+                                }
                             }
                         }
                     }
@@ -813,6 +834,33 @@ namespace ModLoader
             }
         }
 
+        private static void WarpperAllEditorGameSrouces()
+        {
+            foreach (var item in WaitForWarpperEditorGameSourceGUIDList)
+            {
+                try
+                {
+                    ProcessingUniqueIDScriptablePack = item;
+
+                    JsonData json = new JsonData();
+                    string json_data = "";
+                    using (StreamReader sr = new StreamReader(item.CardPath))
+                        json_data = sr.ReadToEnd();
+
+                    if (!json_data.IsNullOrWhiteSpace())
+                    {
+                        json = JsonMapper.ToObject(json_data);
+                        JsonUtility.FromJsonOverwrite(json_data, item.obj);
+                        WarpperFunction.JsonCommonWarpper(item.obj, json);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError("WarpperAllEditorGameSrouces " + ex.Message);
+                }
+            }
+        }
+
         [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "LoadGameData")]
         public static void GameLoadLoadGameDataPostfix()
         {
@@ -831,6 +879,8 @@ namespace ModLoader
                 WarpperAllEditorMods();
 
                 WarpperAllGameSrouces();
+
+                WarpperAllEditorGameSrouces();
 
                 AddPerkGroup();
 
