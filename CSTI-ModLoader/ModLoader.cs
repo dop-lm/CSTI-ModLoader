@@ -1,18 +1,14 @@
 ﻿using System;
 using BepInEx;
 using HarmonyLib;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using System.Reflection;
-using UnityEngine.Networking;
-using System.Threading.Tasks;
-using System.Net;
 using System.Text;
 using LitJson;
-using static System.Net.Mime.MediaTypeNames;
 using System.Linq;
+using Ionic.Zip;
 
 namespace ModLoader
 {
@@ -25,7 +21,7 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.1.3")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.1.4")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -52,17 +48,19 @@ namespace ModLoader
 
         public struct UniqueIDScriptablePack
         {
-            public UniqueIDScriptablePack(UniqueIDScriptable obj, string CardDir, string CardPath, string ModName)
+            public UniqueIDScriptablePack(UniqueIDScriptable obj, string CardDir, string CardPath, string ModName, string CardData = "")
             {
                 this.obj = obj;
                 this.CardDir = CardDir;
                 this.CardPath = CardPath;
                 this.ModName = ModName;
+                this.CardData = CardData;
             }
             public UniqueIDScriptable obj;
             public string CardDir;
             public string CardPath;
             public string ModName;
+            public string CardData;
         }
 
         public static UniqueIDScriptablePack ProcessingUniqueIDScriptablePack = new UniqueIDScriptablePack();
@@ -99,32 +97,32 @@ namespace ModLoader
             Debug.LogError(string.Format("{0}.{1} Error: {2}", ProcessingUniqueIDScriptablePack.ModName, ProcessingUniqueIDScriptablePack.obj.name, error_info));
         }
 
-        static IEnumerator GetDataRequest(string ModName, string file)
-        {
-            var audio_name = Path.GetFileNameWithoutExtension(file);
-            var request = UnityEngine.Networking.UnityWebRequestMultimedia.GetAudioClip(file, AudioType.WAV);
+        //static IEnumerator GetDataRequest(string ModName, string file)
+        //{
+        //    var audio_name = Path.GetFileNameWithoutExtension(file);
+        //    var request = UnityEngine.Networking.UnityWebRequestMultimedia.GetAudioClip(file, AudioType.WAV);
 
-            yield return request.SendWebRequest();
+        //    yield return request.SendWebRequest();
 
-            if (request.isNetworkError)
-                Debug.LogErrorFormat("Load Resource Custom Audio Error {0}", request.error);
-            else
-            {
-                AudioClip clip = DownloadHandlerAudioClip.GetContent(request);
-                clip.name = audio_name;
-                if (!AudioClipDict.ContainsKey(audio_name))
-                    AudioClipDict.Add(audio_name, clip);
-                else
-                    UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, audio_name);
-            }
-        }
+        //    if (request.isNetworkError)
+        //        Debug.LogErrorFormat("Load Resource Custom Audio Error {0}", request.error);
+        //    else
+        //    {
+        //        AudioClip clip = DownloadHandlerAudioClip.GetContent(request);
+        //        clip.name = audio_name;
+        //        if (!AudioClipDict.ContainsKey(audio_name))
+        //            AudioClipDict.Add(audio_name, clip);
+        //        else
+        //            UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, audio_name);
+        //    }
+        //}
 
-        public static AudioClip GetAudioClipFromWav(string file)
+        public static AudioClip GetAudioClipFromWav(byte[] raw_data, string clip_name)
         {
             AudioClip clip = null;
-            var raw_data = System.IO.File.ReadAllBytes(file);
+            //var raw_data = System.IO.File.ReadAllBytes(file);
             var raw_string = Encoding.ASCII.GetString(raw_data);
-            var clip_name = Path.GetFileNameWithoutExtension(file);
+            //var clip_name = Path.GetFileNameWithoutExtension(file);
 
             if (raw_string.Substring(0, 4) == "RIFF")
             {
@@ -301,6 +299,261 @@ namespace ModLoader
             }
         }
 
+        private static void LoadModsFromZip()
+        {
+            try
+            {
+                var files = Directory.GetFiles(Path.Combine(BepInEx.Paths.BepInExRootPath, "plugins"));
+                foreach (var file in files)
+                {
+                    if (!file.EndsWith(".zip"))
+                        continue;
+                    ModInfo Info = new ModInfo();
+                    string ModName = Path.GetFileNameWithoutExtension(file);
+                    string ModDirName = Path.GetFileNameWithoutExtension(file);
+                    ZipFile zip = null;
+                    //System.Collections.ObjectModel.ReadOnlyCollection<ZipArchiveEntry> entrys = null;
+                    ICollection<ZipEntry> entrys = null;
+
+                    //Check if is a Mod Directory and Load Mod Info
+                    try
+                    {
+                        //zip = ZipFile.Open(file, ZipArchiveMode.Read);
+                        zip = ZipFile.Read(file);
+                        entrys = zip.Entries;
+                        ModDirName = entrys.ElementAt(0).FileName.Substring(0, entrys.ElementAt(0).FileName.Length - 1);
+
+                        //var ModInfoZip = zip.GetEntry(ModDirName + @"/ModInfo.json");
+                        var ModInfoZip = zip[ModDirName + @"/ModInfo.json"];
+                        if (ModInfoZip == null)
+                            continue;
+
+                        // Load Mod Info
+                        MemoryStream ms = new MemoryStream();
+                        ModInfoZip.Extract(ms);
+                        ms.Seek(0, SeekOrigin.Begin);
+                        using (StreamReader sr = new StreamReader(ms))
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
+
+                        // Check Name
+                        if (!Info.Name.IsNullOrWhiteSpace())
+                            ModName = Info.Name;
+
+                        UnityEngine.Debug.Log(string.Format("ModLoader Load EditorZipMod {0} {1}", ModName, Info.Version));
+
+                        // Check Verison
+                        System.Version ModRequestVersion = System.Version.Parse(Info.ModLoaderVerison);
+                        if (PluginVersion.CompareTo(ModRequestVersion) < 0)
+                            UnityEngine.Debug.LogWarningFormat("ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModName, ModRequestVersion);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogError("LoadModsFromZip " + ex.Message);
+                        continue;
+                    }
+
+                    // Load Resource
+                    try
+                    {
+                        foreach (var entry in entrys)
+                        {
+                            if (!(entry.FileName.StartsWith(ModDirName + @"/Resource") && entry.FileName.EndsWith(".ab")))
+                                continue;
+                            MemoryStream ms = new MemoryStream();
+                            entry.Extract(ms);
+                            ms.Seek(0, SeekOrigin.Begin);
+                            AssetBundle ab = AssetBundle.LoadFromStream(ms);
+                            foreach (var obj in ab.LoadAllAssets())
+                            {
+                                if (obj.GetType() == typeof(UnityEngine.Sprite))
+                                {
+                                    if (!SpriteDict.ContainsKey(obj.name))
+                                        SpriteDict.Add(obj.name, obj as UnityEngine.Sprite);
+                                    else
+                                        UnityEngine.Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModName, obj.name);
+                                }
+                                if (obj.GetType() == typeof(UnityEngine.AudioClip))
+                                {
+                                    if (!AudioClipDict.ContainsKey(obj.name))
+                                        AudioClipDict.Add(obj.name, obj as UnityEngine.AudioClip);
+                                    else
+                                        UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, obj.name);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Load Resource Error {1}", ModName, ex.Message);
+                    }
+
+                    // Load Resource Custom Pictures
+                    try
+                    {
+                        foreach (var entry in entrys)
+                        {
+                            if (!(entry.FileName.StartsWith(ModDirName + @"/Resource/Picture") &&
+                                (entry.FileName.EndsWith(".jpg") || entry.FileName.EndsWith(".jpeg") || entry.FileName.EndsWith(".png"))))
+                                continue;
+                            var sprite_name = Path.GetFileNameWithoutExtension(entry.FileName);
+                            Texture2D t2d = new Texture2D(2, 2);
+                            MemoryStream ms = new MemoryStream();
+                            entry.Extract(ms);
+                            ImageConversion.LoadImage(t2d, ms.ToArray());
+                            Sprite sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height), Vector2.zero);
+                            sprite.name = sprite_name;
+                            if (!SpriteDict.ContainsKey(sprite_name))
+                                SpriteDict.Add(sprite_name, sprite);
+                            else
+                                UnityEngine.Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModName, sprite_name);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Pictures Error {1}", ModName, ex.Message);
+                    }
+
+                    // Load Resource Custom Audio
+                    try
+                    {
+                        foreach (var entry in entrys)
+                        {
+                            if (!(entry.FileName.StartsWith(ModDirName + @"/Resource/Audio") && entry.FileName.EndsWith(".wav")))
+                                continue;
+                            MemoryStream ms = new MemoryStream();
+                            entry.Extract(ms);
+                            var clip_name = Path.GetFileNameWithoutExtension(entry.FileName);
+                            var clip = GetAudioClipFromWav(ms.ToArray(), clip_name);
+                            if (clip)
+                            {
+                                if (!AudioClipDict.ContainsKey(clip.name))
+                                    AudioClipDict.Add(clip.name, clip);
+                                else
+                                    UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, clip.name);
+                            }
+                            //MBSingleton<GameLoad>.Instance.StartCoroutine(GetDataRequest(ModName, file));
+
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Load Resource Custom Audio Error {1}", ModName, ex.Message);
+                    }
+
+                    // Load Localization
+                    try
+                    {
+                        foreach (var entry in entrys)
+                        {
+                            if (!(entry.FileName.StartsWith(ModDirName + @"/Localization") && entry.FileName.EndsWith(".csv")))
+                                continue;
+                            MemoryStream ms = new MemoryStream();
+                            entry.Extract(ms);
+                            ms.Seek(0, SeekOrigin.Begin);
+                            using (StreamReader sr = new StreamReader(ms))
+                                WaitForLoadCSVList.Add(new Tuple<string, string>(Path.GetFileName(entry.FileName), sr.ReadToEnd()));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Load Localization Error {1}", ModName, ex.Message);
+                    }
+
+                    // Load and init UniqueIDScriptable
+                    try
+                    {
+                        var subclasses = from assembly in AppDomain.CurrentDomain.GetAssemblies()
+                                         from type in assembly.GetTypes()
+                                         where type.IsSubclassOf(typeof(UniqueIDScriptable))
+                                         select type;
+
+                        foreach (var type in subclasses)
+                        {
+                            foreach (var entry in entrys)
+                            {
+                                if (!entry.FileName.StartsWith(ModDirName + @"/" + type.Name))
+                                    continue;
+                                if (!Info.ModEditorVersion.IsNullOrWhiteSpace())
+                                {
+                                    if (!entry.FileName.EndsWith(".json"))
+                                        continue;
+                                    string CardName = Path.GetFileNameWithoutExtension(entry.FileName);
+                                    string CardData = "";
+                                    try
+                                    {
+                                        var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                                        var card = type.GetMethod("CreateInstance", bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(Type) }, null).Invoke(null, new object[] { type });
+                                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                                        MemoryStream ms = new MemoryStream();
+                                        entry.Extract(ms);
+                                        ms.Seek(0, SeekOrigin.Begin);
+                                        using (StreamReader sr = new StreamReader(ms))
+                                        {
+                                            CardData = sr.ReadToEnd();
+                                            JsonUtility.FromJsonOverwrite(CardData, card);
+                                        }
+
+                                        type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(card, new object[] { ModName + "_" + CardName });
+                                        type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
+
+                                        var card_guid = type.GetField("UniqueID", bindingFlags).GetValue(card) as string;
+                                        AllGUIDDict.Add(card_guid, card as UniqueIDScriptable);
+                                        GameLoad.Instance.DataBase.AllData.Add(card as UniqueIDScriptable);
+
+                                        if (!WaitForWarpperEditorGUIDDict.ContainsKey(card_guid))
+                                            WaitForWarpperEditorGUIDDict.Add(card_guid, new UniqueIDScriptablePack(card as UniqueIDScriptable, "", "", ModName, CardData));
+                                        else
+                                            UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperEditorGUIDDict Same Key was Add {1}", ModName, card_guid);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        UnityEngine.Debug.LogErrorFormat("{0} EditorLoadZip {1} {2} Error {3}", type.Name, ModName, CardName, ex.Message);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Load UniqueIDScriptable Error {1}", ModName, ex.Message);
+                    }
+
+                    // Load GameSourceModify
+                    try
+                    {
+                        if (!Info.ModEditorVersion.IsNullOrWhiteSpace())
+                        {
+                            //var modify_dirs = Directory.GetDirectories(CombinePaths(dir, "GameSourceModify"));
+                            foreach (var entry in entrys)
+                            {
+                                if (!(entry.FileName.StartsWith(ModDirName + @"/GameSourceModify") && entry.FileName.EndsWith(".json")))
+                                    continue;
+                                string CardData = "";
+                                string Guid = Path.GetFileNameWithoutExtension(entry.FileName);
+                                MemoryStream ms = new MemoryStream();
+                                entry.Extract(ms);
+                                ms.Seek(0, SeekOrigin.Begin);
+                                using (StreamReader sr = new StreamReader(ms))
+                                    CardData = sr.ReadToEnd();
+                                if (AllGUIDDict.TryGetValue(Guid, out var obj))
+                                    WaitForWarpperEditorGameSourceGUIDList.Add(new UniqueIDScriptablePack(obj, "", "", ModName, CardData));
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogErrorFormat("{0} Load GameSourceModify Error {1}", ModName, ex.Message);
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogError(ex.Message);
+            }
+        }
+
         private static void LoadMods()
         {
             try
@@ -325,7 +578,7 @@ namespace ModLoader
                         if (!Info.Name.IsNullOrWhiteSpace())
                             ModName = Info.Name;
 
-                        UnityEngine.Debug.Log("ModLoader Load Mod " + ModName);
+                        UnityEngine.Debug.Log(string.Format("ModLoader Load Mod {0} {1}", ModName, Info.Version));
 
                         // Check Verison
                         System.Version ModRequestVersion = System.Version.Parse(Info.ModLoaderVerison);
@@ -402,7 +655,9 @@ namespace ModLoader
                         {
                             if (!file.EndsWith(".wav"))
                                 continue;
-                            var clip = GetAudioClipFromWav(file);
+                            var raw_data = System.IO.File.ReadAllBytes(file);
+                            var clip_name = Path.GetFileNameWithoutExtension(file);
+                            var clip = GetAudioClipFromWav(raw_data, clip_name);
                             if (clip)
                             {
                                 if (!AudioClipDict.ContainsKey(clip.name))
@@ -493,14 +748,18 @@ namespace ModLoader
                                         continue;
                                     string CardName = Path.GetFileNameWithoutExtension(file);
                                     string CardPath = file;
+                                    string CardData = "";
                                     try
                                     {
                                         var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
                                         var card = type.GetMethod("CreateInstance", bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(Type) }, null).Invoke(null, new object[] { type });
                                         JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                                        using (StreamReader sr = new StreamReader(CardPath))
-                                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
 
+                                        using (StreamReader sr = new StreamReader(CardPath))
+                                        {
+                                            CardData = sr.ReadToEnd();
+                                            JsonUtility.FromJsonOverwrite(CardData, card);
+                                        }
                                         type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(card, new object[] { ModName + "_" + CardName });
                                         type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
 
@@ -509,7 +768,7 @@ namespace ModLoader
                                         GameLoad.Instance.DataBase.AllData.Add(card as UniqueIDScriptable);
 
                                         if (!WaitForWarpperEditorGUIDDict.ContainsKey(card_guid))
-                                            WaitForWarpperEditorGUIDDict.Add(card_guid, new UniqueIDScriptablePack(card as UniqueIDScriptable, "", CardPath, ModName));
+                                            WaitForWarpperEditorGUIDDict.Add(card_guid, new UniqueIDScriptablePack(card as UniqueIDScriptable, "", CardPath, ModName, CardData));
                                         else
                                             UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperEditorGUIDDict Same Key was Add {1}", ModName, card_guid);
                                     }
@@ -553,9 +812,13 @@ namespace ModLoader
                                 {
                                     if (file.EndsWith(".json"))
                                     {
+                                        string CardPath = file;
+                                        string CardData = "";
                                         string Guid = Path.GetFileNameWithoutExtension(file);
+                                        using (StreamReader sr = new StreamReader(CardPath))
+                                            CardData = sr.ReadToEnd();
                                         if (AllGUIDDict.TryGetValue(Guid, out var obj))
-                                            WaitForWarpperEditorGameSourceGUIDList.Add(new UniqueIDScriptablePack(obj, modify_dir, file, ModName));
+                                            WaitForWarpperEditorGameSourceGUIDList.Add(new UniqueIDScriptablePack(obj, modify_dir, CardPath, ModName, CardData));
                                     }
                                 }
                             }
@@ -647,8 +910,7 @@ namespace ModLoader
                     ProcessingUniqueIDScriptablePack = item.Value;
 
                     JsonData json = new JsonData();
-                    using (StreamReader sr = new StreamReader(item.Value.CardPath))
-                        json = JsonMapper.ToObject(sr.ReadToEnd());
+                    json = JsonMapper.ToObject(item.Value.CardData);
                     WarpperFunction.JsonCommonWarpper(item.Value.obj, json);
                     if (item.Value.obj is CardData)
                     {
@@ -852,14 +1114,10 @@ namespace ModLoader
                     ProcessingUniqueIDScriptablePack = item;
 
                     JsonData json = new JsonData();
-                    string json_data = "";
-                    using (StreamReader sr = new StreamReader(item.CardPath))
-                        json_data = sr.ReadToEnd();
-
-                    if (!json_data.IsNullOrWhiteSpace())
+                    if (!item.CardData.IsNullOrWhiteSpace())
                     {
-                        json = JsonMapper.ToObject(json_data);
-                        JsonUtility.FromJsonOverwrite(json_data, item.obj);
+                        json = JsonMapper.ToObject(item.CardData);
+                        JsonUtility.FromJsonOverwrite(item.CardData, item.obj);
                         WarpperFunction.JsonCommonWarpper(item.obj, json);
                     }
 
@@ -889,6 +1147,8 @@ namespace ModLoader
                 LoadGameResource();
 
                 LoadMods();
+
+                LoadModsFromZip();
 
                 LoadLocalization();
 
