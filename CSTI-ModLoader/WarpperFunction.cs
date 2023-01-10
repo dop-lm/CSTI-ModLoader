@@ -202,7 +202,7 @@ namespace ModLoader
                                             instance.Add(new_obj);
                                         }
                                         else
-                                            ModLoader.LogErrorWithModInfo("CommonWarpper ADD SubWarpData Format " + field_type.Name);
+                                            ModLoader.LogErrorWithModInfo("CommonWarpper ADD Wrong SubWarpData Format " + field_type.Name);
                                     }
                                 }
                                 else if (field.FieldType.IsArray)
@@ -224,7 +224,7 @@ namespace ModLoader
                                             instance.SetValue(new_obj, i + start_idx);
                                         }
                                         else
-                                            ModLoader.LogErrorWithModInfo("CommonWarpper ADD SubWarpData Format " + field_type.Name);
+                                            ModLoader.LogErrorWithModInfo("CommonWarpper ADD Wrong SubWarpData Format " + field_type.Name);
                                     }
                                     field.SetValue(obj, instance);
                                 }
@@ -264,7 +264,7 @@ namespace ModLoader
                                             instance[i] = target_obj;
                                         }
                                         else
-                                            ModLoader.LogErrorWithModInfo("CommonWarpper MODIFY SubWarpData Format " + field_type.Name);
+                                            ModLoader.LogErrorWithModInfo("CommonWarpper MODIFY Wrong SubWarpData Format " + field_type.Name);
                                     }
                                 }
                                 else if (field.FieldType.IsArray)
@@ -279,7 +279,7 @@ namespace ModLoader
                                             instance.SetValue(target_obj, i);
                                         }
                                         else
-                                            ModLoader.LogErrorWithModInfo("CommonWarpper MODIFY SubWarpData Format " + field_type.Name);
+                                            ModLoader.LogErrorWithModInfo("CommonWarpper MODIFY Wrong SubWarpData Format " + field_type.Name);
                                     }
                                     field.SetValue(obj, instance);
                                 }
@@ -328,6 +328,8 @@ namespace ModLoader
                                             break;
                                         var list = field.GetValue(obj) as IList;
                                         var ele = list[i];
+                                        if (ele == null)
+                                            continue;
                                         JsonCommonWarpper(ele, json[key][i]);
                                         list[i] = ele;
                                         field.SetValue(obj, list);
@@ -339,6 +341,8 @@ namespace ModLoader
                                             break;
                                         var array = field.GetValue(obj) as Array;
                                         var ele = array.GetValue(i);
+                                        if (ele == null)
+                                            continue;
                                         JsonCommonWarpper(ele, json[key][i]);
                                         array.SetValue(ele, i);
                                         field.SetValue(obj, array);
@@ -350,7 +354,7 @@ namespace ModLoader
                 }
                 catch(Exception ex)
                 {
-                    ModLoader.LogErrorWithModInfo(string.Format("CommonWarpper {0} {1} {2}", obj_type.Name, ex.Message));
+                    ModLoader.LogErrorWithModInfo(string.Format("CommonWarpper {0} {1}", obj_type.Name, ex.Message));
                 }
             }
         }
@@ -359,7 +363,7 @@ namespace ModLoader
         {
             //if (!obj.GetType().IsClass)
             //{
-            //    UnityEngine.Debug.LogWarning("ClassWarpper Object IsNotClass");
+            //    ModLoader.LogErrorWithModInfo("ClassWarpper Object IsNotClass");
             //    return;
             //}
             string method_name;
@@ -377,7 +381,7 @@ namespace ModLoader
                 method_name = "WarpperModify";
             else
             {
-                UnityEngine.Debug.LogWarning("ClassWarpper Unkown Warp Type");
+                ModLoader.LogErrorWithModInfo("ClassWarpper Unkown Warp Type");
                 return;
             }
 
@@ -387,7 +391,7 @@ namespace ModLoader
                 var field = obj.GetType().GetField(field_name, bindingFlags);
                 //if (warp_type == WarpType.REFERENCE && !field.FieldType.IsSubclassOf(typeof(ScriptableObject)))
                 //{
-                //    UnityEngine.Debug.LogWarning("ClassWarpper Reference Warp Field Must be Subclass of ScriptableObject");
+                //    ModLoader.LogErrorWithModInfo("ClassWarpper Reference Warp Field Must be Subclass of ScriptableObject");
                 //    return;
                 //}
 
@@ -406,7 +410,7 @@ namespace ModLoader
         {
             //if (!obj.GetType().IsClass)
             //{
-            //    UnityEngine.Debug.LogWarning("ClassWarpper Object IsNotClass");
+            //    ModLoader.LogErrorWithModInfo("ClassWarpper Object IsNotClass");
             //    return;
             //}
             string method_name;
@@ -424,7 +428,7 @@ namespace ModLoader
                 method_name = "WarpperModify";
             else
             {
-                UnityEngine.Debug.LogWarning("ClassWarpper Unkown Warp Type");
+                ModLoader.LogErrorWithModInfo("ClassWarpper Unkown Warp Type");
                 return;
             }
 
@@ -434,7 +438,7 @@ namespace ModLoader
                 var field = obj.GetType().GetField(field_name, bindingFlags);
                 //if (warp_type == WarpType.REFERENCE && !field.FieldType.IsSubclassOf(typeof(ScriptableObject)))
                 //{
-                //    UnityEngine.Debug.LogWarning("ClassWarpper Reference Warp Field Must be Subclass of ScriptableObject");
+                //    ModLoader.LogErrorWithModInfo("ClassWarpper Reference Warp Field Must be Subclass of ScriptableObject");
                 //    return;
                 //}
 
@@ -449,7 +453,7 @@ namespace ModLoader
                 }
                 else
                 {
-                    UnityEngine.Debug.LogWarning("ClassWarpper Object Field Must be Array or List");
+                    ModLoader.LogErrorWithModInfo("ClassWarpper Object Field Must be Array or List");
                     return;
                 }
 
@@ -468,7 +472,7 @@ namespace ModLoader
         {
             //if (!obj.GetType().IsClass)
             //{
-            //    UnityEngine.Debug.LogWarning("UniqueIDScriptableCopyWarpper Object IsNotClass");
+            //    ModLoader.LogErrorWithModInfo("UniqueIDScriptableCopyWarpper Object IsNotClass");
             //    return;
             //}
             if (ModLoader.AllGUIDDict.TryGetValue(data, out var ele))
@@ -496,7 +500,7 @@ namespace ModLoader
         {
             //if (!obj.GetType().IsClass)
             //{
-            //    UnityEngine.Debug.LogWarning("UniqueIDScriptableCopyWarpper Object IsNotClass");
+            //    ModLoader.LogErrorWithModInfo("UniqueIDScriptableCopyWarpper Object IsNotClass");
             //    return;
             //}
             if (data.Count > 0 && ModLoader.AllGUIDDict.TryGetValue(data[0], out var ele))
@@ -523,7 +527,7 @@ namespace ModLoader
         {
             //if (!obj.GetType().IsClass)
             //{
-            //    UnityEngine.Debug.LogWarning("ObjectCustomWarpper Object IsNotClass");
+            //    ModLoader.LogErrorWithModInfo("ObjectCustomWarpper Object IsNotClass");
             //    return;
             //}
             try
@@ -566,7 +570,7 @@ namespace ModLoader
         {
             //if (!obj.GetType().IsClass)
             //{
-            //    UnityEngine.Debug.LogWarning("ObjectCustomWarpper Object IsNotClass");
+            //    ModLoader.LogErrorWithModInfo("ObjectCustomWarpper Object IsNotClass");
             //    return;
             //}
 
@@ -654,7 +658,7 @@ namespace ModLoader
         {
             //if (!obj.GetType().IsClass)
             //{
-            //    UnityEngine.Debug.LogWarning("ObjectReferenceWarpper Object IsNotClass");
+            //    ModLoader.LogErrorWithModInfo("ObjectReferenceWarpper Object IsNotClass");
             //    return;
             //}
             if (dict.TryGetValue(data, out var ele))
@@ -676,7 +680,7 @@ namespace ModLoader
         {
             //if (!obj.GetType().IsClass)
             //{
-            //    UnityEngine.Debug.LogWarning("ObjectReferenceWarpper Object IsNotClass");
+            //    ModLoader.LogErrorWithModInfo("ObjectReferenceWarpper Object IsNotClass");
             //    return;
             //}
             try
@@ -715,7 +719,7 @@ namespace ModLoader
         {
             //if (!obj.GetType().IsClass)
             //{
-            //    UnityEngine.Debug.LogWarning("ObjectAddReferenceWarpper Object IsNotClass");
+            //    ModLoader.LogErrorWithModInfo("ObjectAddReferenceWarpper Object IsNotClass");
             //    return;
             //}
             try
@@ -755,7 +759,7 @@ namespace ModLoader
         {
             //if (!obj.GetType().IsClass)
             //{
-            //    UnityEngine.Debug.LogWarning("ObjectAddWarpper Object IsNotClass");
+            //    ModLoader.LogErrorWithModInfo("ObjectAddWarpper Object IsNotClass");
             //    return;
             //}
 
@@ -843,7 +847,7 @@ namespace ModLoader
         {
             //if (!obj.GetType().IsClass)
             //{
-            //    UnityEngine.Debug.LogWarning("ObjectWarpperModify Object IsNotClass");
+            //    ModLoader.LogErrorWithModInfo("ObjectWarpperModify Object IsNotClass");
             //    return;
             //}
             try
@@ -886,7 +890,7 @@ namespace ModLoader
         {
             //if (!obj.GetType().IsClass)
             //{
-            //    UnityEngine.Debug.LogWarning("ObjectWarpperModify Object IsNotClass");
+            //    ModLoader.LogErrorWithModInfo("ObjectWarpperModify Object IsNotClass");
             //    return;
             //}
 

@@ -25,7 +25,7 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.1.2")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.1.3")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -324,6 +324,8 @@ namespace ModLoader
                         // Check Name
                         if (!Info.Name.IsNullOrWhiteSpace())
                             ModName = Info.Name;
+
+                        UnityEngine.Debug.Log("ModLoader Load Mod " + ModName);
 
                         // Check Verison
                         System.Version ModRequestVersion = System.Version.Parse(Info.ModLoaderVerison);
@@ -784,6 +786,7 @@ namespace ModLoader
 
         private static void WarpperAllGameSrouces()
         {
+            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
             foreach (var item in WaitForWarpperGameSourceGUIDList)
             {
                 try
@@ -796,6 +799,11 @@ namespace ModLoader
                         using (StreamReader sr = new StreamReader(item.CardPath))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                         warpper.WarpperCustomSelf(item.obj as CardData);
+                        var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
+                        if (FillDropsList != null)
+                        {
+                            FillDropsList.Invoke(item.obj, null);
+                        }
                     }
                     else if (item.obj is CharacterPerk)
                     {
@@ -836,6 +844,7 @@ namespace ModLoader
 
         private static void WarpperAllEditorGameSrouces()
         {
+            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
             foreach (var item in WaitForWarpperEditorGameSourceGUIDList)
             {
                 try
@@ -852,6 +861,15 @@ namespace ModLoader
                         json = JsonMapper.ToObject(json_data);
                         JsonUtility.FromJsonOverwrite(json_data, item.obj);
                         WarpperFunction.JsonCommonWarpper(item.obj, json);
+                    }
+
+                    if (item.obj is CardData)
+                    {
+                        var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
+                        if (FillDropsList != null)
+                        {
+                            FillDropsList.Invoke(item.obj, null);
+                        }
                     }
                 }
                 catch (Exception ex)
