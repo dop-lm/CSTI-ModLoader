@@ -33,7 +33,7 @@ namespace ModLoader
             }
             else if (field_type.IsSubclassOf(typeof(ScriptableObject)))
             {
-                if (ModLoader.AllScriptableObjectWithoutGUIDDict.TryGetValue(field_type.Name, out var type_dict))
+                if (ModLoader.AllScriptableObjectWithoutGuidDict.TryGetValue(field_type, out var type_dict))
                     ObjectReferenceWarpper(obj, data, field_name, type_dict);
                 else
                     ModLoader.LogErrorWithModInfo("CommonWarpper No Such Dict " + field_type.Name);
@@ -47,9 +47,9 @@ namespace ModLoader
             {
                 ObjectReferenceWarpper(obj, data, field_name, ModLoader.AudioClipDict);
             }
-            else if (field_type == typeof(WeatherSet))
+            else if (field_type == typeof(WeatherSpecialEffect) || field_type.IsSubclassOf(typeof(WeatherSpecialEffect)))
             {
-                ObjectReferenceWarpper(obj, data, field_name, ModLoader.WeatherSetDict);
+                ObjectReferenceWarpper(obj, data, field_name, ModLoader.WeatherSpecialEffectDict);
             }
             else if (field_type == typeof(ScriptableObject))
             {
@@ -72,7 +72,7 @@ namespace ModLoader
             }
             else if (field_type.IsSubclassOf(typeof(ScriptableObject)))
             {
-                if (ModLoader.AllScriptableObjectWithoutGUIDDict.TryGetValue(field_type.Name, out var type_dict))
+                if (ModLoader.AllScriptableObjectWithoutGuidDict.TryGetValue(field_type, out var type_dict))
                 {
                     if (warp_type == WarpType.ADD_REFERENCE)
                         ObjectAddReferenceWarpper(obj, data, field_name, type_dict);
@@ -96,12 +96,9 @@ namespace ModLoader
                 else
                     ObjectReferenceWarpper(obj, data, field_name, ModLoader.AudioClipDict);
             }
-            else if (field_type == typeof(WeatherSet))
+            else if (field_type == typeof(WeatherSpecialEffect) || field_type.IsSubclassOf(typeof(WeatherSpecialEffect)))
             {
-                if (warp_type == WarpType.ADD_REFERENCE)
-                    ObjectAddReferenceWarpper(obj, data, field_name, ModLoader.WeatherSetDict);
-                else
-                    ObjectReferenceWarpper(obj, data, field_name, ModLoader.WeatherSetDict);
+                ObjectReferenceWarpper(obj, data, field_name, ModLoader.WeatherSpecialEffectDict);
             }
             else if (field_type == typeof(ScriptableObject))
             {
