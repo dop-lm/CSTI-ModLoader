@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSTI-ModLoader", "CSTI-ModLoader\ModLoader.csproj", "{34D91181-B67D-4226-B87D-C90488A16702}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModLoader", "CSTI-ModLoader\ModLoader.csproj", "{62F4CE9B-B17B-42FB-B543-75E49F9C91AA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamicModLoader", "DynamicModLoader\DynamicModLoader.csproj", "{1CE14441-18B5-4FAE-8C2B-91ECBF71D0FF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{34D91181-B67D-4226-B87D-C90488A16702}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{34D91181-B67D-4226-B87D-C90488A16702}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{34D91181-B67D-4226-B87D-C90488A16702}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{34D91181-B67D-4226-B87D-C90488A16702}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62F4CE9B-B17B-42FB-B543-75E49F9C91AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62F4CE9B-B17B-42FB-B543-75E49F9C91AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62F4CE9B-B17B-42FB-B543-75E49F9C91AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62F4CE9B-B17B-42FB-B543-75E49F9C91AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1CE14441-18B5-4FAE-8C2B-91ECBF71D0FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1CE14441-18B5-4FAE-8C2B-91ECBF71D0FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1CE14441-18B5-4FAE-8C2B-91ECBF71D0FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CE14441-18B5-4FAE-8C2B-91ECBF71D0FF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
