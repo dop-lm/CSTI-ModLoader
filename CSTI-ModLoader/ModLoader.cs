@@ -25,7 +25,7 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.2.2")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.2.3")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -35,6 +35,7 @@ namespace ModLoader
         public static Dictionary<string, WeatherSpecialEffect> WeatherSpecialEffectDict = new Dictionary<string, WeatherSpecialEffect>();
 
         public static Dictionary<string, UniqueIDScriptable> AllGUIDDict = new Dictionary<string, UniqueIDScriptable>();
+        public static Dictionary<string, Dictionary<string, CardData>> AllCardTagGuidCardDataDict = new Dictionary<string, Dictionary<string, CardData>>();
         public static Dictionary<Type, Dictionary<string, UniqueIDScriptable>> AllTypeGUIDDict = new Dictionary<Type, Dictionary<string, UniqueIDScriptable>>();
         //public static Dictionary<string, ScriptableObject> AllScriptableObjectDict = new Dictionary<string, ScriptableObject>();
         public static Dictionary<string, CardTag> CardTagDict = new Dictionary<string, CardTag>();
@@ -73,9 +74,11 @@ namespace ModLoader
 
         private static Dictionary<string, ScriptableObjectPack> WaitForWarpperGuidDict = new Dictionary<string, ScriptableObjectPack>();
         private static Dictionary<string, ScriptableObjectPack> WaitForWarpperEditorGuidDict = new Dictionary<string, ScriptableObjectPack>();
+
         private static List<ScriptableObjectPack> WaitForWarpperEditorNoGuidlist = new List<ScriptableObjectPack>();
         private static List<ScriptableObjectPack> WaitForWarpperGameSourceGUIDList = new List<ScriptableObjectPack>();
         private static List<ScriptableObjectPack> WaitForWarpperEditorGameSourceGUIDList = new List<ScriptableObjectPack>();
+        private static List<ScriptableObjectPack> WaitForMatchAndWarpperEditorGameSourceList = new List<ScriptableObjectPack>();
 
         private static List<Tuple<string, string>> WaitForLoadCSVList = new List<Tuple<string, string>>();
         private static List<Tuple<string, string, CardData>> WaitForAddBlueprintCard = new List<Tuple<string, string, CardData>>();
@@ -946,16 +949,15 @@ namespace ModLoader
                                     var modify_files = Directory.GetFiles(modify_dir);
                                     foreach (var file in modify_files)
                                     {
-                                        if (file.EndsWith(".json"))
-                                        {
-                                            string CardPath = file;
-                                            string CardData = "";
-                                            string Guid = Path.GetFileNameWithoutExtension(file);
-                                            using (StreamReader sr = new StreamReader(CardPath))
-                                                CardData = sr.ReadToEnd();
-                                            if (AllGUIDDict.TryGetValue(Guid, out var obj))
-                                                WaitForWarpperEditorGameSourceGUIDList.Add(new ScriptableObjectPack(obj, modify_dir, CardPath, ModName, CardData));
-                                        }
+                                        if (!file.EndsWith(".json"))
+                                            continue;
+                                        string CardPath = file;
+                                        string CardData = "";
+                                        string Guid = Path.GetFileNameWithoutExtension(file);
+                                        using (StreamReader sr = new StreamReader(CardPath))
+                                            CardData = sr.ReadToEnd();
+                                        if (AllGUIDDict.TryGetValue(Guid, out var obj))
+                                            WaitForWarpperEditorGameSourceGUIDList.Add(new ScriptableObjectPack(obj, modify_dir, CardPath, ModName, CardData));
                                     }
                                 }
                             }
@@ -1371,6 +1373,11 @@ namespace ModLoader
                     if (!item.CardData.IsNullOrWhiteSpace())
                     {
                         json = JsonMapper.ToObject(item.CardData);
+                        if (json.ContainsKey("MatchTagWarpData") && json["MatchTagWarpData"].IsArray && json["MatchTagWarpData"].Count > 0)
+                        {
+                            WaitForMatchAndWarpperEditorGameSourceList.Add(item);
+                            continue;
+                        }
                         if (json.ContainsKey("ModLoaderSpecialOverwrite"))
                             if (json["ModLoaderSpecialOverwrite"].IsBoolean && (bool)json["ModLoaderSpecialOverwrite"])
                                 JsonUtility.FromJsonOverwrite(item.CardData, item.obj);
@@ -1389,6 +1396,78 @@ namespace ModLoader
                 catch (Exception ex)
                 {
                     Debug.LogWarning("WarpperAllEditorGameSrouces " + ex.Message);
+                }
+            }
+        }
+
+        private static void MatchAndWarpperAllEditorGameSrouce()
+        {
+            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+            foreach (var item in AllGUIDDict.Values)
+            {
+                try
+                {
+                    if (item is CardData)
+                    {
+                        var obj = item as CardData;
+                        foreach (var tag in obj.CardTags)
+                        {
+                            if (!AllCardTagGuidCardDataDict.ContainsKey(tag.name))
+                                AllCardTagGuidCardDataDict.Add(tag.name, new Dictionary<string, CardData>());
+
+                            if (AllCardTagGuidCardDataDict.TryGetValue(tag.name, out var dict))
+                                dict.Add(obj.UniqueID, obj);
+                        }
+                    }
+                }
+                catch
+                {
+                    //Debug.LogWarning("MatchAndWarpperAllEditorGameSrouce Match " + ex.Message);
+                }
+            }
+
+            foreach (var item in WaitForMatchAndWarpperEditorGameSourceList)
+            {
+                try
+                {
+                    JsonData json = new JsonData();
+                    if (item.CardData.IsNullOrWhiteSpace())
+                        continue;
+                    json = JsonMapper.ToObject(item.CardData);
+
+                    if (json.ContainsKey("MatchTagWarpData") && json["MatchTagWarpData"].IsArray && json["MatchTagWarpData"].Count > 0)
+                    {
+                        if (!AllCardTagGuidCardDataDict.TryGetValue(json["MatchTagWarpData"][0].ToString(), out var dict))
+                            continue;
+                        var MatchList = dict.Keys.ToList();
+
+                        for (int i = 1; i < json["MatchTagWarpData"].Count; i++)
+                        {
+                            if (AllCardTagGuidCardDataDict.TryGetValue(json["MatchTagWarpData"][i].ToString(), out var next_dict))
+                                MatchList = MatchList.Intersect(next_dict.Keys).ToList();
+                        }
+
+                        foreach (var match in MatchList)
+                        {
+                            if (AllGUIDDict.TryGetValue(match, out var card))
+                            {
+                                if (card is CardData)
+                                {
+                                    if (json.ContainsKey("MatchTypeWarpData") && json["MatchTypeWarpData"].IsString)
+                                        if ((card as CardData).CardType.ToString() != json["MatchTypeWarpData"].ToString())
+                                            continue;
+                                    WarpperFunction.JsonCommonWarpper(card, json);
+                                    var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
+                                    if (FillDropsList != null)
+                                        FillDropsList.Invoke(card, null);
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning("MatchAndWarpperAllEditorGameSrouce Warpper " + ex.Message);
                 }
             }
         }
@@ -1534,7 +1613,7 @@ namespace ModLoader
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning(ex.Message);
+                    Debug.LogWarning("CustomGameObjectFixed " + ex.Message);
                 }
             }
         }
@@ -1588,6 +1667,8 @@ namespace ModLoader
                 WarpperAllGameSrouces();
 
                 WarpperAllEditorGameSrouces();
+
+                MatchAndWarpperAllEditorGameSrouce();
 
                 AddPerkGroup();
 
