@@ -25,7 +25,7 @@ namespace DynamicModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.DynamicModLoader", "DynamicModLoader", "1.0.1")]
+    [BepInPlugin("Dop.plugin.CSTI.DynamicModLoader", "DynamicModLoader", "1.0.2")]
     public class DynamicModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -37,15 +37,6 @@ namespace DynamicModLoader
         public static Dictionary<string, UniqueIDScriptable> AllGUIDDict = new Dictionary<string, UniqueIDScriptable>();
         public static Dictionary<string, Dictionary<string, CardData>> AllCardTagGuidCardDataDict = new Dictionary<string, Dictionary<string, CardData>>();
         public static Dictionary<Type, Dictionary<string, UniqueIDScriptable>> AllTypeGUIDDict = new Dictionary<Type, Dictionary<string, UniqueIDScriptable>>();
-        public static Dictionary<string, CardTag> CardTagDict = new Dictionary<string, CardTag>();
-        public static Dictionary<string, EquipmentTag> EquipmentTagDict = new Dictionary<string, EquipmentTag>();
-        public static Dictionary<string, ActionTag> ActionTagDict = new Dictionary<string, ActionTag>();
-        public static Dictionary<string, CardTabGroup> CardTabGroupDict = new Dictionary<string, CardTabGroup>();
-        public static Dictionary<string, EndgameLogCategory> EndgameLogCategoryDict = new Dictionary<string, EndgameLogCategory>();
-        public static Dictionary<string, LocalTickCounter> LocalTickCounterDict = new Dictionary<string, LocalTickCounter>();
-        public static Dictionary<string, WeatherSet> WeatherSetDict = new Dictionary<string, WeatherSet>();
-        public static Dictionary<string, PerkGroup> PerkGroupDict = new Dictionary<string, PerkGroup>();
-
         public static Dictionary<string, ScriptableObject> AllCardOrTagDict = new Dictionary<string, ScriptableObject>();
         public static Dictionary<Type, Dictionary<string, ScriptableObject>> AllScriptableObjectWithoutGuidDict = new Dictionary<Type, Dictionary<string, ScriptableObject>>();
         public static Dictionary<string, Type> ScriptableObjectKeyType = new Dictionary<string, Type>();
@@ -91,7 +82,7 @@ namespace DynamicModLoader
         private void Awake()
         {
             // Plugin startup logic
-            Harmony.CreateAndPatchAll(typeof(DynamicModLoader));
+            Harmony.CreateAndPatchAll(typeof(DynamicModLoader), this.Info.Metadata.GUID);
             PluginVersion = System.Version.Parse(this.Info.Metadata.Version.ToString());
             Logger.LogInfo("Plugin DynamicModLoader is loaded! ");
         }
@@ -200,8 +191,6 @@ namespace DynamicModLoader
                 {
                     if (!AllCardOrTagDict.ContainsKey(ele.name))
                         AllCardOrTagDict.Add(ele.name, ele as ScriptableObject);
-                    else
-                        UnityEngine.Debug.LogWarning("AllCardOrTagDict Same Key was Add " + (ele as UniqueIDScriptable).name);
 
                     if (!(ele is UniqueIDScriptable))
                     {
@@ -237,62 +226,14 @@ namespace DynamicModLoader
                         {
                             if (!AllCardOrTagDict.ContainsKey((ele as CardData).UniqueID))
                                 AllCardOrTagDict.Add((ele as CardData).UniqueID, ele as CardData);
-                            else
-                                UnityEngine.Debug.LogWarning("AllCardOrTagDict Same Key was Add " + (ele as CardData).UniqueID);
-                        }
-
-                        if (ele is PerkGroup)
-                        {
-                            if (!PerkGroupDict.ContainsKey((ele as PerkGroup).UniqueID))
-                                PerkGroupDict.Add(ele.name, ele as PerkGroup);
-                            else
-                                UnityEngine.Debug.LogWarning("PerkGroupDict Same Key was Add " + (ele as PerkGroup).UniqueID);
                         }
 
                         if (!AllGUIDDict.ContainsKey((ele as UniqueIDScriptable).UniqueID))
                             AllGUIDDict.Add((ele as UniqueIDScriptable).UniqueID, ele as UniqueIDScriptable);
-                        else
-                            UnityEngine.Debug.LogWarning("AllGUIDDict Same Key was Add " + (ele as UniqueIDScriptable).UniqueID);
-                    }
-                    else if (ele is CardTag)
-                    {
-                        if (!CardTagDict.ContainsKey(ele.name))
-                            CardTagDict.Add(ele.name, ele as CardTag);
-                        else
-                            UnityEngine.Debug.LogWarning("CardTagDict Same Key was Add " + ele.name);
-                    }
-                    else if (ele is EquipmentTag)
-                    {
-                        if (!EquipmentTagDict.ContainsKey(ele.name))
-                            EquipmentTagDict.Add(ele.name, ele as EquipmentTag);
-                        else
-                            UnityEngine.Debug.LogWarning("EquipmentTagDict Same Key was Add " + ele.name);
-                    }
-                    else if (ele is ActionTag)
-                    {
-                        if (!ActionTagDict.ContainsKey(ele.name))
-                            ActionTagDict.Add(ele.name, ele as ActionTag);
-                        else
-                            UnityEngine.Debug.LogWarning("ActionTagDict Same Key was Add " + ele.name);
-                    }
-                    else if (ele is CardTabGroup)
-                    {
-                        if (!CardTabGroupDict.ContainsKey(ele.name))
-                            CardTabGroupDict.Add(ele.name, ele as CardTabGroup);
-                        else
-                            UnityEngine.Debug.LogWarning("CardTabGroupDict Same Key was Add " + ele.name);
-                    }
-                    else if (ele is WeatherSet)
-                    {
-                        if (!WeatherSetDict.ContainsKey(ele.name))
-                            WeatherSetDict.Add(ele.name, ele as WeatherSet);
-                        else
-                            UnityEngine.Debug.LogWarning("WeatherSetDict Same Key was Add " + ele.name);
                     }
                 }
                 catch (Exception ex)
                 {
-                    UnityEngine.Debug.LogWarning("LoadGameResource Error " + ex.Message);
                 }
             }
 
@@ -300,22 +241,16 @@ namespace DynamicModLoader
             {
                 if (!SpriteDict.ContainsKey(ele.name))
                     SpriteDict.Add(ele.name, ele as UnityEngine.Sprite);
-                else
-                    UnityEngine.Debug.LogWarning("SpriteDict Same Key was Add " + ele.name);
             }
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(UnityEngine.AudioClip)))
             {
                 if (!AudioClipDict.ContainsKey(ele.name))
                     AudioClipDict.Add(ele.name, ele as UnityEngine.AudioClip);
-                else
-                    UnityEngine.Debug.LogWarning("AudioClipDict Same Key was Add " + ele.name);
             }
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(WeatherSpecialEffect)))
             {
                 if (!WeatherSpecialEffectDict.ContainsKey(ele.name))
                     WeatherSpecialEffectDict.Add(ele.name, ele as WeatherSpecialEffect);
-                else
-                    UnityEngine.Debug.LogWarning("WeatherSpecialEffectDict Same Key was Add " + ele.name);
             }
         }
 
@@ -559,7 +494,7 @@ namespace DynamicModLoader
                                             type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(card, new object[] { ModName + "_" + CardName });
                                             type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
 
-                                            
+
                                             AllGUIDDict.Add(card_guid, card as UniqueIDScriptable);
                                             GameLoad.Instance.DataBase.AllData.Add(card as UniqueIDScriptable);
 
@@ -684,8 +619,8 @@ namespace DynamicModLoader
 
                         if (json.ContainsKey("ItemCardDataCardTabGpGroup") && json["ItemCardDataCardTabGpGroup"].IsArray)
                             for (int i = 0; i < json["ItemCardDataCardTabGpGroup"].Count; i++)
-                                if (json["ItemCardDataCardTabGpGroup"][i].IsString && CardTabGroupDict.TryGetValue(json["ItemCardDataCardTabGpGroup"][i].ToString(), out var tab_group))
-                                    tab_group.IncludedCards.Add(item.Value.obj as CardData);
+                                if (json["ItemCardDataCardTabGpGroup"][i].IsString && AllScriptableObjectWithoutGuidDict[typeof(CardTabGroup)].TryGetValue(json["ItemCardDataCardTabGpGroup"][i].ToString(), out var tab_group))
+                                    (tab_group as CardTabGroup).IncludedCards.Add(item.Value.obj as CardData);
 
                         var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
                         if (FillDropsList != null)
@@ -818,10 +753,11 @@ namespace DynamicModLoader
             {
                 try
                 {
-                    if (PerkGroupDict.TryGetValue(tuple.Item1, out var group))
+                    if (AllTypeGUIDDict[typeof(PerkGroup)].TryGetValue(tuple.Item1, out var group))
                     {
-                        Array.Resize<CharacterPerk>(ref group.PerksList, group.PerksList.Length + 1);
-                        group.PerksList[group.PerksList.Length - 1] = tuple.Item2;
+                        var perk_group = group as PerkGroup;
+                        Array.Resize<CharacterPerk>(ref perk_group.PerksList, perk_group.PerksList.Length + 1);
+                        perk_group.PerksList[perk_group.PerksList.Length - 1] = tuple.Item2;
                     }
                 }
                 catch (Exception ex)
@@ -1185,7 +1121,7 @@ namespace DynamicModLoader
             }
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "LoadGameData")]
+        [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "LoadGameData"), HarmonyBefore(new string[] { "Dop.plugin.CSTI.ModLoader" })]
         public static void GameLoadLoadGameDataPostfix(GameLoad __instance)
         {
             try
@@ -1234,6 +1170,11 @@ namespace DynamicModLoader
         {
             try
             {
+                if (!init_flag)
+                {
+                    LoadGameResource();
+                }
+
                 ResetWarpperList();
 
                 LoadMods();

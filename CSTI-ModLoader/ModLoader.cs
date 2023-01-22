@@ -25,7 +25,7 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.2.4")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.2.5")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -93,7 +93,7 @@ namespace ModLoader
         private void Awake()
         {
             // Plugin startup logic
-            Harmony.CreateAndPatchAll(typeof(ModLoader));
+            Harmony.CreateAndPatchAll(typeof(ModLoader), this.Info.Metadata.GUID);
             PluginVersion = System.Version.Parse(this.Info.Metadata.Version.ToString());
             Logger.LogInfo("Plugin ModLoader is loaded! ");
         }
