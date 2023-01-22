@@ -25,7 +25,7 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.2.3")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.2.4")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -1506,7 +1506,21 @@ namespace ModLoader
                 }
             }
 
-            foreach(var item in WaitForAddDefaultContentPage)
+            var displayers = Resources.FindObjectsOfTypeAll(typeof(ContentDisplayer));
+            foreach (var displayer in displayers)
+            {
+                try
+                {
+                    if (!CustomContentDisplayerDict.ContainsKey(displayer.name))
+                        CustomContentDisplayerDict.Add(displayer.name, displayer as ContentDisplayer);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning("CustomContentDisplayerDict Warning " + ex.Message);
+                }
+            }
+
+            foreach (var item in WaitForAddDefaultContentPage)
             {
                 try
                 {
@@ -1617,7 +1631,6 @@ namespace ModLoader
                 }
             }
         }
-
 
         private static void AddPlayerCharacter(GameLoad instance)
         {
