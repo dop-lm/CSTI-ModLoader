@@ -33,7 +33,7 @@ namespace DynamicModLoader
             }
             else if (field_type.IsSubclassOf(typeof(ScriptableObject)))
             {
-                if (DynamicModLoader.AllScriptableObjectWithoutGuidDict.TryGetValue(field_type, out var type_dict))
+                if (DynamicModLoader.AllScriptableObjectWithoutGuidTypeDict.TryGetValue(field_type, out var type_dict))
                     ObjectReferenceWarpper(obj, data, field_name, type_dict);
                 else
                     DynamicModLoader.LogErrorWithModInfo("CommonWarpper No Such Dict " + field_type.Name);
@@ -53,7 +53,7 @@ namespace DynamicModLoader
             }
             else if (field_type == typeof(ScriptableObject))
             {
-                ObjectReferenceWarpper(obj, data, field_name, DynamicModLoader.AllCardOrTagDict);
+                ObjectReferenceWarpper(obj, data, field_name, DynamicModLoader.AllScriptableObjectDict);
             }
             else
             {
@@ -72,7 +72,7 @@ namespace DynamicModLoader
             }
             else if (field_type.IsSubclassOf(typeof(ScriptableObject)))
             {
-                if (DynamicModLoader.AllScriptableObjectWithoutGuidDict.TryGetValue(field_type, out var type_dict))
+                if (DynamicModLoader.AllScriptableObjectWithoutGuidTypeDict.TryGetValue(field_type, out var type_dict))
                 {
                     if (warp_type == WarpType.ADD_REFERENCE)
                         ObjectAddReferenceWarpper(obj, data, field_name, type_dict);
@@ -103,9 +103,9 @@ namespace DynamicModLoader
             else if (field_type == typeof(ScriptableObject))
             {
                 if (warp_type == WarpType.ADD_REFERENCE)
-                    ObjectAddReferenceWarpper(obj, data, field_name, DynamicModLoader.AllCardOrTagDict);
+                    ObjectAddReferenceWarpper(obj, data, field_name, DynamicModLoader.AllScriptableObjectDict);
                 else
-                    ObjectReferenceWarpper(obj, data, field_name, DynamicModLoader.AllCardOrTagDict);
+                    ObjectReferenceWarpper(obj, data, field_name, DynamicModLoader.AllScriptableObjectDict);
             }
             else
             {

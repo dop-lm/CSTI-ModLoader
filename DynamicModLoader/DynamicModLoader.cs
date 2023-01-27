@@ -25,7 +25,7 @@ namespace DynamicModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.DynamicModLoader", "DynamicModLoader", "1.0.2")]
+    [BepInPlugin("Dop.plugin.CSTI.DynamicModLoader", "DynamicModLoader", "1.0.3")]
     public class DynamicModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -34,12 +34,19 @@ namespace DynamicModLoader
         public static Dictionary<string, UnityEngine.AudioClip> AudioClipDict = new Dictionary<string, UnityEngine.AudioClip>();
         public static Dictionary<string, WeatherSpecialEffect> WeatherSpecialEffectDict = new Dictionary<string, WeatherSpecialEffect>();
 
+        // GUID Dict
         public static Dictionary<string, UniqueIDScriptable> AllGUIDDict = new Dictionary<string, UniqueIDScriptable>();
+        public static Dictionary<Type, Dictionary<string, UniqueIDScriptable>> AllGUIDTypeDict = new Dictionary<Type, Dictionary<string, UniqueIDScriptable>>();
+        // AllCardTagGuidCardDataDict[CardTag.name][Guid] = CardData
         public static Dictionary<string, Dictionary<string, CardData>> AllCardTagGuidCardDataDict = new Dictionary<string, Dictionary<string, CardData>>();
-        public static Dictionary<Type, Dictionary<string, UniqueIDScriptable>> AllTypeGUIDDict = new Dictionary<Type, Dictionary<string, UniqueIDScriptable>>();
-        public static Dictionary<string, ScriptableObject> AllCardOrTagDict = new Dictionary<string, ScriptableObject>();
-        public static Dictionary<Type, Dictionary<string, ScriptableObject>> AllScriptableObjectWithoutGuidDict = new Dictionary<Type, Dictionary<string, ScriptableObject>>();
+
+        // ScriptableObject Dict
+        // AllScriptableObjectDict[GUID or name] = ScriptableObject
+        public static Dictionary<string, ScriptableObject> AllScriptableObjectDict = new Dictionary<string, ScriptableObject>();
+        public static Dictionary<Type, Dictionary<string, ScriptableObject>> AllScriptableObjectWithoutGuidTypeDict = new Dictionary<Type, Dictionary<string, ScriptableObject>>();
         public static Dictionary<string, Type> ScriptableObjectKeyType = new Dictionary<string, Type>();
+
+        // Special Dict(Vulnerable Function)
         public static Dictionary<string, ContentDisplayer> CustomContentDisplayerDict = new Dictionary<string, ContentDisplayer>();
         public static Dictionary<string, GameObject> CustomGameObjectListDict = new Dictionary<string, GameObject>();
 
@@ -86,6 +93,29 @@ namespace DynamicModLoader
             PluginVersion = System.Version.Parse(this.Info.Metadata.Version.ToString());
             Logger.LogInfo("Plugin DynamicModLoader is loaded! ");
         }
+        private static void ResetWarpperList()
+        {
+            WaitForWarpperEditorNoGuidlist.Clear();
+            WaitForLoadCSVList.Clear();
+            WaitForWarpperEditorGameSourceGUIDList.Clear();
+
+            WaitForAddCardTabGroup.Clear();
+            WaitForAddJournalPlayerCharacter.Clear();
+            WaitForAddDefaultContentPage.Clear();
+            WaitForAddMainContentPage.Clear();
+        }
+        private static void ReFillCheatsManager()
+        {
+            try
+            {
+                var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                var card = typeof(CheatsManager).GetMethod("FillCards", bindingFlags, null, new Type[] { }, null).Invoke(MBSingleton<CheatsManager>.Instance, new object[] { });
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning(ex.Message);
+            }
+        }
 
         public static string CombinePaths(params string[] paths)
         {
@@ -96,10 +126,47 @@ namespace DynamicModLoader
             return paths.Aggregate(Path.Combine);
         }
 
+        public static bool IsSubDirectory(string dir, string parent_dir)
+        {
+            DirectoryInfo di1 = new DirectoryInfo(parent_dir);
+            DirectoryInfo di2 = new DirectoryInfo(dir);
+            bool isParent = false;
+            while (di2.Parent != null)
+            {
+                if (di2.Parent.FullName == di1.FullName)
+                {
+                    isParent = true;
+                    break;
+                }
+                else di2 = di2.Parent;
+            }
+            return isParent;
+        }
+
         public static void LogErrorWithModInfo(string error_info)
         {
             Debug.LogWarning(string.Format("{0}.{1} Error: {2}", ProcessingScriptableObjectPack.ModName, ProcessingScriptableObjectPack.obj.name, error_info));
         }
+
+        //static IEnumerator GetDataRequest(string ModName, string file)
+        //{
+        //    var audio_name = Path.GetFileNameWithoutExtension(file);
+        //    var request = UnityEngine.Networking.UnityWebRequestMultimedia.GetAudioClip(file, AudioType.WAV);
+
+        //    yield return request.SendWebRequest();
+
+        //    if (request.isNetworkError)
+        //        Debug.LogWarningFormat("Load Resource Custom Audio Error {0}", request.error);
+        //    else
+        //    {
+        //        AudioClip clip = DownloadHandlerAudioClip.GetContent(request);
+        //        clip.name = audio_name;
+        //        if (!AudioClipDict.ContainsKey(audio_name))
+        //            AudioClipDict.Add(audio_name, clip);
+        //        else
+        //            UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, audio_name);
+        //    }
+        //}
 
         public static AudioClip GetAudioClipFromWav(byte[] raw_data, string clip_name)
         {
@@ -169,7 +236,7 @@ namespace DynamicModLoader
             return clip;
         }
 
-        private static void LoadGameResource()
+        protected static void LoadGameResource()
         {
             try
             {
@@ -189,43 +256,49 @@ namespace DynamicModLoader
             {
                 try
                 {
-                    if (!AllCardOrTagDict.ContainsKey(ele.name))
-                        AllCardOrTagDict.Add(ele.name, ele as ScriptableObject);
+                    if (ele is UniqueIDScriptable)
+                    {
+                        if (!AllScriptableObjectDict.ContainsKey((ele as UniqueIDScriptable).UniqueID))
+                            AllScriptableObjectDict.Add((ele as UniqueIDScriptable).UniqueID, ele as ScriptableObject);
+                    }
+                    else
+                    {
+                        if (!AllScriptableObjectDict.ContainsKey(ele.name))
+                            AllScriptableObjectDict.Add(ele.name, ele as ScriptableObject);
+                    }
 
                     if (!(ele is UniqueIDScriptable))
                     {
 
-                        if (!AllScriptableObjectWithoutGuidDict.ContainsKey(ele.GetType()))
+                        if (!AllScriptableObjectWithoutGuidTypeDict.ContainsKey(ele.GetType()))
                         {
-                            AllScriptableObjectWithoutGuidDict.Add(ele.GetType(), new Dictionary<string, ScriptableObject>());
-                            if (AllScriptableObjectWithoutGuidDict.TryGetValue(ele.GetType(), out var type_dict))
-                                type_dict.Add(ele.name, ele as ScriptableObject);
+                            AllScriptableObjectWithoutGuidTypeDict.Add(ele.GetType(), new Dictionary<string, ScriptableObject>());
+                            if (AllScriptableObjectWithoutGuidTypeDict.TryGetValue(ele.GetType(), out var type_dict))
+                                if(!type_dict.ContainsKey(ele.name))
+                                    type_dict.Add(ele.name, ele as ScriptableObject);
                         }
                         else
                         {
-                            if (AllScriptableObjectWithoutGuidDict.TryGetValue(ele.GetType(), out var type_dict))
-                                type_dict.Add(ele.name, ele as ScriptableObject);
+                            if (AllScriptableObjectWithoutGuidTypeDict.TryGetValue(ele.GetType(), out var type_dict))
+                                if (!type_dict.ContainsKey(ele.name))
+                                    type_dict.Add(ele.name, ele as ScriptableObject);
                         }
                     }
 
                     if (ele is UniqueIDScriptable)
                     {
-                        if (!AllTypeGUIDDict.ContainsKey(ele.GetType()))
+                        if (!AllGUIDTypeDict.ContainsKey(ele.GetType()))
                         {
-                            AllTypeGUIDDict.Add(ele.GetType(), new Dictionary<string, UniqueIDScriptable>());
-                            if (AllTypeGUIDDict.TryGetValue(ele.GetType(), out var type_dict))
-                                type_dict.Add(ele.name, ele as UniqueIDScriptable);
+                            AllGUIDTypeDict.Add(ele.GetType(), new Dictionary<string, UniqueIDScriptable>());
+                            if (AllGUIDTypeDict.TryGetValue(ele.GetType(), out var type_dict))
+                                if (!type_dict.ContainsKey(ele.name))
+                                    type_dict.Add(ele.name, ele as UniqueIDScriptable);
                         }
                         else
                         {
-                            if (AllTypeGUIDDict.TryGetValue(ele.GetType(), out var type_dict))
-                                type_dict.Add(ele.name, ele as UniqueIDScriptable);
-                        }
-
-                        if (ele is CardData)
-                        {
-                            if (!AllCardOrTagDict.ContainsKey((ele as CardData).UniqueID))
-                                AllCardOrTagDict.Add((ele as CardData).UniqueID, ele as CardData);
+                            if (AllGUIDTypeDict.TryGetValue(ele.GetType(), out var type_dict))
+                                if (!type_dict.ContainsKey(ele.name))
+                                    type_dict.Add(ele.name, ele as UniqueIDScriptable);
                         }
 
                         if (!AllGUIDDict.ContainsKey((ele as UniqueIDScriptable).UniqueID))
@@ -234,6 +307,7 @@ namespace DynamicModLoader
                 }
                 catch (Exception ex)
                 {
+                    UnityEngine.Debug.LogWarning("LoadGameResource Error " + ex.Message);
                 }
             }
 
@@ -254,11 +328,11 @@ namespace DynamicModLoader
             }
         }
 
-        private static void LoadMods()
+        protected static void LoadMods(string mods_dir)
         {
             try
             {
-                var dirs = Directory.GetDirectories(Path.Combine(BepInEx.Paths.BepInExRootPath, "DynamicModDebug"));
+                var dirs = Directory.GetDirectories(mods_dir);
                 foreach (var dir in dirs)
                 {
                     //  Check if is a Mod Directory
@@ -278,12 +352,12 @@ namespace DynamicModLoader
                         if (!Info.Name.IsNullOrWhiteSpace())
                             ModName = Info.Name;
 
-                        UnityEngine.Debug.Log(string.Format("DynamicModLoader Load Mod {0} {1}", ModName, Info.Version));
+                        UnityEngine.Debug.Log(string.Format("ModLoader Load Mod {0} {1}", ModName, Info.Version));
 
-                        //// Check Verison
+                        // Check Verison
                         //System.Version ModRequestVersion = System.Version.Parse(Info.ModLoaderVerison);
                         //if (PluginVersion.CompareTo(ModRequestVersion) < 0)
-                        //    UnityEngine.Debug.LogWarningFormat("DynamicModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModName, ModRequestVersion);
+                        //    UnityEngine.Debug.LogWarningFormat("ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModName, ModRequestVersion);
                     }
                     catch (Exception ex)
                     {
@@ -373,6 +447,7 @@ namespace DynamicModLoader
                                     else
                                         AudioClipDict[clip.name] = clip;
                                 }
+                                //MBSingleton<GameLoad>.Instance.StartCoroutine(GetDataRequest(ModName, file));
                             }
                         }
                     }
@@ -386,37 +461,44 @@ namespace DynamicModLoader
                     {
                         if (Directory.Exists(CombinePaths(dir, "ScriptableObject")))
                         {
-                            var sub_dirs = Directory.GetDirectories(CombinePaths(dir, "ScriptableObject"));
-                            foreach (var sub_dir in sub_dirs)
+                            var subclasses = from assembly in AppDomain.CurrentDomain.GetAssemblies()
+                                             from type in assembly.GetTypes()
+                                             where type.IsSubclassOf(typeof(ScriptableObject))
+                                             select type;
+
+                            foreach (var type in subclasses)
                             {
-                                if (ScriptableObjectKeyType.TryGetValue(Path.GetFileName(sub_dir), out var type))
+                                if (type.IsSubclassOf(typeof(UniqueIDScriptable)) || type == typeof(UniqueIDScriptable))
+                                    continue;
+
+                                if (!Directory.Exists(CombinePaths(dir, "ScriptableObject", type.Name)))
+                                    continue;
+
+                                foreach (var file in Directory.EnumerateFiles(CombinePaths(dir, "ScriptableObject", type.Name), "*.json", SearchOption.AllDirectories))
                                 {
-                                    var files = Directory.GetFiles(sub_dir);
-                                    foreach (var file in files)
+                                    var obj_name = Path.GetFileNameWithoutExtension(file);
+                                    if (AllScriptableObjectWithoutGuidTypeDict.TryGetValue(type, out var dict))
                                     {
-                                        if (!file.EndsWith(".json"))
-                                            continue;
-                                        var obj_name = Path.GetFileNameWithoutExtension(file);
-                                        if (AllScriptableObjectWithoutGuidDict.TryGetValue(type, out var dict))
+                                        string CardData = "";
+                                        using (StreamReader sr = new StreamReader(file))
+                                            CardData = sr.ReadToEnd();
+                                        if (dict.ContainsKey(obj_name))
                                         {
-                                            string CardData = "";
-                                            using (StreamReader sr = new StreamReader(file))
-                                                CardData = sr.ReadToEnd();
-                                            if (dict.ContainsKey(obj_name))
-                                            {
-                                                var obj = dict[obj_name];
-                                                JsonUtility.FromJsonOverwrite(CardData, obj);
-                                                WaitForWarpperEditorNoGuidlist.Add(new ScriptableObjectPack(obj, "", "", ModName, CardData));
-                                            }
-                                            else
-                                            {
-                                                var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-                                                var obj = type.GetMethod("CreateInstance", bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(Type) }, null).Invoke(null, new object[] { type });
-                                                type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(obj, new object[] { obj_name });
-                                                JsonUtility.FromJsonOverwrite(CardData, obj);
-                                                dict.Add(obj_name, obj as ScriptableObject);
-                                                WaitForWarpperEditorNoGuidlist.Add(new ScriptableObjectPack(obj as ScriptableObject, "", "", ModName, CardData));
-                                            }
+                                            JsonUtility.FromJsonOverwrite(CardData, dict[obj_name]);
+                                            WaitForWarpperEditorNoGuidlist.Add(new ScriptableObjectPack(dict[obj_name], "", "", ModName, CardData));
+                                        }
+                                        else
+                                        {
+                                            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                                            var obj = type.GetMethod("CreateInstance", bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(Type) }, null).Invoke(null, new object[] { type });   
+                                            type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(obj, new object[] { obj_name });
+
+                                            JsonUtility.FromJsonOverwrite(CardData, obj);
+                                            WaitForWarpperEditorNoGuidlist.Add(new ScriptableObjectPack(obj as ScriptableObject, "", "", ModName, CardData));
+
+                                            dict.Add(obj_name, obj as ScriptableObject);
+                                            if (!AllScriptableObjectDict.ContainsKey(obj_name))
+                                                AllScriptableObjectDict.Add(obj_name, obj as ScriptableObject);
                                         }
                                     }
                                 }
@@ -462,11 +544,8 @@ namespace DynamicModLoader
                                 continue;
                             if (!Info.ModEditorVersion.IsNullOrWhiteSpace())
                             {
-                                var files = Directory.GetFiles(CombinePaths(dir, type.Name));
-                                foreach (var file in files)
+                                foreach (var file in Directory.EnumerateFiles(CombinePaths(dir, type.Name), "*.json", SearchOption.AllDirectories))
                                 {
-                                    if (!file.EndsWith(".json"))
-                                        continue;
                                     string CardName = Path.GetFileNameWithoutExtension(file);
                                     string CardPath = file;
                                     string CardData = "";
@@ -479,29 +558,32 @@ namespace DynamicModLoader
                                             json = JsonMapper.ToObject(CardData);
                                         }
                                         var card_guid = json["UniqueID"].ToString();
-                                        if (WaitForWarpperEditorGuidDict.ContainsKey(card_guid))
+
+                                        if (AllGUIDDict.ContainsKey(card_guid))
                                         {
-                                            var card = WaitForWarpperEditorGuidDict[card_guid].obj;
-                                            JsonUtility.FromJsonOverwrite(CardData, card);
-                                            WaitForWarpperEditorGuidDict[card_guid] = new ScriptableObjectPack(card, "", CardPath, ModName, CardData);
+                                            JsonUtility.FromJsonOverwrite(CardData, AllGUIDDict[card_guid]);
+                                            WaitForWarpperEditorGuidDict[card_guid] = new ScriptableObjectPack(AllGUIDDict[card_guid] as UniqueIDScriptable, "", CardPath, ModName, CardData);
                                         }
                                         else
                                         {
                                             var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
                                             var card = type.GetMethod("CreateInstance", bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(Type) }, null).Invoke(null, new object[] { type });
                                             JsonUtility.FromJsonOverwrite(CardData, card);
-
                                             type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(card, new object[] { ModName + "_" + CardName });
                                             type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
-
-
-                                            AllGUIDDict.Add(card_guid, card as UniqueIDScriptable);
-                                            GameLoad.Instance.DataBase.AllData.Add(card as UniqueIDScriptable);
 
                                             if (!WaitForWarpperEditorGuidDict.ContainsKey(card_guid))
                                                 WaitForWarpperEditorGuidDict.Add(card_guid, new ScriptableObjectPack(card as UniqueIDScriptable, "", CardPath, ModName, CardData));
                                             else
                                                 UnityEngine.Debug.LogWarningFormat("{0} WaitForWarpperEditorGuidDict Same Key was Add {1}", ModName, card_guid);
+
+                                            AllGUIDDict.Add(card_guid, card as UniqueIDScriptable);
+                                            GameLoad.Instance.DataBase.AllData.Add(card as UniqueIDScriptable);
+                                            if (!AllScriptableObjectDict.ContainsKey(card_guid))
+                                                AllScriptableObjectDict.Add(card_guid, card as ScriptableObject);
+                                            if (AllGUIDTypeDict.TryGetValue(type, out var dict))
+                                                if (!dict.ContainsKey(card_guid))
+                                                    dict.Add(card_guid, card as UniqueIDScriptable);
                                         }
                                     }
                                     catch (Exception ex)
@@ -530,16 +612,15 @@ namespace DynamicModLoader
                                     var modify_files = Directory.GetFiles(modify_dir);
                                     foreach (var file in modify_files)
                                     {
-                                        if (file.EndsWith(".json"))
-                                        {
-                                            string CardPath = file;
-                                            string CardData = "";
-                                            string Guid = Path.GetFileNameWithoutExtension(file);
-                                            using (StreamReader sr = new StreamReader(CardPath))
-                                                CardData = sr.ReadToEnd();
-                                            if (AllGUIDDict.TryGetValue(Guid, out var obj))
-                                                WaitForWarpperEditorGameSourceGUIDList.Add(new ScriptableObjectPack(obj, modify_dir, CardPath, ModName, CardData));
-                                        }
+                                        if (!file.EndsWith(".json"))
+                                            continue;
+                                        string CardPath = file;
+                                        string CardData = "";
+                                        string Guid = Path.GetFileNameWithoutExtension(file);
+                                        using (StreamReader sr = new StreamReader(CardPath))
+                                            CardData = sr.ReadToEnd();
+                                        if (AllGUIDDict.TryGetValue(Guid, out var obj))
+                                            WaitForWarpperEditorGameSourceGUIDList.Add(new ScriptableObjectPack(obj, modify_dir, CardPath, ModName, CardData));
                                     }
                                 }
                             }
@@ -557,19 +638,7 @@ namespace DynamicModLoader
             }
         }
 
-        private static void ResetWarpperList()
-        {
-            WaitForWarpperEditorNoGuidlist.Clear();
-            WaitForLoadCSVList.Clear();
-            WaitForWarpperEditorGameSourceGUIDList.Clear();
-
-            WaitForAddCardTabGroup.Clear();
-            WaitForAddJournalPlayerCharacter.Clear();
-            WaitForAddDefaultContentPage.Clear();
-            WaitForAddMainContentPage.Clear();
-        }
-
-        private static void LoadEditorScriptableObject()
+        protected static void LoadEditorScriptableObject()
         {
             foreach (var item in WaitForWarpperEditorNoGuidlist)
             {
@@ -598,7 +667,7 @@ namespace DynamicModLoader
             }
         }
 
-        private static void WarpperAllEditorMods()
+        protected static void WarpperAllEditorMods()
         {
             var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
             foreach (var item in WaitForWarpperEditorGuidDict)
@@ -617,9 +686,9 @@ namespace DynamicModLoader
                             json.ContainsKey("BlueprintCardDataCardTabSubGroup") && json["BlueprintCardDataCardTabSubGroup"].IsString && !json["BlueprintCardDataCardTabSubGroup"].ToString().IsNullOrWhiteSpace())
                             WaitForAddBlueprintCard.Add(new Tuple<string, string, CardData>(json["BlueprintCardDataCardTabGroup"].ToString(), json["BlueprintCardDataCardTabSubGroup"].ToString(), item.Value.obj as CardData));
 
-                        if (json.ContainsKey("ItemCardDataCardTabGpGroup") && json["ItemCardDataCardTabGpGroup"].IsArray)
+                        if (json.ContainsKey("ItemCardDataCardTabGpGroup") && json["ItemCardDataCardTabGpGroup"].IsArray && AllScriptableObjectWithoutGuidTypeDict.TryGetValue(typeof(CardTabGroup), out var dict))
                             for (int i = 0; i < json["ItemCardDataCardTabGpGroup"].Count; i++)
-                                if (json["ItemCardDataCardTabGpGroup"][i].IsString && AllScriptableObjectWithoutGuidDict[typeof(CardTabGroup)].TryGetValue(json["ItemCardDataCardTabGpGroup"][i].ToString(), out var tab_group))
+                                if (json["ItemCardDataCardTabGpGroup"][i].IsString && dict.TryGetValue(json["ItemCardDataCardTabGpGroup"][i].ToString(), out var tab_group))
                                     (tab_group as CardTabGroup).IncludedCards.Add(item.Value.obj as CardData);
 
                         var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
@@ -640,7 +709,7 @@ namespace DynamicModLoader
                     }
                     else if (item.Value.obj is PlayerCharacter)
                     {
-                        if (AllTypeGUIDDict.TryGetValue(typeof(Gamemode), out var dict))
+                        if (AllGUIDTypeDict.TryGetValue(typeof(Gamemode), out var dict))
                         {
                             foreach (var pair in dict)
                             {
@@ -659,7 +728,7 @@ namespace DynamicModLoader
             }
         }
 
-        private static void LoadLocalization()
+        protected static void LoadLocalization()
         {
             if (MBSingleton<LocalizationManager>.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "简体中文")
             {
@@ -678,10 +747,6 @@ namespace DynamicModLoader
                                 {
                                     CurrentTexts.Add(keyValuePair.Key, regex.Replace(keyValuePair.Value[1], "\n"));
                                 }
-                                else
-                                {
-                                    CurrentTexts[keyValuePair.Key] = regex.Replace(keyValuePair.Value[1], "\n");
-                                }
                             }
                         }
                     }
@@ -693,7 +758,7 @@ namespace DynamicModLoader
             }
         }
 
-        private static void AddBlueprintCardData(GraphicsManager instance)
+        protected static void AddBlueprintCardData(GraphicsManager instance)
         {
             foreach (var tuple in WaitForAddBlueprintCard)
             {
@@ -723,7 +788,7 @@ namespace DynamicModLoader
             }
         }
 
-        private static void AddVisibleGameStat(GraphicsManager instance)
+        protected static void AddVisibleGameStat(GraphicsManager instance)
         {
             foreach (var tuple in WaitForAddVisibleGameStat)
             {
@@ -747,17 +812,20 @@ namespace DynamicModLoader
             }
         }
 
-        private static void AddPerkGroup()
+        protected static void AddPerkGroup()
         {
             foreach (var tuple in WaitForAddPerkGroup)
             {
                 try
                 {
-                    if (AllTypeGUIDDict[typeof(PerkGroup)].TryGetValue(tuple.Item1, out var group))
+                    if (AllGUIDTypeDict.TryGetValue(typeof(PerkGroup), out var dict))
                     {
-                        var perk_group = group as PerkGroup;
-                        Array.Resize<CharacterPerk>(ref perk_group.PerksList, perk_group.PerksList.Length + 1);
-                        perk_group.PerksList[perk_group.PerksList.Length - 1] = tuple.Item2;
+                        if (dict.TryGetValue(tuple.Item1, out var group))
+                        {
+                            var obj = group as PerkGroup;
+                            Array.Resize<CharacterPerk>(ref obj.PerksList, obj.PerksList.Length + 1);
+                            obj.PerksList[obj.PerksList.Length - 1] = tuple.Item2;
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -767,7 +835,7 @@ namespace DynamicModLoader
             }
         }
 
-        private static void AddCardTabGroup(GraphicsManager instance)
+        protected static void AddCardTabGroup(GraphicsManager instance)
         {
             foreach (var item in WaitForAddCardTabGroup)
             {
@@ -796,7 +864,7 @@ namespace DynamicModLoader
             }
         }
 
-        private static void AddCardTabGroupOnce(GraphicsManager instance)
+        protected static void AddCardTabGroupOnce(GraphicsManager instance)
         {
             foreach (var item in WaitForAddCardTabGroup)
             {
@@ -837,7 +905,7 @@ namespace DynamicModLoader
             }
         }
 
-        private static void WarpperAllEditorGameSrouces()
+        protected static void WarpperAllEditorGameSrouces()
         {
             var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
             foreach (var item in WaitForWarpperEditorGameSourceGUIDList)
@@ -877,8 +945,7 @@ namespace DynamicModLoader
             }
         }
 
-
-        private static void MatchAndWarpperAllEditorGameSrouce()
+        protected static void MatchAndWarpperAllEditorGameSrouce()
         {
             var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
             foreach (var item in AllGUIDDict.Values)
@@ -984,6 +1051,20 @@ namespace DynamicModLoader
                 }
             }
 
+            var displayers = Resources.FindObjectsOfTypeAll(typeof(ContentDisplayer));
+            foreach (var displayer in displayers)
+            {
+                try
+                {
+                    if (!CustomContentDisplayerDict.ContainsKey(displayer.name))
+                        CustomContentDisplayerDict.Add(displayer.name, displayer as ContentDisplayer);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning("CustomContentDisplayerDict Warning " + ex.Message);
+                }
+            }
+
             foreach (var item in WaitForAddDefaultContentPage)
             {
                 try
@@ -1070,7 +1151,7 @@ namespace DynamicModLoader
             }
         }
 
-        private static void CustomGameObjectFixed()
+        protected static void CustomGameObjectFixed()
         {
 
             foreach (var item in CustomGameObjectListDict)
@@ -1091,12 +1172,12 @@ namespace DynamicModLoader
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning(ex.Message);
+                    Debug.LogWarning("CustomGameObjectFixed " + ex.Message);
                 }
             }
         }
 
-        private static void AddPlayerCharacter(GameLoad instance)
+        protected static void AddPlayerCharacter(GameLoad instance)
         {
             try
             {
@@ -1108,18 +1189,7 @@ namespace DynamicModLoader
             }
         }
 
-        private static void ReFillCheatsManager()
-        {
-            try
-            {
-                var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-                var card = typeof(CheatsManager).GetMethod("FillCards", bindingFlags, null, new Type[] { }, null).Invoke(MBSingleton<CheatsManager>.Instance, new object[] { });
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning(ex.Message);
-            }
-        }
+
 
         [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "LoadGameData"), HarmonyBefore(new string[] { "Dop.plugin.CSTI.ModLoader" })]
         public static void GameLoadLoadGameDataPostfix(GameLoad __instance)
@@ -1128,7 +1198,7 @@ namespace DynamicModLoader
             {
                 LoadGameResource();
 
-                LoadMods();
+                LoadMods(Path.Combine(BepInEx.Paths.BepInExRootPath, "DynamicModDebug"));
 
                 LoadEditorScriptableObject();
 
@@ -1177,7 +1247,7 @@ namespace DynamicModLoader
 
                 ResetWarpperList();
 
-                LoadMods();
+                LoadMods(Path.Combine(BepInEx.Paths.BepInExRootPath, "DynamicModDebug"));
 
                 LoadEditorScriptableObject();
 
