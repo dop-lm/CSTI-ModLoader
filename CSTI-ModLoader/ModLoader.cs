@@ -10,6 +10,7 @@ using LitJson;
 using System.Linq;
 using Ionic.Zip;
 using System.Collections;
+using System.Security.Cryptography;
 
 namespace ModLoader
 {
@@ -22,10 +23,11 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.3.0")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.3.1")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
+        public static Assembly GameSrouceAssembly;
 
         public static Dictionary<string, UnityEngine.Sprite> SpriteDict = new Dictionary<string, UnityEngine.Sprite>();
         public static Dictionary<string, UnityEngine.AudioClip> AudioClipDict = new Dictionary<string, UnityEngine.AudioClip>();
@@ -222,8 +224,14 @@ namespace ModLoader
         {
             try
             {
-                var subclasses = from assembly in AppDomain.CurrentDomain.GetAssemblies()
-                                 from type in assembly.GetTypes()
+                foreach(var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                    if(assembly.GetName().Name == "Assembly-CSharp")
+                    {
+                        GameSrouceAssembly = assembly;
+                        break;
+                    }
+
+                var subclasses = from type in GameSrouceAssembly.GetTypes()
                                  where type.IsSubclassOf(typeof(ScriptableObject))
                                  select type;
                 foreach (var type in subclasses)
@@ -236,6 +244,9 @@ namespace ModLoader
 
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(ScriptableObject)))
             {
+                if (ele.GetType().Assembly != GameSrouceAssembly)
+                    continue;
+
                 try
                 {
                     if (ele is UniqueIDScriptable)
@@ -335,21 +346,21 @@ namespace ModLoader
                 if (!SpriteDict.ContainsKey(ele.name))
                     SpriteDict.Add(ele.name, ele as UnityEngine.Sprite);
                 else
-                    UnityEngine.Debug.LogWarning("SpriteDict Same Key was Add " + ele.name);
+                    UnityEngine.Debug.Log("SpriteDict Same Key was Add " + ele.name);
             }
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(UnityEngine.AudioClip)))
             {
                 if (!AudioClipDict.ContainsKey(ele.name))
                     AudioClipDict.Add(ele.name, ele as UnityEngine.AudioClip);
                 else
-                    UnityEngine.Debug.LogWarning("AudioClipDict Same Key was Add " + ele.name);
+                    UnityEngine.Debug.Log("AudioClipDict Same Key was Add " + ele.name);
             }
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(WeatherSpecialEffect)))
             {
                 if (!WeatherSpecialEffectDict.ContainsKey(ele.name))
                     WeatherSpecialEffectDict.Add(ele.name, ele as WeatherSpecialEffect);
                 else
-                    UnityEngine.Debug.LogWarning("WeatherSpecialEffectDict Same Key was Add " + ele.name);
+                    UnityEngine.Debug.Log("WeatherSpecialEffectDict Same Key was Add " + ele.name);
             }
         }
 
@@ -502,8 +513,7 @@ namespace ModLoader
                     // Load ScriptableObject
                     try
                     {
-                        var subclasses = from assembly in AppDomain.CurrentDomain.GetAssemblies()
-                                         from type in assembly.GetTypes()
+                        var subclasses = from type in GameSrouceAssembly.GetTypes()
                                          where type.IsSubclassOf(typeof(ScriptableObject))
                                          select type;
 
@@ -565,8 +575,7 @@ namespace ModLoader
                     // Load and init UniqueIDScriptable
                     try
                     {
-                        var subclasses = from assembly in AppDomain.CurrentDomain.GetAssemblies()
-                                         from type in assembly.GetTypes()
+                        var subclasses = from type in GameSrouceAssembly.GetTypes()
                                          where type.IsSubclassOf(typeof(UniqueIDScriptable))
                                          select type;
 
@@ -580,17 +589,25 @@ namespace ModLoader
                                 string CardData = "";
                                 try
                                 {
-                                    var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-                                    var card = type.GetMethod("CreateInstance", bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(Type) }, null).Invoke(null, new object[] { type });
-                                    JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                                    JsonData json = new JsonData();
                                     MemoryStream ms = new MemoryStream();
                                     entry.Extract(ms);
                                     ms.Seek(0, SeekOrigin.Begin);
                                     using (StreamReader sr = new StreamReader(ms))
                                     {
                                         CardData = sr.ReadToEnd();
-                                        JsonUtility.FromJsonOverwrite(CardData, card);
+                                        json = JsonMapper.ToObject(CardData);
                                     }
+                                    if (!(json.ContainsKey("UniqueID") && json["UniqueID"].IsString && !json["UniqueID"].ToString().IsNullOrWhiteSpace()))
+                                    {
+                                        UnityEngine.Debug.LogErrorFormat("{0} EditorLoadZip {1} {2} try to load a UniqueIDScriptable without GUID", type.Name, ModName, CardName);
+                                        continue;
+                                    }
+
+                                    var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                                    var card = type.GetMethod("CreateInstance", bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(Type) }, null).Invoke(null, new object[] { type });
+                                    JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                                    JsonUtility.FromJsonOverwrite(CardData, card);
 
                                     type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(card, new object[] { ModName + "_" + CardName });
                                     type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
@@ -787,8 +804,7 @@ namespace ModLoader
                     {
                         if (Directory.Exists(CombinePaths(dir, "ScriptableObject")))
                         {
-                            var subclasses = from assembly in AppDomain.CurrentDomain.GetAssemblies()
-                                             from type in assembly.GetTypes()
+                            var subclasses = from type in GameSrouceAssembly.GetTypes()
                                              where type.IsSubclassOf(typeof(ScriptableObject))
                                              select type;
 
@@ -851,8 +867,7 @@ namespace ModLoader
                     // Load and init UniqueIDScriptable
                     try
                     {
-                        var subclasses = from assembly in AppDomain.CurrentDomain.GetAssemblies()
-                                         from type in assembly.GetTypes()
+                        var subclasses = from type in GameSrouceAssembly.GetTypes()
                                          where type.IsSubclassOf(typeof(UniqueIDScriptable))
                                          select type;
 
@@ -867,15 +882,27 @@ namespace ModLoader
                                 {
                                     string CardName = Path.GetFileName(card_dir); ;
                                     string CardPath = CombinePaths(card_dir, CardName + ".json");
+                                    string CardData = "";
                                     if (File.Exists(CardPath))
                                     {
                                         try
                                         {
+                                            JsonData json = new JsonData();
+                                            using (StreamReader sr = new StreamReader(CardPath))
+                                            {
+                                                CardData = sr.ReadToEnd();
+                                                json = JsonMapper.ToObject(CardData);
+                                            }
+                                            if (!(json.ContainsKey("UniqueID") && json["UniqueID"].IsString && !json["UniqueID"].ToString().IsNullOrWhiteSpace()))
+                                            {
+                                                UnityEngine.Debug.LogErrorFormat("{0} EditorLoadZip {1} {2} try to load a UniqueIDScriptable without GUID", type.Name, ModName, CardName);
+                                                continue;
+                                            }
+
                                             var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
                                             var card = type.GetMethod("CreateInstance", bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(Type) }, null).Invoke(null, new object[] { type });
                                             JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                                            using (StreamReader sr = new StreamReader(CardPath))
-                                                JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), card);
+                                            JsonUtility.FromJsonOverwrite(CardData, card);
 
                                             type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(card, new object[] { ModName + "_" + CardName });
                                             type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
@@ -910,15 +937,23 @@ namespace ModLoader
                                     string CardData = "";
                                     try
                                     {
-                                        var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-                                        var card = type.GetMethod("CreateInstance", bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(Type) }, null).Invoke(null, new object[] { type });
-                                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-
+                                        JsonData json = new JsonData();
                                         using (StreamReader sr = new StreamReader(CardPath))
                                         {
                                             CardData = sr.ReadToEnd();
-                                            JsonUtility.FromJsonOverwrite(CardData, card);
+                                            json = JsonMapper.ToObject(CardData);
                                         }
+                                        if (!(json.ContainsKey("UniqueID") && json["UniqueID"].IsString && !json["UniqueID"].ToString().IsNullOrWhiteSpace()))
+                                        {
+                                            UnityEngine.Debug.LogErrorFormat("{0} EditorLoadZip {1} {2} try to load a UniqueIDScriptable without GUID", type.Name, ModName, CardName);
+                                            continue;
+                                        }
+
+                                        var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                                        var card = type.GetMethod("CreateInstance", bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(Type) }, null).Invoke(null, new object[] { type });
+                                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                                        JsonUtility.FromJsonOverwrite(CardData, card);
+
                                         type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(card, new object[] { ModName + "_" + CardName });
                                         type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
 
