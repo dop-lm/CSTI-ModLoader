@@ -23,7 +23,7 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.3.1")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.3.3")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -86,6 +86,7 @@ namespace ModLoader
         private static List<Tuple<string, string>> WaitForLoadCSVList = new List<Tuple<string, string>>();
         private static List<Tuple<string, string, CardData>> WaitForAddBlueprintCard = new List<Tuple<string, string, CardData>>();
         private static List<Tuple<string, GameStat>> WaitForAddVisibleGameStat = new List<Tuple<string, GameStat>>();
+        private static List<GuideEntry> WaitForAddGuideEntry = new List<GuideEntry>();
         private static List<Tuple<string, CharacterPerk>> WaitForAddPerkGroup = new List<Tuple<string, CharacterPerk>>();
 
         private static List<ScriptableObjectPack> WaitForAddCardTabGroup = new List<ScriptableObjectPack>();
@@ -610,7 +611,7 @@ namespace ModLoader
                                     JsonUtility.FromJsonOverwrite(CardData, card);
 
                                     type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(card, new object[] { ModName + "_" + CardName });
-                                    type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
+                                    //type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
 
                                     var card_guid = type.GetField("UniqueID", bindingFlags).GetValue(card) as string;
                                     AllGUIDDict.Add(card_guid, card as UniqueIDScriptable);
@@ -905,7 +906,7 @@ namespace ModLoader
                                             JsonUtility.FromJsonOverwrite(CardData, card);
 
                                             type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(card, new object[] { ModName + "_" + CardName });
-                                            type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
+                                            //type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
 
                                             var card_guid = type.GetField("UniqueID", bindingFlags).GetValue(card) as string;
                                             AllGUIDDict.Add(card_guid, card as UniqueIDScriptable);
@@ -955,7 +956,7 @@ namespace ModLoader
                                         JsonUtility.FromJsonOverwrite(CardData, card);
 
                                         type.GetProperty("name", bindingFlags).GetSetMethod(true).Invoke(card, new object[] { ModName + "_" + CardName });
-                                        type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
+                                        //type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
 
                                         var card_guid = type.GetField("UniqueID", bindingFlags).GetValue(card) as string;
                                         AllGUIDDict.Add(card_guid, card as UniqueIDScriptable);
@@ -1060,6 +1061,10 @@ namespace ModLoader
                             WaitForAddDefaultContentPage.Add(new ScriptableObjectPack(item.obj, "", "", "", item.CardData));
                         else if(item.obj.name.EndsWith("Main"))
                             WaitForAddMainContentPage.Add(new ScriptableObjectPack(item.obj, "", "", "", item.CardData));
+                    }
+                    if(item.obj is GuideEntry)
+                    {
+                        WaitForAddGuideEntry.Add(item.obj as GuideEntry);
                     }
                 }
                 catch (Exception ex)
@@ -1709,7 +1714,22 @@ namespace ModLoader
             }
             catch (Exception ex)
             {
-                Debug.LogWarning(ex.Message);
+                Debug.LogWarning("AddPlayerCharacter" + ex.Message);
+            }
+        }
+
+        private static void LoadGuideEntry(GuideManager instance)
+        {
+            try
+            {
+                foreach(var entry in WaitForAddGuideEntry)
+                {
+                    instance.AllEntries.Add(entry);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("LoadGuideEntry" + ex.Message);
             }
         }
 
@@ -1725,8 +1745,8 @@ namespace ModLoader
         //    }
         //}
 
-        [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "LoadGameData")]
-        public static void GameLoadLoadGameDataPostfix(GameLoad __instance)
+        [HarmonyPrefix, HarmonyPatch(typeof(UniqueIDScriptable), "ClearDict")]
+        public static void UniqueIDScriptableClearDictPrefix()
         {
             try
             {
@@ -1755,10 +1775,51 @@ namespace ModLoader
 
                 AddPerkGroup();
 
-                AddPlayerCharacter(__instance);
+                //AddPlayerCharacter(__instance);
 
                 stopwatch.Stop();
                 Debug.Log("ModLoader Time taken: " + (stopwatch.Elapsed));
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning(ex.Message);
+            }
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "LoadGameData")]
+        public static void GameLoadLoadGameDataPostfix(GameLoad __instance)
+        {
+            try
+            {
+                //System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+                //stopwatch.Start();
+
+                //LoadGameResource();
+
+                //LoadMods(Path.Combine(BepInEx.Paths.BepInExRootPath, "plugins"));
+
+                //LoadModsFromZip();
+
+                //LoadEditorScriptableObject();
+
+                //LoadLocalization();
+
+                //WarpperAllMods();
+
+                //WarpperAllEditorMods();
+
+                //WarpperAllGameSrouces();
+
+                //WarpperAllEditorGameSrouces();
+
+                //MatchAndWarpperAllEditorGameSrouce();
+
+                //AddPerkGroup();
+
+                AddPlayerCharacter(__instance);
+
+                //stopwatch.Stop();
+                //Debug.Log("ModLoader Time taken: " + (stopwatch.Elapsed));
             }
             catch (Exception ex)
             {
@@ -1772,6 +1833,19 @@ namespace ModLoader
             try
             {
                 LoadLocalization();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning(ex.Message);
+            }
+        }
+
+        [HarmonyPrefix, HarmonyPatch(typeof(GuideManager), "Start")]
+        public static void GuideManagerStartPrefix(GuideManager __instance)
+        {
+            try
+            {
+                LoadGuideEntry(__instance);
             }
             catch (Exception ex)
             {
