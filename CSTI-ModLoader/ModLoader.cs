@@ -23,7 +23,7 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.3.3")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "1.3.5")]
     public class ModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -58,16 +58,16 @@ namespace ModLoader
 
         public struct ScriptableObjectPack
         {
-            public ScriptableObjectPack(ScriptableObject obj, string CardDir, string CardPath, string ModName, string CardData = "")
+            public ScriptableObjectPack(ScriptableObject obj, string CardDirOrGuid, string CardPath, string ModName, string CardData = "")
             {
                 this.obj = obj;
-                this.CardDir = CardDir;
+                this.CardDirOrGuid = CardDirOrGuid;
                 this.CardPath = CardPath;
                 this.ModName = ModName;
                 this.CardData = CardData;
             }
             public ScriptableObject obj;
-            public string CardDir;
+            public string CardDirOrGuid;
             public string CardPath;
             public string ModName;
             public string CardData;
@@ -85,6 +85,7 @@ namespace ModLoader
 
         private static List<Tuple<string, string>> WaitForLoadCSVList = new List<Tuple<string, string>>();
         private static List<Tuple<string, string, CardData>> WaitForAddBlueprintCard = new List<Tuple<string, string, CardData>>();
+        private static List<Tuple<string, CardData>> WaitForAddCardFilterGroupCard = new List<Tuple<string, CardData>>();
         private static List<Tuple<string, GameStat>> WaitForAddVisibleGameStat = new List<Tuple<string, GameStat>>();
         private static List<GuideEntry> WaitForAddGuideEntry = new List<GuideEntry>();
         private static List<Tuple<string, CharacterPerk>> WaitForAddPerkGroup = new List<Tuple<string, CharacterPerk>>();
@@ -193,19 +194,24 @@ namespace ModLoader
                         else if (SubchunkID == "data")
                         {
                             var data_len = (raw_data.Length - index);
-                            var data = new float[data_len / BolckAlign];
+                            var data = new float[data_len / BolckAlign * NumChannels];
 
-                            for (int i = 0; i < data.Length; i++)
+                            //Debug.LogFormat("{0} {1} {2} {3} {4} {5}", NumChannels, BolckAlign, BitsPerSample, data_len, data.Length, SubchunkSize);
+
+                            for (int i = 0; i < data.Length; i += NumChannels)
                             {
-                                if (BitsPerSample == 8)
-                                    data[i] = BitConverter.ToChar(raw_data, index + BolckAlign * i) / ((float)Char.MaxValue);
-                                else if (BitsPerSample == 16)
-                                    data[i] = (BitConverter.ToInt16(raw_data, index + BolckAlign * i)) / ((float)Int16.MaxValue);
-                                else if (BitsPerSample == 32)
-                                    data[i] = BitConverter.ToInt32(raw_data, index + BolckAlign * i) / ((float)Int32.MaxValue);
+                                for (int j = 0; j < NumChannels; j++)
+                                {
+                                    if (BitsPerSample == 8)
+                                        data[i + j] = BitConverter.ToChar(raw_data, index + BolckAlign * (i / NumChannels) + j) / ((float)Char.MaxValue);
+                                    else if (BitsPerSample == 16)
+                                        data[i + j] = (BitConverter.ToInt16(raw_data, index + BolckAlign * (i / NumChannels) + 2*j)) / ((float)Int16.MaxValue);
+                                    else if (BitsPerSample == 32)
+                                        data[i + j] = BitConverter.ToInt32(raw_data, index + BolckAlign * (i / NumChannels) + 4*j) / ((float)Int32.MaxValue);
+                                }
                             }
 
-                            clip = AudioClip.Create(clip_name, data.Length, 1, (int)SampleRate, false);
+                            clip = AudioClip.Create(clip_name, data.Length / NumChannels, NumChannels, (int)SampleRate, false);
                             clip.SetData(data, 0);
 
                             index += (int)SubchunkSize;
@@ -656,6 +662,8 @@ namespace ModLoader
                                 CardData = sr.ReadToEnd();
                             if (AllGUIDDict.TryGetValue(Guid, out var obj))
                                 WaitForWarpperEditorGameSourceGUIDList.Add(new ScriptableObjectPack(obj, "", "", ModName, CardData));
+                            else
+                                WaitForWarpperEditorGameSourceGUIDList.Add(new ScriptableObjectPack(null, Guid, "", ModName, CardData));
                         }
                     }
                     catch (Exception ex)
@@ -1023,7 +1031,9 @@ namespace ModLoader
                                         using (StreamReader sr = new StreamReader(CardPath))
                                             CardData = sr.ReadToEnd();
                                         if (AllGUIDDict.TryGetValue(Guid, out var obj))
-                                            WaitForWarpperEditorGameSourceGUIDList.Add(new ScriptableObjectPack(obj, modify_dir, CardPath, ModName, CardData));
+                                            WaitForWarpperEditorGameSourceGUIDList.Add(new ScriptableObjectPack(obj, "", "", ModName, CardData));
+                                        else
+                                            WaitForWarpperEditorGameSourceGUIDList.Add(new ScriptableObjectPack(null, Guid, "", ModName, CardData));
                                     }
                                 }
                             }
@@ -1085,7 +1095,7 @@ namespace ModLoader
 
                     if (item.Value.obj is CardData)
                     {
-                        CardDataWarpper warpper = new CardDataWarpper(item.Value.CardDir);
+                        CardDataWarpper warpper = new CardDataWarpper(item.Value.CardDirOrGuid);
                         using (StreamReader sr = new StreamReader(item.Value.CardPath))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                         warpper.WarpperCustomSelf(item.Value.obj as CardData);
@@ -1099,7 +1109,7 @@ namespace ModLoader
                     }
                     else if (item.Value.obj is CharacterPerk)
                     {
-                        CharacterPerkWarpper warpper = new CharacterPerkWarpper(item.Value.CardDir);
+                        CharacterPerkWarpper warpper = new CharacterPerkWarpper(item.Value.CardDirOrGuid);
                         using (StreamReader sr = new StreamReader(item.Value.CardPath))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                         warpper.WarpperCustomSelf(item.Value.obj as CharacterPerk);
@@ -1108,7 +1118,7 @@ namespace ModLoader
                     }
                     else if (item.Value.obj is GameStat)
                     {
-                        GameStatWarpper warpper = new GameStatWarpper(item.Value.CardDir);
+                        GameStatWarpper warpper = new GameStatWarpper(item.Value.CardDirOrGuid);
                         using (StreamReader sr = new StreamReader(item.Value.CardPath))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                         warpper.WarpperCustomSelf(item.Value.obj as GameStat);
@@ -1118,14 +1128,14 @@ namespace ModLoader
                     }
                     else if (item.Value.obj is Objective)
                     {
-                        ObjectiveWarpper warpper = new ObjectiveWarpper(item.Value.CardDir);
+                        ObjectiveWarpper warpper = new ObjectiveWarpper(item.Value.CardDirOrGuid);
                         using (StreamReader sr = new StreamReader(item.Value.CardPath))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                         warpper.WarpperCustomSelf(item.Value.obj as Objective);
                     }
                     else if (item.Value.obj is SelfTriggeredAction)
                     {
-                        SelfTriggeredActionWarpper warpper = new SelfTriggeredActionWarpper(item.Value.CardDir);
+                        SelfTriggeredActionWarpper warpper = new SelfTriggeredActionWarpper(item.Value.CardDirOrGuid);
                         using (StreamReader sr = new StreamReader(item.Value.CardPath))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                         warpper.WarpperCustomSelf(item.Value.obj as SelfTriggeredAction);
@@ -1161,6 +1171,11 @@ namespace ModLoader
                             for (int i = 0; i < json["ItemCardDataCardTabGpGroup"].Count; i++)
                                 if (json["ItemCardDataCardTabGpGroup"][i].IsString && dict.TryGetValue(json["ItemCardDataCardTabGpGroup"][i].ToString(), out var tab_group))
                                     (tab_group as CardTabGroup).IncludedCards.Add(item.Value.obj as CardData);
+
+                        if (json.ContainsKey("CardDataCardFilterGroup") && json["CardDataCardFilterGroup"].IsArray)
+                            for (int i = 0; i < json["CardDataCardFilterGroup"].Count; i++)
+                                if (json["CardDataCardFilterGroup"][i].IsString && !json["CardDataCardFilterGroup"][i].ToString().IsNullOrWhiteSpace())
+                                    WaitForAddCardFilterGroupCard.Add(new Tuple<string, CardData>(json["CardDataCardFilterGroup"][i].ToString(), item.Value.obj as CardData));
 
                         var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
                         if (FillDropsList != null)
@@ -1375,6 +1390,21 @@ namespace ModLoader
                 }
             }
         }
+        private static void AddCardFilterGroupOnce()
+        {
+            Dictionary<string, CardFilterGroup> CardFilterGroupDict = new Dictionary<string, CardFilterGroup>(); 
+
+            foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(CardFilterGroup)))
+            {
+                if (ele.GetType().Assembly != GameSrouceAssembly)
+                    continue;
+                CardFilterGroupDict.Add(ele.name, ele as CardFilterGroup);
+            }
+
+            foreach (var item in WaitForAddCardFilterGroupCard)
+                if (CardFilterGroupDict.TryGetValue(item.Item1, out var Filter))
+                    Filter.IncludedCards.Add(item.Item2);
+        }
 
         private static void WarpperAllGameSrouces()
         {
@@ -1387,7 +1417,7 @@ namespace ModLoader
 
                     if (item.obj is CardData)
                     {
-                        CardDataWarpper warpper = new CardDataWarpper(item.CardDir);
+                        CardDataWarpper warpper = new CardDataWarpper(item.CardDirOrGuid);
                         using (StreamReader sr = new StreamReader(item.CardPath))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                         warpper.WarpperCustomSelf(item.obj as CardData);
@@ -1399,14 +1429,14 @@ namespace ModLoader
                     }
                     else if (item.obj is CharacterPerk)
                     {
-                        CharacterPerkWarpper warpper = new CharacterPerkWarpper(item.CardDir);
+                        CharacterPerkWarpper warpper = new CharacterPerkWarpper(item.CardDirOrGuid);
                         using (StreamReader sr = new StreamReader(item.CardPath))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                         warpper.WarpperCustomSelf(item.obj as CharacterPerk);
                     }
                     else if (item.obj is GameStat)
                     {
-                        GameStatWarpper warpper = new GameStatWarpper(item.CardDir);
+                        GameStatWarpper warpper = new GameStatWarpper(item.CardDirOrGuid);
                         using (StreamReader sr = new StreamReader(item.CardPath))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                         warpper.WarpperCustomSelf(item.obj as GameStat);
@@ -1414,14 +1444,14 @@ namespace ModLoader
                     }
                     else if (item.obj is Objective)
                     {
-                        ObjectiveWarpper warpper = new ObjectiveWarpper(item.CardDir);
+                        ObjectiveWarpper warpper = new ObjectiveWarpper(item.CardDirOrGuid);
                         using (StreamReader sr = new StreamReader(item.CardPath))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                         warpper.WarpperCustomSelf(item.obj as Objective);
                     }
                     else if (item.obj is SelfTriggeredAction)
                     {
-                        SelfTriggeredActionWarpper warpper = new SelfTriggeredActionWarpper(item.CardDir);
+                        SelfTriggeredActionWarpper warpper = new SelfTriggeredActionWarpper(item.CardDirOrGuid);
                         using (StreamReader sr = new StreamReader(item.CardPath))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), warpper);
                         warpper.WarpperCustomSelf(item.obj as SelfTriggeredAction);
@@ -1437,10 +1467,19 @@ namespace ModLoader
         private static void WarpperAllEditorGameSrouces()
         {
             var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-            foreach (var item in WaitForWarpperEditorGameSourceGUIDList)
+            //foreach (var item in WaitForWarpperEditorGameSourceGUIDList)
+            for(int i = 0; i < WaitForWarpperEditorGameSourceGUIDList.Count; i++)
             {
+                var item = WaitForWarpperEditorGameSourceGUIDList[i];
                 try
                 {
+                    if(item.obj == null)
+                    {
+                        if (AllGUIDDict.TryGetValue(item.CardDirOrGuid, out var obj))
+                            item.obj = obj;
+                        else
+                            continue;
+                    }
                     ProcessingScriptableObjectPack = item;
 
                     JsonData json = new JsonData();
@@ -1878,6 +1917,8 @@ namespace ModLoader
                     AddCardTabGroupOnce(__instance);
 
                     CustomGameObjectFixed();
+
+                    AddCardFilterGroupOnce();
                     init_flag = true;
                 }
             }
