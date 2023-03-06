@@ -25,7 +25,7 @@ namespace DynamicModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.DynamicModLoader", "DynamicModLoader", "1.0.3")]
+    [BepInPlugin("Dop.plugin.CSTI.DynamicModLoader", "DynamicModLoader", "1.1.0")]
     public class DynamicModLoader : BaseUnityPlugin
     {
         public static System.Version PluginVersion;
@@ -37,11 +37,9 @@ namespace DynamicModLoader
         // GUID Dict
         public static Dictionary<string, UniqueIDScriptable> AllGUIDDict = new Dictionary<string, UniqueIDScriptable>();
         public static Dictionary<Type, Dictionary<string, UniqueIDScriptable>> AllGUIDTypeDict = new Dictionary<Type, Dictionary<string, UniqueIDScriptable>>();
-        // AllCardTagGuidCardDataDict[CardTag.name][Guid] = CardData
         public static Dictionary<string, Dictionary<string, CardData>> AllCardTagGuidCardDataDict = new Dictionary<string, Dictionary<string, CardData>>();
 
         // ScriptableObject Dict
-        // AllScriptableObjectDict[GUID or name] = ScriptableObject
         public static Dictionary<string, ScriptableObject> AllScriptableObjectDict = new Dictionary<string, ScriptableObject>();
         public static Dictionary<Type, Dictionary<string, ScriptableObject>> AllScriptableObjectWithoutGuidTypeDict = new Dictionary<Type, Dictionary<string, ScriptableObject>>();
         public static Dictionary<string, Type> ScriptableObjectKeyType = new Dictionary<string, Type>();
@@ -69,10 +67,8 @@ namespace DynamicModLoader
 
         public static ScriptableObjectPack ProcessingScriptableObjectPack = new ScriptableObjectPack();
 
-        //private static Dictionary<string, ScriptableObjectPack> WaitForWarpperGuidDict = new Dictionary<string, ScriptableObjectPack>();
         private static Dictionary<string, ScriptableObjectPack> WaitForWarpperEditorGuidDict = new Dictionary<string, ScriptableObjectPack>();
         private static List<ScriptableObjectPack> WaitForWarpperEditorNoGuidlist = new List<ScriptableObjectPack>();
-        //private static List<ScriptableObjectPack> WaitForWarpperGameSourceGUIDList = new List<ScriptableObjectPack>();
         private static List<ScriptableObjectPack> WaitForWarpperEditorGameSourceGUIDList = new List<ScriptableObjectPack>();
         private static List<ScriptableObjectPack> WaitForMatchAndWarpperEditorGameSourceList = new List<ScriptableObjectPack>();
 
@@ -98,6 +94,10 @@ namespace DynamicModLoader
             WaitForWarpperEditorNoGuidlist.Clear();
             WaitForLoadCSVList.Clear();
             WaitForWarpperEditorGameSourceGUIDList.Clear();
+            WaitForMatchAndWarpperEditorGameSourceList.Clear();
+            WaitForAddBlueprintCard.Clear();
+            WaitForAddVisibleGameStat.Clear();
+            WaitForAddPerkGroup.Clear();
 
             WaitForAddCardTabGroup.Clear();
             WaitForAddJournalPlayerCharacter.Clear();
@@ -126,47 +126,10 @@ namespace DynamicModLoader
             return paths.Aggregate(Path.Combine);
         }
 
-        public static bool IsSubDirectory(string dir, string parent_dir)
-        {
-            DirectoryInfo di1 = new DirectoryInfo(parent_dir);
-            DirectoryInfo di2 = new DirectoryInfo(dir);
-            bool isParent = false;
-            while (di2.Parent != null)
-            {
-                if (di2.Parent.FullName == di1.FullName)
-                {
-                    isParent = true;
-                    break;
-                }
-                else di2 = di2.Parent;
-            }
-            return isParent;
-        }
-
         public static void LogErrorWithModInfo(string error_info)
         {
             Debug.LogWarning(string.Format("{0}.{1} Error: {2}", ProcessingScriptableObjectPack.ModName, ProcessingScriptableObjectPack.obj.name, error_info));
         }
-
-        //static IEnumerator GetDataRequest(string ModName, string file)
-        //{
-        //    var audio_name = Path.GetFileNameWithoutExtension(file);
-        //    var request = UnityEngine.Networking.UnityWebRequestMultimedia.GetAudioClip(file, AudioType.WAV);
-
-        //    yield return request.SendWebRequest();
-
-        //    if (request.isNetworkError)
-        //        Debug.LogWarningFormat("Load Resource Custom Audio Error {0}", request.error);
-        //    else
-        //    {
-        //        AudioClip clip = DownloadHandlerAudioClip.GetContent(request);
-        //        clip.name = audio_name;
-        //        if (!AudioClipDict.ContainsKey(audio_name))
-        //            AudioClipDict.Add(audio_name, clip);
-        //        else
-        //            UnityEngine.Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}", ModName, audio_name);
-        //    }
-        //}
 
         public static AudioClip GetAudioClipFromWav(byte[] raw_data, string clip_name)
         {
@@ -208,19 +171,24 @@ namespace DynamicModLoader
                         else if (SubchunkID == "data")
                         {
                             var data_len = (raw_data.Length - index);
-                            var data = new float[data_len / BolckAlign];
+                            var data = new float[data_len / BolckAlign * NumChannels];
 
-                            for (int i = 0; i < data.Length; i++)
+                            //Debug.LogFormat("{0} {1} {2} {3} {4} {5}", NumChannels, BolckAlign, BitsPerSample, data_len, data.Length, SubchunkSize);
+
+                            for (int i = 0; i < data.Length; i += NumChannels)
                             {
-                                if (BitsPerSample == 8)
-                                    data[i] = BitConverter.ToChar(raw_data, index + BolckAlign * i) / ((float)Char.MaxValue);
-                                else if (BitsPerSample == 16)
-                                    data[i] = (BitConverter.ToInt16(raw_data, index + BolckAlign * i)) / ((float)Int16.MaxValue);
-                                else if (BitsPerSample == 32)
-                                    data[i] = BitConverter.ToInt32(raw_data, index + BolckAlign * i) / ((float)Int32.MaxValue);
+                                for (int j = 0; j < NumChannels; j++)
+                                {
+                                    if (BitsPerSample == 8)
+                                        data[i + j] = BitConverter.ToChar(raw_data, index + BolckAlign * (i / NumChannels) + j) / ((float)Char.MaxValue);
+                                    else if (BitsPerSample == 16)
+                                        data[i + j] = (BitConverter.ToInt16(raw_data, index + BolckAlign * (i / NumChannels) + 2 * j)) / ((float)Int16.MaxValue);
+                                    else if (BitsPerSample == 32)
+                                        data[i + j] = BitConverter.ToInt32(raw_data, index + BolckAlign * (i / NumChannels) + 4 * j) / ((float)Int32.MaxValue);
+                                }
                             }
 
-                            clip = AudioClip.Create(clip_name, data.Length, 1, (int)SampleRate, false);
+                            clip = AudioClip.Create(clip_name, data.Length / NumChannels, NumChannels, (int)SampleRate, false);
                             clip.SetData(data, 0);
 
                             index += (int)SubchunkSize;
@@ -352,7 +320,7 @@ namespace DynamicModLoader
                         if (!Info.Name.IsNullOrWhiteSpace())
                             ModName = Info.Name;
 
-                        UnityEngine.Debug.Log(string.Format("ModLoader Load Mod {0} {1}", ModName, Info.Version));
+                        UnityEngine.Debug.Log(string.Format("DynamicModLoader Load Mod {0} {1}", ModName, Info.Version));
 
                         // Check Verison
                         //System.Version ModRequestVersion = System.Version.Parse(Info.ModLoaderVerison);
@@ -1191,8 +1159,8 @@ namespace DynamicModLoader
 
 
 
-        [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "LoadGameData"), HarmonyBefore(new string[] { "Dop.plugin.CSTI.ModLoader" })]
-        public static void GameLoadLoadGameDataPostfix(GameLoad __instance)
+        [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "LoadOptions"), HarmonyBefore(new string[] { "Dop.plugin.CSTI.ModLoader" })]
+        public static void GameLoadLoadOptionsPostfix(GameLoad __instance)
         {
             try
             {
