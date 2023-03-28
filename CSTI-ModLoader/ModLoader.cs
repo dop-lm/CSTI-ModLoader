@@ -1075,7 +1075,10 @@ namespace ModLoader
                             {
                                 string newText = keyValuePair.Value[isChineseLanguage ? 1 : 0];
 
-                                CurrentTexts.Add(keyValuePair.Key, regex.Replace(newText, "\n"));
+                                if (!string.IsNullOrEmpty(newText))
+                                {
+                                    CurrentTexts.Add(keyValuePair.Key, regex.Replace(newText, "\n"));
+                                }
                             }
                         }
                     }
