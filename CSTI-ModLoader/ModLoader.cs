@@ -1058,30 +1058,31 @@ namespace ModLoader
 
         private static void LoadLocalization()
         {
-            if (MBSingleton<LocalizationManager>.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "简体中文")
+            bool isChineseLanguage = MBSingleton<LocalizationManager>.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "简体中文";
+
+            foreach (var pair in WaitForLoadCSVList)
             {
-                foreach (var pair in WaitForLoadCSVList)
+                try
                 {
-                    try
+                    if (pair.Item1.Contains("SimpCn"))
                     {
-                        if (pair.Item1.Contains("SimpCn"))
+                        var CurrentTexts = Traverse.Create(MBSingleton<LocalizationManager>.Instance).Field("CurrentTexts").GetValue() as Dictionary<string, string>;
+                        Dictionary<string, List<string>> dictionary = CSVParser.LoadFromString(pair.Item2, Delimiter.Comma);
+                        System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex("\\\\n");
+                        foreach (KeyValuePair<string, List<string>> keyValuePair in dictionary)
                         {
-                            var CurrentTexts = Traverse.Create(MBSingleton<LocalizationManager>.Instance).Field("CurrentTexts").GetValue() as Dictionary<string, string>;
-                            Dictionary<string, List<string>> dictionary = CSVParser.LoadFromString(pair.Item2, Delimiter.Comma);
-                            System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex("\\\\n");
-                            foreach (KeyValuePair<string, List<string>> keyValuePair in dictionary)
+                            if (!CurrentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
                             {
-                                if (!CurrentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
-                                {
-                                    CurrentTexts.Add(keyValuePair.Key, regex.Replace(keyValuePair.Value[1], "\n"));
-                                }
+                                string newText = keyValuePair.Value[isChineseLanguage ? 1 : 0];
+
+                                CurrentTexts.Add(keyValuePair.Key, regex.Replace(newText, "\n"));
                             }
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Debug.LogWarning("LoadLocalization " + ex.Message);
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning("LoadLocalization " + ex.Message);
                 }
             }
         }
