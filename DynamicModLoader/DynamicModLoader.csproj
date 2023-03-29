@@ -34,7 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>..\..\..\..\Games\Card Survival Tropical Island  1.01r\BepInEx\core\0Harmony.dll</HintPath>
+      <HintPath>..\..\..\..\App\Libs\BepInEx\0Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
@@ -42,11 +42,11 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="BepInEx">
-      <HintPath>..\..\..\..\Games\Card Survival Tropical Island  1.01r\BepInEx\core\BepInEx.dll</HintPath>
+      <HintPath>..\..\..\..\App\Libs\BepInEx\BepInEx.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="BepInEx.Harmony">
-      <HintPath>..\..\..\..\Games\Card Survival Tropical Island  1.01r\BepInEx\core\BepInEx.Harmony.dll</HintPath>
+      <HintPath>..\..\..\..\App\Libs\BepInEx\BepInEx.Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="DotNetZip">

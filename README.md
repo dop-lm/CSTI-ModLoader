@@ -37,3 +37,7 @@ CSTI-ModLoader是卡片生存游戏Card Survival: Tropical Island的一个通用
 * 增加对已有卡片的修改功能
 * 编写GUI的JSON-MOD编辑工具，准备起名叫CSTI-ModEditor
 * 增加自定义音效
+
+# 分支说明
+因为dop并未使用nstrip或类似工具避免反射，所以单独开了个分支
+引用dll的路径也有所不同
