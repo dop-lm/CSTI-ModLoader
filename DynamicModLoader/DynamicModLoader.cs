@@ -805,7 +805,8 @@ namespace DynamicModLoader
                     {
                         if (pair.Item1.Contains("SimpCn"))
                         {
-                            var CurrentTexts = LocalizationManager.CurrentTexts;
+                            var CurrentTexts = AccessTools.StaticFieldRefAccess<Dictionary<string, string>>(
+                                typeof(LocalizationManager), "CurrentTexts");
                             Dictionary<string, List<string>> dictionary =
                                 CSVParser.LoadFromString(pair.Item2, Delimiter.Comma);
                             System.Text.RegularExpressions.Regex regex =

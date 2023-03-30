@@ -1097,7 +1097,11 @@ namespace ModLoader
                         var sprite = Sprite.Create(texture2D, new Rect(0, 0, texture2D.width, texture2D.height),
                             Vector2.zero);
                         sprite.name = name;
-                        SpriteDict[sprite.name] = sprite;
+                        if (!SpriteDict.ContainsKey(name))
+                            SpriteDict.Add(name, sprite);
+                        else
+                            Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName,
+                                name);
                     }
                 }
 
@@ -1125,19 +1129,14 @@ namespace ModLoader
                                 continue;
                             }
 
-                            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-                            var card = type
-                                .GetMethod("CreateInstance",
-                                    bindingFlags | BindingFlags.Static | BindingFlags.FlattenHierarchy, null,
-                                    new[] {typeof(Type)}, null).Invoke(null, new object[] {type});
+                            var card = ScriptableObject.CreateInstance(type);
                             JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                             JsonUtility.FromJsonOverwrite(CardData, card);
 
-                            type.GetProperty("name", bindingFlags).GetSetMethod(true)
-                                .Invoke(card, new object[] {modName + "_" + CardName});
+                            card.name = modName + "_" + CardName;
                             //type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
 
-                            var card_guid = type.GetField("UniqueID", bindingFlags).GetValue(card) as string;
+                            var card_guid = Traverse.Create(card).Field<string>("UniqueID").Value;
                             AllGUIDDict.Add(card_guid, card as UniqueIDScriptable);
                             GameLoad.Instance.DataBase.AllData.Add(card as UniqueIDScriptable);
 
@@ -1301,7 +1300,9 @@ namespace ModLoader
                     {
                         if (pair.Item1.Contains("SimpCn"))
                         {
-                            var CurrentTexts = LocalizationManager.CurrentTexts;
+                            var CurrentTexts =
+                                AccessTools.StaticFieldRefAccess<Dictionary<string, string>>(
+                                    typeof(LocalizationManager), "CurrentTexts");
                             Dictionary<string, List<string>> dictionary = CSVParser.LoadFromString(pair.Item2);
                             foreach (var keyValuePair in dictionary)
                             {
@@ -1331,7 +1332,8 @@ namespace ModLoader
                     {
                         if (pair.Item1.Contains("SimpEn"))
                         {
-                            var CurrentTexts = LocalizationManager.CurrentTexts;
+                            var CurrentTexts = AccessTools.StaticFieldRefAccess<Dictionary<string, string>>(
+                                typeof(LocalizationManager), "CurrentTexts");
                             Dictionary<string, List<string>> dictionary = CSVParser.LoadFromString(pair.Item2);
                             foreach (var keyValuePair in dictionary)
                             {
@@ -1741,10 +1743,11 @@ namespace ModLoader
                             continue;
                         }
 
-                        var pages = displayer.ExplicitPageContent;
+                        var tDisplayer = Traverse.Create(displayer);
+                        var pages = tDisplayer.Field<List<ContentPage>>("ExplicitPageContent").Value;
                         pages.Clear();
                         pages.Add(modPage);
-                        displayer.DefaultPage = modPage;
+                        tDisplayer.Field<ContentPage>("DefaultPage").Value = modPage;
 
                         var name_parts = item.obj.name.Split('_');
                         if (name_parts.Length > 2)
