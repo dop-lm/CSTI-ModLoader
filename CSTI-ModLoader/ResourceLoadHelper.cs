@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using BepInEx;
 using JetBrains.Annotations;
@@ -85,6 +86,16 @@ namespace ModLoader
             }
 
             return Task.Run(loadInner);
+        }
+    }
+
+    public class SimpleOnce
+    {
+        private int OnceStat;
+
+        public bool DoOnce()
+        {
+            return Interlocked.CompareExchange(ref OnceStat, 1, 0) == 0;
         }
     }
 }

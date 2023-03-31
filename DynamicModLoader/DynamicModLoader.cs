@@ -776,7 +776,7 @@ namespace DynamicModLoader
                             foreach (var pair in dict)
                             {
                                 var mode = pair.Value as Gamemode;
-                                Array.Resize<PlayerCharacter>(ref mode.PlayableCharacters,
+                                Array.Resize(ref mode.PlayableCharacters,
                                     mode.PlayableCharacters.Length + 1);
                                 mode.PlayableCharacters[mode.PlayableCharacters.Length - 1] =
                                     item.Value.obj as PlayerCharacter;
@@ -896,7 +896,7 @@ namespace DynamicModLoader
                         if (dict.TryGetValue(tuple.Item1, out var group))
                         {
                             var obj = group as PerkGroup;
-                            Array.Resize<CharacterPerk>(ref obj.PerksList, obj.PerksList.Length + 1);
+                            Array.Resize(ref obj.PerksList, obj.PerksList.Length + 1);
                             obj.PerksList[obj.PerksList.Length - 1] = tuple.Item2;
                         }
                     }
@@ -926,7 +926,7 @@ namespace DynamicModLoader
 
                     if (obj.SubGroups.Count != 0)
                     {
-                        Array.Resize<CardTabGroup>(ref instance.BlueprintModelsPopup.BlueprintTabs,
+                        Array.Resize(ref instance.BlueprintModelsPopup.BlueprintTabs,
                             instance.BlueprintModelsPopup.BlueprintTabs.Length + 1);
                         instance.BlueprintModelsPopup.BlueprintTabs[
                             instance.BlueprintModelsPopup.BlueprintTabs.Length - 1] = obj;

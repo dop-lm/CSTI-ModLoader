@@ -63,6 +63,7 @@
       <HintPath>..\..\Libs\LitJson.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="UnityEngine">
       <HintPath>..\..\Libs\UnityEngine.dll</HintPath>
       <Private>False</Private>
