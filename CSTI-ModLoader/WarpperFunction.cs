@@ -302,7 +302,27 @@ namespace ModLoader
                                     {
                                         if (json[field_name + "WarpData"][i].IsObject)
                                         {
-                                            var target_obj = instance.GetValue(i);
+                                            object target_obj = null;
+                                            try
+                                            {
+                                                target_obj = instance.GetValue(i);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                var id = "NullId";
+                                                if (obj is UniqueIDScriptable uniqueIDScriptable)
+                                                {
+                                                    id = uniqueIDScriptable.UniqueID;
+                                                }
+                                                else if(obj is ScriptableObject scriptableObject)
+                                                {
+                                                    id = scriptableObject.name;
+                                                }else if (obj is CardAction cardAction)
+                                                {
+                                                    id = cardAction.ActionName.ParentObjectID;
+                                                }
+                                                Debug.LogWarning($"On access {id}::{obj_type}.{field_name} : {e}");
+                                            }
                                             JsonCommonWarpper(target_obj, json[field_name + "WarpData"][i]);
                                             instance.SetValue(target_obj, i);
                                         }
@@ -394,7 +414,25 @@ namespace ModLoader
                                         if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
                                             break;
                                         var array = getter(obj) as Array;
-                                        var ele = array.GetValue(i);
+                                        object ele = null;
+                                        try
+                                        {
+                                            ele = array.GetValue(i);
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            var id = "NullId";
+                                            if (obj is UniqueIDScriptable uniqueIDScriptable)
+                                            {
+                                                id = uniqueIDScriptable.UniqueID;
+                                            }
+                                            else if(obj is ScriptableObject scriptableObject)
+                                            {
+                                                id = scriptableObject.name;
+                                            }
+                                            Debug.LogWarning($"On access {id}::{obj_type}.{field_name} : {e}");
+                                        }
+
                                         if (ele == null)
                                             continue;
                                         JsonCommonWarpper(ele, json[key][i]);
@@ -535,7 +573,7 @@ namespace ModLoader
                 FieldInfoCache[type] = new Dictionary<string, FieldInfo> {{field_name, fieldInfo}};
             }
 
-            if (fieldInfo!=null&&getter_use)
+            if (fieldInfo != null && getter_use)
             {
                 if (FieldGetterDynamicMethodCache.ContainsKey(type))
                 {
@@ -558,7 +596,7 @@ namespace ModLoader
                 }
             }
 
-            if (fieldInfo!=null&&setter_use)
+            if (fieldInfo != null && setter_use)
             {
                 if (FieldSetterDynamicMethodCache.ContainsKey(type))
                 {

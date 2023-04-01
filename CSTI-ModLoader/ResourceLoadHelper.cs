@@ -47,7 +47,7 @@ namespace ModLoader
                 select type;
             foreach (var type in subclasses)
             {
-                if (!Directory.Exists(Path.Combine(dir, type.Name)))
+                if (!Directory.Exists(ModLoader.CombinePaths(dir, type.Name)))
                     continue;
                 if (Info.ModEditorVersion.IsNullOrWhiteSpace())
                 {
@@ -91,11 +91,21 @@ namespace ModLoader
 
     public class SimpleOnce
     {
-        private int OnceStat;
+        private long OnceStat;
 
         public bool DoOnce()
         {
             return Interlocked.CompareExchange(ref OnceStat, 1, 0) == 0;
+        }
+
+        public bool SetDone()
+        {
+            return Interlocked.CompareExchange(ref OnceStat, 2, 1) == 1;
+        }
+
+        public bool Done()
+        {
+            return Interlocked.Read(ref OnceStat) == 2;
         }
     }
 }

@@ -22,7 +22,7 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.0.3")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.0.4")]
     public class ModLoader : BaseUnityPlugin
     {
         public static Version PluginVersion;
@@ -117,19 +117,19 @@ namespace ModLoader
             var harmony = new Harmony(Info.Metadata.GUID);
             PluginVersion = Version.Parse(Info.Metadata.Version.ToString());
 
-            // var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public |
-            //                    BindingFlags.Static;
+            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public |
+                               BindingFlags.Static;
 
             try
             {
                 // var UniqueIDScriptableClearDictPrefixMethod =
                 //     new HarmonyMethod(typeof(ModLoader).GetMethod("UniqueIDScriptableClearDictPrefix"));
                 var UniqueIDScriptableClearDictPrefixMethod =
-                    new HarmonyMethod(AccessTools.Method(typeof(ModLoader), nameof(UniqueIDScriptableClearDictPrefix)));
+                    new HarmonyMethod(typeof(ModLoader), nameof(UniqueIDScriptableClearDictPrefix));
                 // harmony.Patch(typeof(UniqueIDScriptable).GetMethod("ClearDict", bindingFlags),
                 //     prefix: UniqueIDScriptableClearDictPrefixMethod);
                 harmony.Patch(AccessTools.Method(typeof(UniqueIDScriptable), "ClearDict"),
-                    postfix: UniqueIDScriptableClearDictPrefixMethod);
+                    prefix: UniqueIDScriptableClearDictPrefixMethod);
             }
             catch (Exception ex)
             {
@@ -141,8 +141,8 @@ namespace ModLoader
                 // var LocalizationManagerLoadLanguagePostfixMethod =
                 //     new HarmonyMethod(typeof(ModLoader).GetMethod("LocalizationManagerLoadLanguagePostfix"));
                 var LocalizationManagerLoadLanguagePostfixMethod =
-                    new HarmonyMethod(AccessTools.Method(typeof(ModLoader),
-                        nameof(LocalizationManagerLoadLanguagePostfix)));
+                    new HarmonyMethod(typeof(ModLoader),
+                        nameof(LocalizationManagerLoadLanguagePostfix));
                 // harmony.Patch(typeof(LocalizationManager).GetMethod("LoadLanguage", bindingFlags),
                 //     postfix: LocalizationManagerLoadLanguagePostfixMethod);
                 harmony.Patch(AccessTools.Method(typeof(LocalizationManager), "LoadLanguage"),
@@ -158,11 +158,11 @@ namespace ModLoader
                 // var GuideManagerStartPrefixMethod =
                 //     new HarmonyMethod(typeof(ModLoader).GetMethod("GuideManagerStartPrefix"));
                 var GuideManagerStartPrefixMethod =
-                    new HarmonyMethod(AccessTools.Method(typeof(ModLoader), nameof(GuideManagerStartPrefix)));
+                    new HarmonyMethod(typeof(ModLoader), nameof(GuideManagerStartPrefix));
                 // harmony.Patch(typeof(GuideManager).GetMethod("Start", bindingFlags),
                 //     prefix: GuideManagerStartPrefixMethod);
                 harmony.Patch(AccessTools.Method(typeof(GuideManager), "Start"),
-                    postfix: GuideManagerStartPrefixMethod);
+                    prefix: GuideManagerStartPrefixMethod);
             }
             catch (Exception ex)
             {
@@ -174,7 +174,7 @@ namespace ModLoader
                 // var GraphicsManagerInitPostfixMethod =
                 //     new HarmonyMethod(typeof(ModLoader).GetMethod("GraphicsManagerInitPostfix"));
                 var GraphicsManagerInitPostfixMethod =
-                    new HarmonyMethod(AccessTools.Method(typeof(ModLoader), nameof(GraphicsManagerInitPostfix)));
+                    new HarmonyMethod(typeof(ModLoader), nameof(GraphicsManagerInitPostfix));
                 // harmony.Patch(typeof(GraphicsManager).GetMethod("Init", bindingFlags),
                 //     postfix: GraphicsManagerInitPostfixMethod);
                 harmony.Patch(AccessTools.Method(typeof(GraphicsManager), "Init"),
@@ -183,6 +183,16 @@ namespace ModLoader
             catch (Exception ex)
             {
                 Debug.LogWarningFormat("{0} {1}", "GraphicsManagerInitPostfix", ex);
+            }
+
+            try
+            {
+                var fixFXMaskAwake = new HarmonyMethod(typeof(ModLoader), nameof(FixFXMaskAwake));
+                harmony.Patch(AccessTools.Method(typeof(FXMask), "Awake"), prefix: fixFXMaskAwake);
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning(e);
             }
 
 
@@ -805,8 +815,12 @@ namespace ModLoader
                     // Load Pictures
                     try
                     {
-                        var files = Directory.GetFiles(CombinePaths(dir, "Resource", "Picture"));
-                        spritesWaitList.Add(ResourceLoadHelper.LoadPictures(ModName, files));
+                        var picPath = CombinePaths(dir, "Resource", "Picture");
+                        if (Directory.Exists(picPath))
+                        {
+                            var files = Directory.GetFiles(picPath);
+                            spritesWaitList.Add(ResourceLoadHelper.LoadPictures(ModName, files));
+                        }
                     }
                     catch (Exception e)
                     {
@@ -1195,9 +1209,9 @@ namespace ModLoader
                                 item.CardData));
                     }
 
-                    if (item.obj is GuideEntry)
+                    if (item.obj is GuideEntry entry)
                     {
-                        WaitForAddGuideEntry.Add(item.obj as GuideEntry);
+                        WaitForAddGuideEntry.Add(entry);
                     }
                 }
                 catch (Exception ex)
@@ -1207,8 +1221,15 @@ namespace ModLoader
             }
         }
 
+        private static readonly SimpleOnce _onceWarp = new SimpleOnce();
+
         private static void WarpperAllEditorMods()
         {
+            if (!_onceWarp.DoOnce())
+            {
+                return;
+            }
+
             // var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
             foreach (var item in WaitForWarpperEditorGuidDict)
             {
@@ -1292,6 +1313,8 @@ namespace ModLoader
                     Debug.LogWarning("WarpperAllEditorMods " + ex.Message);
                 }
             }
+
+            _onceWarp.SetDone();
         }
 
         private static void LoadLocalization()
@@ -1584,6 +1607,35 @@ namespace ModLoader
             }
         }
 
+        private static IEnumerator FXMaskPostAwake(FXMask instance)
+        {
+            while (!AmbienceImageEffect.Instance)
+            {
+                yield return null;
+            }
+
+            var tInstance = Traverse.Create(instance);
+            tInstance.Field<RectTransform>("MyRectTr").Value = instance.GetComponent<RectTransform>();
+            tInstance.Field<AmbienceImageEffect>("AmbienceEffects").Value = AmbienceImageEffect.Instance;
+            var fieldMaskObject = tInstance.Field<SpriteMask>("MaskObject");
+            fieldMaskObject.Value = Instantiate(AmbienceImageEffect.Instance.MaskPrefab,
+                AmbienceImageEffect.Instance.WeatherEffectsParent);
+            if (GameManager.DontRenameGOs)
+                yield break;
+            fieldMaskObject.Value.name = instance.name + "_Mask";
+        }
+
+        private static bool FixFXMaskAwake(FXMask __instance)
+        {
+            if (!AmbienceImageEffect.Instance)
+            {
+                __instance.StartCoroutine(FXMaskPostAwake(__instance));
+                return false;
+            }
+
+            return true;
+        }
+
         private static void MatchAndWarpperAllEditorGameSrouce()
         {
             foreach (var item in AllGUIDDict.Values)
@@ -1661,12 +1713,7 @@ namespace ModLoader
         static IEnumerator WaiterForContentDisplayer()
         {
             bool done = false;
-            while (!AmbienceImageEffect.Instance)
-            {
-                yield return null;
-            }
-
-            while (!done)
+            while (true)
             {
                 var objs = Resources.FindObjectsOfTypeAll<ContentDisplayer>();
 
@@ -1675,9 +1722,11 @@ namespace ModLoader
                     if (obj.gameObject.name == "JournalTourist")
                     {
                         ContentDisplayer displayer = null;
+                        GameObject clone = null;
                         try
                         {
-                            displayer = Instantiate(obj);
+                            clone = Instantiate(obj.gameObject);
+                            displayer = clone.GetComponent<ContentDisplayer>();
                         }
                         catch (Exception ex)
                         {
@@ -1686,7 +1735,6 @@ namespace ModLoader
 
                         if (displayer == null)
                             break;
-                        var clone = displayer.gameObject;
                         clone.name = "JournalDefaultSample";
                         clone.hideFlags = HideFlags.HideAndDontSave;
                         CustomGameObjectListDict.Add(clone.name, clone);
@@ -1716,6 +1764,11 @@ namespace ModLoader
                 {
                     Debug.LogWarning("CustomContentDisplayerDict Warning " + ex.Message);
                 }
+            }
+
+            while (!_onceWarp.Done())
+            {
+                yield return null;
             }
 
             foreach (var item in WaitForAddDefaultContentPage)
@@ -1921,7 +1974,7 @@ namespace ModLoader
                             }
 
                             var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
-                            // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card); // useless
+                            // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                             JsonUtility.FromJsonOverwrite(CardData, card);
 
                             card.name = modName + "_" + CardName;
@@ -1959,7 +2012,8 @@ namespace ModLoader
         }
 
         // Patch
-        private static readonly SimpleOnce _once = new SimpleOnce();
+
+        private static SimpleOnce _once = new SimpleOnce();
 
         public static void UniqueIDScriptableClearDictPrefix()
         {
@@ -1979,11 +2033,11 @@ namespace ModLoader
 
                 LoadModsFromZip();
 
+                LoadFromPreLoadData();
+
                 LoadEditorScriptableObject();
 
                 LoadLocalization();
-
-                LoadFromPreLoadData();
 
                 System.Diagnostics.Stopwatch stopwatch1 = new System.Diagnostics.Stopwatch();
                 stopwatch1.Start();
@@ -2001,6 +2055,7 @@ namespace ModLoader
 
                 stopwatch.Stop();
                 Debug.Log("ModLoader Time taken: " + (stopwatch.Elapsed));
+                _once.SetDone();
             }
             catch (Exception ex)
             {
