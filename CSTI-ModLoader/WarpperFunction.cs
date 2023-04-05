@@ -2,10 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Reflection.Emit;
-using HarmonyLib;
 using LitJson;
 using UnityEngine;
 using Object = System.Object;
@@ -134,7 +130,7 @@ namespace ModLoader
                             (int) json[key] == (int) WarpType.ADD_REFERENCE)
                         {
                             var field_name = key.Substring(0, key.Length - 8);
-                            var (field, _, _) = FieldFromCache(obj_type, field_name, getter_use: false,
+                            var (field, _, _) = obj_type.FieldFromCache(field_name, getter_use: false,
                                 setter_use: false);
                             var field_type = field.FieldType;
 
@@ -187,7 +183,7 @@ namespace ModLoader
                         else if ((int) json[key] == (int) WarpType.ADD)
                         {
                             var field_name = key.Substring(0, key.Length - 8);
-                            var (field, getter, setter) = FieldFromCache(obj_type, field_name);
+                            var (field, getter, setter) = obj_type.FieldFromCache(field_name);
                             var field_type = field.FieldType;
 
                             if (json[field_name + "WarpData"].IsArray)
@@ -236,14 +232,7 @@ namespace ModLoader
                                                 "CommonWarpper ADD Wrong SubWarpData Format " + field_type.Name);
                                     }
 
-                                    if (obj_type.IsValueType)
-                                    {
-                                        field.SetValue(obj, instance);
-                                    }
-                                    else
-                                    {
-                                        setter(obj, instance);
-                                    }
+                                    setter(obj, instance);
                                 }
                                 else
                                 {
@@ -260,21 +249,14 @@ namespace ModLoader
                         else if ((int) json[key] == (int) WarpType.MODIFY)
                         {
                             var field_name = key.Substring(0, key.Length - 8);
-                            var (field, getter, setter) = FieldFromCache(obj_type, field_name);
+                            var (field, getter, setter) = obj_type.FieldFromCache(field_name);
                             var field_type = field.FieldType;
 
                             if (json[field_name + "WarpData"].IsObject)
                             {
                                 var target_obj = getter(obj);
                                 JsonCommonWarpper(target_obj, json[field_name + "WarpData"]);
-                                if (obj_type.IsValueType)
-                                {
-                                    field.SetValue(obj, target_obj);
-                                }
-                                else
-                                {
-                                    setter(obj, target_obj);
-                                }
+                                setter(obj, target_obj);
                             }
                             else if (json[field_name + "WarpData"].IsArray)
                             {
@@ -314,15 +296,18 @@ namespace ModLoader
                                                 {
                                                     id = uniqueIDScriptable.UniqueID;
                                                 }
-                                                else if(obj is ScriptableObject scriptableObject)
+                                                else if (obj is ScriptableObject scriptableObject)
                                                 {
                                                     id = scriptableObject.name;
-                                                }else if (obj is CardAction cardAction)
+                                                }
+                                                else if (obj is CardAction cardAction)
                                                 {
                                                     id = cardAction.ActionName.ParentObjectID;
                                                 }
+
                                                 Debug.LogWarning($"On access {id}::{obj_type}.{field_name} : {e}");
                                             }
+
                                             JsonCommonWarpper(target_obj, json[field_name + "WarpData"][i]);
                                             instance.SetValue(target_obj, i);
                                         }
@@ -331,14 +316,7 @@ namespace ModLoader
                                                 "CommonWarpper MODIFY Wrong SubWarpData Format " + field_type.Name);
                                     }
 
-                                    if (obj_type.IsValueType)
-                                    {
-                                        field.SetValue(obj, instance);
-                                    }
-                                    else
-                                    {
-                                        setter(obj, instance);
-                                    }
+                                    setter(obj, instance);
                                 }
                                 else
                                 {
@@ -364,24 +342,17 @@ namespace ModLoader
                         if ((json[key].IsObject))
                         {
                             var field_name = key;
-                            var (field, getter, setter) = FieldFromCache(obj_type, field_name);
+                            var (field, getter, setter) = obj_type.FieldFromCache(field_name);
                             if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
                                 continue;
                             var sub_obj = getter(obj);
                             JsonCommonWarpper(sub_obj, json[key]);
-                            if (obj_type.IsValueType)
-                            {
-                                field.SetValue(obj, sub_obj);
-                            }
-                            else
-                            {
-                                setter(obj, sub_obj);
-                            }
+                            setter(obj, sub_obj);
                         }
                         else if (json[key].IsArray)
                         {
                             var field_name = key;
-                            var (field, getter, setter) = FieldFromCache(obj_type, field_name);
+                            var (field, getter, setter) = obj_type.FieldFromCache(field_name);
 
                             for (int i = 0; i < json[key].Count; i++)
                             {
@@ -399,14 +370,7 @@ namespace ModLoader
                                             continue;
                                         JsonCommonWarpper(ele, json[key][i]);
                                         list[i] = ele;
-                                        if (obj_type.IsValueType)
-                                        {
-                                            field.SetValue(obj, list);
-                                        }
-                                        else
-                                        {
-                                            setter(obj, list);
-                                        }
+                                        setter(obj, list);
                                     }
                                     else if (field.FieldType.IsArray)
                                     {
@@ -426,10 +390,11 @@ namespace ModLoader
                                             {
                                                 id = uniqueIDScriptable.UniqueID;
                                             }
-                                            else if(obj is ScriptableObject scriptableObject)
+                                            else if (obj is ScriptableObject scriptableObject)
                                             {
                                                 id = scriptableObject.name;
                                             }
+
                                             Debug.LogWarning($"On access {id}::{obj_type}.{field_name} : {e}");
                                         }
 
@@ -437,14 +402,7 @@ namespace ModLoader
                                             continue;
                                         JsonCommonWarpper(ele, json[key][i]);
                                         array.SetValue(ele, i);
-                                        if (obj_type.IsValueType)
-                                        {
-                                            field.SetValue(obj, array);
-                                        }
-                                        else
-                                        {
-                                            setter(obj, array);
-                                        }
+                                        setter(obj, array);
                                     }
                                 }
                             }
@@ -470,15 +428,8 @@ namespace ModLoader
             {
                 try
                 {
-                    var (field, _, setter) = FieldFromCache(obj.GetType(), field_name, getter_use: false);
-                    if (obj.GetType().IsValueType)
-                    {
-                        field.SetValue(obj, ele);
-                    }
-                    else
-                    {
-                        setter(obj, ele);
-                    }
+                    var (field, _, setter) = obj.GetType().FieldFromCache(field_name, getter_use: false);
+                    setter(obj, ele);
                 }
                 catch (Exception ex)
                 {
@@ -498,7 +449,7 @@ namespace ModLoader
             //}
             try
             {
-                var (field, getter, setter) = FieldFromCache(obj.GetType(), field_name);
+                var (field, getter, setter) = obj.GetType().FieldFromCache(field_name);
                 if (field.FieldType.IsGenericType && (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
                 {
                     var instance = getter(obj) as IList;
@@ -513,14 +464,7 @@ namespace ModLoader
                     for (int i = 0; i < data.Count; i++)
                         if (dict.TryGetValue(data[i], out var ele))
                             instance.SetValue(ele, i);
-                    if (obj.GetType().IsValueType)
-                    {
-                        field.SetValue(obj, instance);
-                    }
-                    else
-                    {
-                        setter(obj, instance);
-                    }
+                    setter(obj, instance);
                 }
             }
             catch (Exception ex)
@@ -537,135 +481,6 @@ namespace ModLoader
                 field_name, "AddReferenceWarpper Only Vaild in List or Array Filed"));
         }
 
-        public static readonly Dictionary<Type, Dictionary<string, FieldInfo>> FieldInfoCache =
-            new Dictionary<Type, Dictionary<string, FieldInfo>>();
-
-        public static readonly Dictionary<Type, Dictionary<string, Func<object, object>>>
-            FieldGetterDynamicMethodCache =
-                new Dictionary<Type, Dictionary<string, Func<object, object>>>();
-
-        public static readonly Dictionary<Type, Dictionary<string, Action<object, object>>>
-            FieldSetterDynamicMethodCache =
-                new Dictionary<Type, Dictionary<string, Action<object, object>>>();
-
-        public static (FieldInfo field, Func<object, object> getter, Action<object, object> setter) FieldFromCache(
-            Type type, string field_name, bool getter_use = true, bool setter_use = true)
-        {
-            FieldInfo fieldInfo;
-            Func<object, object> getter = null;
-            Action<object, object> setter = null;
-            if (FieldInfoCache.ContainsKey(type))
-            {
-                var fieldInfos = FieldInfoCache[type];
-                if (fieldInfos.ContainsKey(field_name))
-                {
-                    fieldInfo = fieldInfos[field_name];
-                }
-                else
-                {
-                    fieldInfo = AccessTools.Field(type, field_name);
-                    fieldInfos[field_name] = fieldInfo;
-                }
-            }
-            else
-            {
-                fieldInfo = AccessTools.Field(type, field_name);
-                FieldInfoCache[type] = new Dictionary<string, FieldInfo> {{field_name, fieldInfo}};
-            }
-
-            if (fieldInfo != null && getter_use)
-            {
-                if (FieldGetterDynamicMethodCache.ContainsKey(type))
-                {
-                    var delegates = FieldGetterDynamicMethodCache[type];
-                    if (delegates.ContainsKey(field_name))
-                    {
-                        getter = delegates[field_name];
-                    }
-                    else
-                    {
-                        getter = GenGetter(fieldInfo, type);
-                        delegates[field_name] = getter;
-                    }
-                }
-                else
-                {
-                    getter = GenGetter(fieldInfo, type);
-                    FieldGetterDynamicMethodCache[type] = new Dictionary<string, Func<object, object>>
-                        {{field_name, getter}};
-                }
-            }
-
-            if (fieldInfo != null && setter_use)
-            {
-                if (FieldSetterDynamicMethodCache.ContainsKey(type))
-                {
-                    var delegates = FieldSetterDynamicMethodCache[type];
-                    if (delegates.ContainsKey(field_name))
-                    {
-                        setter = delegates[field_name];
-                    }
-                    else
-                    {
-                        setter = GenSetter(fieldInfo, type);
-                        delegates[field_name] = setter;
-                    }
-                }
-                else
-                {
-                    setter = GenSetter(fieldInfo, type);
-                    FieldSetterDynamicMethodCache[type] = new Dictionary<string, Action<object, object>>
-                        {{field_name, setter}};
-                }
-            }
-
-            return (fieldInfo, getter, setter);
-        }
-
-        public static Func<object, object> GenGetter(FieldInfo fieldInfo, Type type)
-        {
-            var fieldInfoFieldType = fieldInfo.FieldType;
-            var objType = typeof(object);
-            var dynamicMethod = new DynamicMethod("simple_getter", objType, new[] {objType}, true);
-            var ilGenerator = dynamicMethod.GetILGenerator();
-            ilGenerator.Emit(OpCodes.Ldarg_0);
-            ilGenerator.Emit(type.IsValueType ? OpCodes.Unbox : OpCodes.Castclass, type);
-            ilGenerator.Emit(OpCodes.Ldfld, fieldInfo);
-            if (fieldInfoFieldType.IsValueType)
-            {
-                ilGenerator.Emit(OpCodes.Box, fieldInfoFieldType);
-            }
-
-            ilGenerator.Emit(OpCodes.Ret);
-
-            var field = dynamicMethod.CreateDelegate(typeof(Func<object, object>)) as Func<object, object>;
-            return field;
-        }
-
-        public static Action<object, object> GenSetter(FieldInfo fieldInfo, Type type)
-        {
-            if (type.IsValueType)
-            {
-                return null;
-            }
-
-            var objType = typeof(object);
-            var fieldInfoFieldType = fieldInfo.FieldType;
-            var arg1 = Expression.Parameter(objType, "arg1");
-            var arg2 = Expression.Parameter(objType, "arg2");
-            return Expression.Lambda<Action<object, object>>(Expression
-                        .Assign(
-                            Expression.Field(
-                                !type.IsValueType ? Expression.TypeAs(arg1, type) : Expression.Convert(arg1, type),
-                                fieldInfo),
-                            !fieldInfoFieldType.IsValueType
-                                ? Expression.TypeAs(arg2, fieldInfoFieldType)
-                                : Expression.Convert(arg2, fieldInfoFieldType)),
-                    arg1,
-                    arg2)
-                .Compile();
-        }
-
         public static void ObjectAddReferenceWarpper<TValueType>(Object obj, List<string> data,
             string field_name, Dictionary<string, TValueType> dict)
         {
@@ -676,7 +491,7 @@ namespace ModLoader
             //}
             try
             {
-                var (field, getter, setter) = FieldFromCache(obj.GetType(), field_name);
+                var (field, getter, setter) = obj.GetType().FieldFromCache(field_name);
                 if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(List<>))
                 {
                     var instance = getter(obj) as IList;
@@ -692,14 +507,7 @@ namespace ModLoader
                     for (int i = 0; i < data.Count; i++)
                         if (dict.TryGetValue(data[i], out var ele))
                             instance.SetValue(ele, i + start_idx);
-                    if (obj.GetType().IsValueType)
-                    {
-                        field.SetValue(obj, instance);
-                    }
-                    else
-                    {
-                        setter(obj, instance);
-                    }
+                    setter(obj, instance);
                 }
             }
             catch (Exception ex)
