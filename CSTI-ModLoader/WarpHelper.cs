@@ -19,19 +19,58 @@ namespace ModLoader
             FieldSetterDynamicMethodCache =
                 new Dictionary<Type, Dictionary<string, Action<object, object>>>();
 
-        
+        public static readonly Dictionary<Type, Func<object>> ClassConstructorCache =
+            new Dictionary<Type, Func<object>>();
+
+        public static Func<object> ConstructorFromCache(this Type type)
+        {
+            if (ClassConstructorCache.TryGetValue(type, out var cache))
+            {
+                return cache;
+            }
+
+            if (type.IsValueType)
+            {
+                ClassConstructorCache[type] = CreateConstructor(type, null);
+                return ClassConstructorCache[type];
+            }
+
+            ClassConstructorCache[type] = CreateConstructor(type,
+                AccessTools.FirstConstructor(type, info => info.GetParameters().Length == 0));
+            return ClassConstructorCache[type];
+        }
+
+        public static Func<object> CreateConstructor(Type type, ConstructorInfo constructorInfo)
+        {
+            var dynamicMethod = new DynamicMethod("createInstance", typeof(object), Type.EmptyTypes);
+            var ilGenerator = dynamicMethod.GetILGenerator();
+            if (!type.IsValueType)
+            {
+                ilGenerator.Emit(OpCodes.Newobj, constructorInfo);
+                ilGenerator.Emit(OpCodes.Ret);
+            }
+            else
+            {
+                var declareLocal = ilGenerator.DeclareLocal(type);
+                ilGenerator.Emit(OpCodes.Ldloc_S, declareLocal);
+                ilGenerator.Emit(OpCodes.Box, type);
+                ilGenerator.Emit(OpCodes.Ret);
+            }
+
+            return dynamicMethod.CreateDelegate(typeof(Func<object>)) as Func<object>;
+        }
+
         public static (FieldInfo field, Func<object, object> getter, Action<object, object> setter) FieldFromCache(
             this Type type, string field_name, bool getter_use = true, bool setter_use = true)
         {
             FieldInfo fieldInfo;
             Func<object, object> getter = null;
             Action<object, object> setter = null;
-            if (FieldInfoCache.ContainsKey(type))
+            if (FieldInfoCache.TryGetValue(type, out var fieldInfos))
             {
-                var fieldInfos = FieldInfoCache[type];
-                if (fieldInfos.ContainsKey(field_name))
+                if (fieldInfos.TryGetValue(field_name, out var info))
                 {
-                    fieldInfo = fieldInfos[field_name];
+                    fieldInfo = info;
                 }
                 else
                 {
@@ -47,12 +86,11 @@ namespace ModLoader
 
             if (fieldInfo != null && getter_use)
             {
-                if (FieldGetterDynamicMethodCache.ContainsKey(type))
+                if (FieldGetterDynamicMethodCache.TryGetValue(type, out var delegates))
                 {
-                    var delegates = FieldGetterDynamicMethodCache[type];
-                    if (delegates.ContainsKey(field_name))
+                    if (delegates.TryGetValue(field_name, out var getFunc))
                     {
-                        getter = delegates[field_name];
+                        getter = getFunc;
                     }
                     else
                     {
@@ -70,12 +108,11 @@ namespace ModLoader
 
             if (fieldInfo != null && setter_use)
             {
-                if (FieldSetterDynamicMethodCache.ContainsKey(type))
+                if (FieldSetterDynamicMethodCache.TryGetValue(type, out var delegates))
                 {
-                    var delegates = FieldSetterDynamicMethodCache[type];
-                    if (delegates.ContainsKey(field_name))
+                    if (delegates.TryGetValue(field_name, out var setFunc))
                     {
-                        setter = delegates[field_name];
+                        setter = setFunc;
                     }
                     else
                     {
@@ -109,7 +146,8 @@ namespace ModLoader
             }
 
             ilGenerator.Emit(OpCodes.Ret);
-            return dynamicMethod.CreateDelegate(typeof(Func<object, object>)) as Func<object, object>;
+            var getter = dynamicMethod.CreateDelegate(typeof(Func<object, object>)) as Func<object, object>;
+            return getter;
         }
 
         public static Action<object, object> GenSetter(FieldInfo fieldInfo, Type type)
@@ -125,8 +163,8 @@ namespace ModLoader
                 fieldInfoFieldType);
             ilGenerator.Emit(OpCodes.Stfld, fieldInfo);
             ilGenerator.Emit(OpCodes.Ret);
-            return dynamicMethod.CreateDelegate(typeof(Action<object, object>)) as Action<object, object>;
+            var setter = dynamicMethod.CreateDelegate(typeof(Action<object, object>)) as Action<object, object>;
+            return setter;
         }
-
     }
 }

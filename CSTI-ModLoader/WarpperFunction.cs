@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using LitJson;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using Object = System.Object;
 
@@ -116,34 +118,35 @@ namespace ModLoader
         {
             if (!json.IsObject)
                 return;
-
             var obj_type = obj.GetType();
             foreach (var key in json.Keys)
             {
                 try
                 {
+                    var keyData = json[key];
                     if (key.EndsWith("WarpType"))
                     {
-                        if (!json[key].IsInt || !json.ContainsKey(key.Substring(0, key.Length - 8) + "WarpData"))
+                        if (!keyData.IsInt || !json.ContainsKey(key.Substring(0, key.Length - 8) + "WarpData"))
                             continue;
-                        if ((int) json[key] == (int) WarpType.REFERENCE ||
-                            (int) json[key] == (int) WarpType.ADD_REFERENCE)
+                        if ((int) keyData == (int) WarpType.REFERENCE ||
+                            (int) keyData == (int) WarpType.ADD_REFERENCE)
                         {
                             var field_name = key.Substring(0, key.Length - 8);
                             var (field, _, _) = obj_type.FieldFromCache(field_name, getter_use: false,
                                 setter_use: false);
                             var field_type = field.FieldType;
 
-                            if (json[field_name + "WarpData"].IsString)
+                            var fieldWarpData = json[field_name + "WarpData"];
+                            if (fieldWarpData.IsString)
                             {
-                                JsonCommonRefWarpper(obj, json[field_name + "WarpData"].ToString(), field_name,
-                                    field_type, (WarpType) (int) json[key]);
+                                JsonCommonRefWarpper(obj, fieldWarpData.ToString(), field_name,
+                                    field_type, (WarpType) (int) keyData);
                             }
-                            else if (json[field_name + "WarpData"].IsArray)
+                            else if (fieldWarpData.IsArray)
                             {
                                 Type sub_field_type = null;
                                 if (field.FieldType.IsGenericType &&
-                                    (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
+                                    field.FieldType.GetGenericTypeDefinition() == typeof(List<>))
                                 {
                                     sub_field_type = field.FieldType.GetGenericArguments().Single();
                                 }
@@ -158,21 +161,21 @@ namespace ModLoader
                                 }
 
                                 List<string> list_data = new List<string>();
-                                for (int i = 0; i < json[field_name + "WarpData"].Count; i++)
+                                for (int i = 0; i < fieldWarpData.Count; i++)
                                 {
-                                    if (json[field_name + "WarpData"][i].IsString)
-                                        list_data.Add(json[field_name + "WarpData"][i].ToString());
+                                    if (fieldWarpData[i].IsString)
+                                        list_data.Add(fieldWarpData[i].ToString());
                                     else
                                         ModLoader.LogErrorWithModInfo(
                                             "CommonWarpper REFERENCE Wrong SubWarpData Format " + field_type.Name);
                                 }
 
-                                if (list_data.Count != json[field_name + "WarpData"].Count)
+                                if (list_data.Count != fieldWarpData.Count)
                                     ModLoader.LogErrorWithModInfo(
                                         "CommonWarpper REFERENCE Size Error" + field_type.Name);
 
                                 JsonCommonRefWarpper(obj, list_data, field_name, sub_field_type,
-                                    (WarpType) (int) json[key]);
+                                    (WarpType) (int) keyData);
                             }
                             else
                             {
@@ -180,13 +183,14 @@ namespace ModLoader
                                                               field_type.Name);
                             }
                         }
-                        else if ((int) json[key] == (int) WarpType.ADD)
+                        else if ((int) keyData == (int) WarpType.ADD)
                         {
                             var field_name = key.Substring(0, key.Length - 8);
                             var (field, getter, setter) = obj_type.FieldFromCache(field_name);
                             var field_type = field.FieldType;
 
-                            if (json[field_name + "WarpData"].IsArray)
+                            var fieldWarpData = json[field_name + "WarpData"];
+                            if (fieldWarpData.IsArray)
                             {
                                 Type sub_field_type;
                                 if (field.FieldType.IsGenericType &&
@@ -194,15 +198,16 @@ namespace ModLoader
                                 {
                                     sub_field_type = field.FieldType.GetGenericArguments().Single();
                                     var instance = getter(obj) as IList;
-                                    for (int i = 0; i < json[field_name + "WarpData"].Count; i++)
+                                    for (int i = 0; i < fieldWarpData.Count; i++)
                                     {
-                                        if (json[field_name + "WarpData"][i].IsObject)
+                                        if (fieldWarpData[i].IsObject)
                                         {
-                                            var new_obj = Activator.CreateInstance(sub_field_type);
-                                            JsonUtility.FromJsonOverwrite(json[field_name + "WarpData"][i].ToJson(),
+                                            var new_obj = sub_field_type.IsSubclassOf(typeof(ScriptableObject))
+                                                ? ScriptableObject.CreateInstance(sub_field_type)
+                                                : sub_field_type.ConstructorFromCache()();
+                                            JsonUtility.FromJsonOverwrite(fieldWarpData[i].ToJson(),
                                                 new_obj);
-                                            JsonCommonWarpper(new_obj, json[field_name + "WarpData"][i]);
-                                            var temp_obj = new[] {new_obj};
+                                            JsonCommonWarpper(new_obj, fieldWarpData[i]);
                                             instance.Add(new_obj);
                                         }
                                         else
@@ -215,16 +220,17 @@ namespace ModLoader
                                     sub_field_type = field.FieldType.GetElementType();
                                     var instance = getter(obj) as Array;
                                     int start_idx = instance.Length;
-                                    ArrayResize(ref instance, json[field_name + "WarpData"].Count + instance.Length);
-                                    for (int i = 0; i < json[field_name + "WarpData"].Count; i++)
+                                    ArrayResize(ref instance, fieldWarpData.Count + instance.Length);
+                                    for (int i = 0; i < fieldWarpData.Count; i++)
                                     {
-                                        if (json[field_name + "WarpData"][i].IsObject)
+                                        if (fieldWarpData[i].IsObject)
                                         {
-                                            var new_obj = Activator.CreateInstance(sub_field_type);
-                                            JsonWriter jw = new JsonWriter();
-                                            json[field_name + "WarpData"][i].ToJson(jw);
-                                            JsonUtility.FromJsonOverwrite(jw.TextWriter.ToString(), new_obj);
-                                            JsonCommonWarpper(new_obj, json[field_name + "WarpData"][i]);
+                                            var new_obj = sub_field_type.IsSubclassOf(typeof(ScriptableObject))
+                                                ? ScriptableObject.CreateInstance(sub_field_type)
+                                                : sub_field_type.ConstructorFromCache()();
+                                            JsonUtility.FromJsonOverwrite(fieldWarpData[i].ToJson(),
+                                                new_obj);
+                                            JsonCommonWarpper(new_obj, fieldWarpData[i]);
                                             instance.SetValue(new_obj, i + start_idx);
                                         }
                                         else
@@ -246,30 +252,31 @@ namespace ModLoader
                                                               field_type.Name);
                             }
                         }
-                        else if ((int) json[key] == (int) WarpType.MODIFY)
+                        else if ((int) keyData == (int) WarpType.MODIFY)
                         {
                             var field_name = key.Substring(0, key.Length - 8);
                             var (field, getter, setter) = obj_type.FieldFromCache(field_name);
                             var field_type = field.FieldType;
 
-                            if (json[field_name + "WarpData"].IsObject)
+                            var fieldWarpData = json[field_name + "WarpData"];
+                            if (fieldWarpData.IsObject)
                             {
                                 var target_obj = getter(obj);
-                                JsonCommonWarpper(target_obj, json[field_name + "WarpData"]);
+                                JsonCommonWarpper(target_obj, fieldWarpData);
                                 setter(obj, target_obj);
                             }
-                            else if (json[field_name + "WarpData"].IsArray)
+                            else if (fieldWarpData.IsArray)
                             {
                                 if (field.FieldType.IsGenericType &&
-                                    (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
+                                    field.FieldType.GetGenericTypeDefinition() == typeof(List<>))
                                 {
                                     var instance = getter(obj) as IList;
-                                    for (int i = 0; i < json[field_name + "WarpData"].Count; i++)
+                                    for (int i = 0; i < fieldWarpData.Count; i++)
                                     {
-                                        if (json[field_name + "WarpData"][i].IsObject)
+                                        if (fieldWarpData[i].IsObject)
                                         {
                                             var target_obj = instance[i];
-                                            JsonCommonWarpper(target_obj, json[field_name + "WarpData"][i]);
+                                            JsonCommonWarpper(target_obj, fieldWarpData[i]);
                                             instance[i] = target_obj;
                                         }
                                         else
@@ -280,9 +287,9 @@ namespace ModLoader
                                 else if (field.FieldType.IsArray)
                                 {
                                     var instance = getter(obj) as Array;
-                                    for (int i = 0; i < json[field_name + "WarpData"].Count; i++)
+                                    for (int i = 0; i < fieldWarpData.Count; i++)
                                     {
-                                        if (json[field_name + "WarpData"][i].IsObject)
+                                        if (fieldWarpData[i].IsObject)
                                         {
                                             object target_obj = null;
                                             try
@@ -308,7 +315,7 @@ namespace ModLoader
                                                 Debug.LogWarning($"On access {id}::{obj_type}.{field_name} : {e}");
                                             }
 
-                                            JsonCommonWarpper(target_obj, json[field_name + "WarpData"][i]);
+                                            JsonCommonWarpper(target_obj, fieldWarpData[i]);
                                             instance.SetValue(target_obj, i);
                                         }
                                         else
@@ -339,27 +346,27 @@ namespace ModLoader
                         continue;
                     else
                     {
-                        if ((json[key].IsObject))
+                        if (keyData.IsObject)
                         {
                             var field_name = key;
                             var (field, getter, setter) = obj_type.FieldFromCache(field_name);
                             if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
                                 continue;
                             var sub_obj = getter(obj);
-                            JsonCommonWarpper(sub_obj, json[key]);
+                            JsonCommonWarpper(sub_obj, keyData);
                             setter(obj, sub_obj);
                         }
-                        else if (json[key].IsArray)
+                        else if (keyData.IsArray)
                         {
                             var field_name = key;
                             var (field, getter, setter) = obj_type.FieldFromCache(field_name);
 
-                            for (int i = 0; i < json[key].Count; i++)
+                            for (int i = 0; i < keyData.Count; i++)
                             {
-                                if (json[key][i].IsObject)
+                                if (keyData[i].IsObject)
                                 {
                                     if (field.FieldType.IsGenericType &&
-                                        (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
+                                        field.FieldType.GetGenericTypeDefinition() == typeof(List<>))
                                     {
                                         // var ele_type = field.FieldType.GetGenericArguments().Single();
                                         if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
@@ -368,7 +375,7 @@ namespace ModLoader
                                         var ele = list[i];
                                         if (ele == null)
                                             continue;
-                                        JsonCommonWarpper(ele, json[key][i]);
+                                        JsonCommonWarpper(ele, keyData[i]);
                                         list[i] = ele;
                                         setter(obj, list);
                                     }
@@ -400,7 +407,7 @@ namespace ModLoader
 
                                         if (ele == null)
                                             continue;
-                                        JsonCommonWarpper(ele, json[key][i]);
+                                        JsonCommonWarpper(ele, keyData[i]);
                                         array.SetValue(ele, i);
                                         setter(obj, array);
                                     }
@@ -428,7 +435,7 @@ namespace ModLoader
             {
                 try
                 {
-                    var (field, _, setter) = obj.GetType().FieldFromCache(field_name, getter_use: false);
+                    var (_, _, setter) = obj.GetType().FieldFromCache(field_name, getter_use: false);
                     setter(obj, ele);
                 }
                 catch (Exception ex)
@@ -450,12 +457,12 @@ namespace ModLoader
             try
             {
                 var (field, getter, setter) = obj.GetType().FieldFromCache(field_name);
-                if (field.FieldType.IsGenericType && (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
+                if (field.FieldType.IsGenericType && field.FieldType.GetGenericTypeDefinition() == typeof(List<>))
                 {
                     var instance = getter(obj) as IList;
                     foreach (var name in data)
                         if (dict.TryGetValue(name, out var ele))
-                            instance.Add(ele);
+                            instance?.Add(ele);
                 }
                 else if (field.FieldType.IsArray)
                 {

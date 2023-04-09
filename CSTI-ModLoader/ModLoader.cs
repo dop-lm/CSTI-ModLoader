@@ -22,11 +22,12 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.0.4")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.0.6")]
     public class ModLoader : BaseUnityPlugin
     {
         public static Version PluginVersion;
         public static Assembly GameSrouceAssembly;
+        public static Harmony HarmonyInstance;
 
         public static readonly Dictionary<string, Sprite> SpriteDict = new Dictionary<string, Sprite>();
 
@@ -114,11 +115,11 @@ namespace ModLoader
         private void Awake()
         {
             // Plugin startup logic
-            var harmony = new Harmony(Info.Metadata.GUID);
+            HarmonyInstance = new Harmony(Info.Metadata.GUID);
             PluginVersion = Version.Parse(Info.Metadata.Version.ToString());
 
-            var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public |
-                               BindingFlags.Static;
+            // var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public |
+            //                    BindingFlags.Static;
 
             try
             {
@@ -128,7 +129,7 @@ namespace ModLoader
                     new HarmonyMethod(typeof(ModLoader), nameof(UniqueIDScriptableClearDictPrefix));
                 // harmony.Patch(typeof(UniqueIDScriptable).GetMethod("ClearDict", bindingFlags),
                 //     prefix: UniqueIDScriptableClearDictPrefixMethod);
-                harmony.Patch(AccessTools.Method(typeof(UniqueIDScriptable), "ClearDict"),
+                HarmonyInstance.Patch(AccessTools.Method(typeof(UniqueIDScriptable), "ClearDict"),
                     prefix: UniqueIDScriptableClearDictPrefixMethod);
             }
             catch (Exception ex)
@@ -141,11 +142,10 @@ namespace ModLoader
                 // var LocalizationManagerLoadLanguagePostfixMethod =
                 //     new HarmonyMethod(typeof(ModLoader).GetMethod("LocalizationManagerLoadLanguagePostfix"));
                 var LocalizationManagerLoadLanguagePostfixMethod =
-                    new HarmonyMethod(typeof(ModLoader),
-                        nameof(LocalizationManagerLoadLanguagePostfix));
+                    new HarmonyMethod(typeof(ModLoader), nameof(LocalizationManagerLoadLanguagePostfix));
                 // harmony.Patch(typeof(LocalizationManager).GetMethod("LoadLanguage", bindingFlags),
                 //     postfix: LocalizationManagerLoadLanguagePostfixMethod);
-                harmony.Patch(AccessTools.Method(typeof(LocalizationManager), "LoadLanguage"),
+                HarmonyInstance.Patch(AccessTools.Method(typeof(LocalizationManager), "LoadLanguage"),
                     postfix: LocalizationManagerLoadLanguagePostfixMethod);
             }
             catch (Exception ex)
@@ -161,7 +161,7 @@ namespace ModLoader
                     new HarmonyMethod(typeof(ModLoader), nameof(GuideManagerStartPrefix));
                 // harmony.Patch(typeof(GuideManager).GetMethod("Start", bindingFlags),
                 //     prefix: GuideManagerStartPrefixMethod);
-                harmony.Patch(AccessTools.Method(typeof(GuideManager), "Start"),
+                HarmonyInstance.Patch(AccessTools.Method(typeof(GuideManager), "Start"),
                     prefix: GuideManagerStartPrefixMethod);
             }
             catch (Exception ex)
@@ -177,7 +177,7 @@ namespace ModLoader
                     new HarmonyMethod(typeof(ModLoader), nameof(GraphicsManagerInitPostfix));
                 // harmony.Patch(typeof(GraphicsManager).GetMethod("Init", bindingFlags),
                 //     postfix: GraphicsManagerInitPostfixMethod);
-                harmony.Patch(AccessTools.Method(typeof(GraphicsManager), "Init"),
+                HarmonyInstance.Patch(AccessTools.Method(typeof(GraphicsManager), "Init"),
                     postfix: GraphicsManagerInitPostfixMethod);
             }
             catch (Exception ex)
@@ -188,7 +188,7 @@ namespace ModLoader
             try
             {
                 var fixFXMaskAwake = new HarmonyMethod(typeof(ModLoader), nameof(FixFXMaskAwake));
-                harmony.Patch(AccessTools.Method(typeof(FXMask), "Awake"), prefix: fixFXMaskAwake);
+                HarmonyInstance.Patch(AccessTools.Method(typeof(FXMask), "Awake"), prefix: fixFXMaskAwake);
             }
             catch (Exception e)
             {
@@ -696,7 +696,7 @@ namespace ModLoader
                                     JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                                     JsonUtility.FromJsonOverwrite(CardData, card);
 
-                                    card.name = CardName;
+                                    card.name = $"{ModName}_{CardName}";
                                     //type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
 
                                     var card_guid = card.UniqueID;
@@ -2013,7 +2013,7 @@ namespace ModLoader
 
         // Patch
 
-        private static SimpleOnce _once = new SimpleOnce();
+        private static readonly SimpleOnce _once = new SimpleOnce();
 
         public static void UniqueIDScriptableClearDictPrefix()
         {
