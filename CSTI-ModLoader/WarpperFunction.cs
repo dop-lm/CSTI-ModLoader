@@ -355,10 +355,9 @@ namespace ModLoader
                                                 //Required or JsonData thinks it is an Int64 cast.
                                                 setter(obj, (float)((double)fieldWarpData));
                                             }
-                                            else if (field_type == typeof(double))
-                                            {
-                                                setter(obj, (double)fieldWarpData);
-                                            }
+
+                                            //Otherwise it should be a double.  If not, the cast throw will handle it.
+                                            setter(obj, (double)fieldWarpData);
 
                                             break;
 
