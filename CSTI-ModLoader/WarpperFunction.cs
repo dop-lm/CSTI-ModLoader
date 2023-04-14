@@ -333,8 +333,48 @@ namespace ModLoader
                             }
                             else
                             {
-                                ModLoader.LogErrorWithModInfo("CommonWarpper MODIFY Wrong WarpData Format " +
-                                                              field_type.Name);
+                                //Assumed to be a compatible direct field.
+                                try
+                                {
+
+                                    switch (fieldWarpData.GetJsonType())
+                                    {
+                                        case JsonType.String:
+                                            setter(obj, (string)fieldWarpData);
+                                            break;
+                                        case JsonType.Int:
+                                            setter(obj, (int)fieldWarpData);
+                                            break;
+                                        case JsonType.Long:
+                                            setter(obj, (long)fieldWarpData);
+                                            break;
+                                        case JsonType.Double:
+
+                                            if (field_type == typeof(float))
+                                            {
+                                                //Required or JsonData thinks it is an Int64 cast.
+                                                setter(obj, (float)((double)fieldWarpData));
+                                            }
+                                            else if (field_type == typeof(double))
+                                            {
+                                                setter(obj, (double)fieldWarpData);
+                                            }
+
+                                            break;
+
+                                        case JsonType.Boolean:
+                                            setter(obj, (bool)fieldWarpData);
+                                            break;
+                                        default:
+                                            throw new ApplicationException($"Unexpected JsonType: {fieldWarpData.GetJsonType()}");
+                                    }
+
+                                }
+                                catch (Exception ex)
+                                {
+                                    ModLoader.LogErrorWithModInfo($"Error setting property data for field: \"{field_name}\" Type: \"{ field_type.Name}\"  {ex}");
+
+                                }
                             }
                         }
                         else
