@@ -22,7 +22,7 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.0.6")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.1.0")]
     public class ModLoader : BaseUnityPlugin
     {
         public static Version PluginVersion;
