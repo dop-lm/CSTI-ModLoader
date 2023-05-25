@@ -10,7 +10,13 @@ using LitJson;
 using System.Linq;
 using Ionic.Zip;
 using System.Collections;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using BepInEx.Configuration;
+using UnityEngine.SceneManagement;
+using UnityEngine.U2D;
+using Debug = UnityEngine.Debug;
+using Object = UnityEngine.Object;
 
 namespace ModLoader
 {
@@ -25,6 +31,12 @@ namespace ModLoader
     [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.0.6")]
     public class ModLoader : BaseUnityPlugin
     {
+        public static readonly AccessTools.FieldRef<Dictionary<string, string>> CurrentTextsFieldRef =
+            AccessTools.StaticFieldRefAccess<Dictionary<string, string>>(AccessTools.Field(typeof(LocalizationManager),
+                "CurrentTexts"));
+
+        public static ConfigEntry<bool> SetTexture2ReadOnly;
+
         public static Version PluginVersion;
         public static Assembly GameSrouceAssembly;
         public static Harmony HarmonyInstance;
@@ -114,6 +126,9 @@ namespace ModLoader
 
         private void Awake()
         {
+            SetTexture2ReadOnly =
+                Config.Bind("是否将加载的纹理设置为只读", "SetTexture2ReadOnly", false,
+                    "将加载的纹理设置为只读可以减少内存使用但是之后不能再读取纹理");
             // Plugin startup logic
             HarmonyInstance = new Harmony(Info.Metadata.GUID);
             PluginVersion = Version.Parse(Info.Metadata.Version.ToString());
@@ -1328,9 +1343,7 @@ namespace ModLoader
                     {
                         if (pair.Item1.Contains("SimpCn"))
                         {
-                            var CurrentTexts =
-                                AccessTools.StaticFieldRefAccess<Dictionary<string, string>>(
-                                    typeof(LocalizationManager), "CurrentTexts");
+                            var CurrentTexts = CurrentTextsFieldRef();
                             Dictionary<string, List<string>> dictionary = CSVParser.LoadFromString(pair.Item2);
                             foreach (var keyValuePair in dictionary)
                             {
@@ -1360,8 +1373,7 @@ namespace ModLoader
                     {
                         if (pair.Item1.Contains("SimpEn"))
                         {
-                            var CurrentTexts = AccessTools.StaticFieldRefAccess<Dictionary<string, string>>(
-                                typeof(LocalizationManager), "CurrentTexts");
+                            var CurrentTexts = CurrentTextsFieldRef();
                             Dictionary<string, List<string>> dictionary = CSVParser.LoadFromString(pair.Item2);
                             foreach (var keyValuePair in dictionary)
                             {
@@ -1938,13 +1950,15 @@ namespace ModLoader
                     var (sprites, modName) = task.Result;
                     foreach (var (dat, name) in sprites)
                     {
-                        var texture2D = new Texture2D(0, 0);
-                        texture2D.LoadImage(dat);
+                        var texture2D = new Texture2D(0, 0, TextureFormat.DXT5, Texture.GenerateAllMips, false);
+                        texture2D.LoadImage(dat, SetTexture2ReadOnly.Value);
                         var sprite = Sprite.Create(texture2D, new Rect(0, 0, texture2D.width, texture2D.height),
                             Vector2.zero);
                         sprite.name = name;
                         if (!SpriteDict.ContainsKey(name))
+                        {
                             SpriteDict.Add(name, sprite);
+                        }
                         else
                             Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName,
                                 name);
@@ -2024,7 +2038,7 @@ namespace ModLoader
 
             try
             {
-                System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+                var stopwatch = new Stopwatch();
                 stopwatch.Start();
 
                 LoadGameResource();
@@ -2037,9 +2051,9 @@ namespace ModLoader
 
                 LoadEditorScriptableObject();
 
-                LoadLocalization();
+                // LoadLocalization();
 
-                System.Diagnostics.Stopwatch stopwatch1 = new System.Diagnostics.Stopwatch();
+                var stopwatch1 = new Stopwatch();
                 stopwatch1.Start();
                 WarpperAllEditorMods();
 
