@@ -85,6 +85,14 @@
       <HintPath>..\..\Libs\UnityEngine.ImageConversionModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>..\..\Libs\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>..\..\Libs\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.JSONSerializeModule">
       <HintPath>..\..\Libs\UnityEngine.JSONSerializeModule.dll</HintPath>
       <Private>False</Private>

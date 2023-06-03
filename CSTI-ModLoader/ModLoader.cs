@@ -28,7 +28,21 @@ namespace ModLoader
         public string ModEditorVersion;
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.0.6")]
+    public class ModPack
+    {
+        public ModInfo ModInfo;
+        public string FileName;
+        public ConfigEntry<bool> EnableEntry;
+
+        public ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableEntry)
+        {
+            ModInfo = modInfo;
+            FileName = fileName;
+            EnableEntry = enableEntry;
+        }
+    }
+
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.0.8")]
     public class ModLoader : BaseUnityPlugin
     {
         public static readonly AccessTools.FieldRef<Dictionary<string, string>> CurrentTextsFieldRef =
@@ -36,10 +50,12 @@ namespace ModLoader
                 "CurrentTexts"));
 
         public static ConfigEntry<bool> SetTexture2ReadOnly;
+        public static readonly Dictionary<string, ModPack> ModPacks = new Dictionary<string, ModPack>();
 
         public static Version PluginVersion;
         public static Assembly GameSrouceAssembly;
         public static Harmony HarmonyInstance;
+        public static ModLoader Instance;
 
         public static readonly Dictionary<string, Sprite> SpriteDict = new Dictionary<string, Sprite>();
 
@@ -126,6 +142,7 @@ namespace ModLoader
 
         private void Awake()
         {
+            Instance = this;
             SetTexture2ReadOnly =
                 Config.Bind("是否将加载的纹理设置为只读", "SetTexture2ReadOnly", false,
                     "将加载的纹理设置为只读可以减少内存使用但是之后不能再读取纹理");
@@ -461,6 +478,11 @@ namespace ModLoader
                     ModInfo Info = new ModInfo();
                     string ModName = Path.GetFileNameWithoutExtension(file);
                     string ModDirName = Path.GetFileNameWithoutExtension(file);
+                    ModPacks[ModName] = new ModPack(Info, ModName,
+                        Instance.Config.Bind("是否加载某个模组",
+                            $"{ModName}_{Info.Name}_{Info.ModEditorVersion}_{Info.Version}", true,
+                            $"是否加载{ModName}"));
+                    if (!ModPacks[ModName].EnableEntry.Value) continue;
                     //System.Collections.ObjectModel.ReadOnlyCollection<ZipArchiveEntry> entrys = null;
                     ICollection<ZipEntry> entrys;
 
@@ -800,23 +822,29 @@ namespace ModLoader
                     if (!File.Exists(CombinePaths(dir, "ModInfo.json")))
                         continue;
 
-                    ModInfo modInfo = new ModInfo();
+                    ModInfo Info = new ModInfo();
                     string ModName = Path.GetFileName(dir);
+
+                    ModPacks[ModName] = new ModPack(Info, ModName,
+                        Instance.Config.Bind("是否加载某个模组",
+                            $"{ModName}_{Info.Name}_{Info.ModEditorVersion}_{Info.Version}", true,
+                            $"是否加载{ModName}"));
+                    if (!ModPacks[ModName].EnableEntry.Value) continue;
 
                     try
                     {
                         // Load Mod Info
                         using (StreamReader sr = new StreamReader(CombinePaths(dir, "ModInfo.json")))
-                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), modInfo);
+                            JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
 
                         // Check Name
-                        if (!modInfo.Name.IsNullOrWhiteSpace())
-                            ModName = modInfo.Name;
+                        if (!Info.Name.IsNullOrWhiteSpace())
+                            ModName = Info.Name;
 
-                        Debug.Log($"ModLoader PreLoad Mod {ModName} {modInfo.Version}");
+                        Debug.Log($"ModLoader PreLoad Mod {ModName} {Info.Version}");
 
                         // Check Verison
-                        Version ModRequestVersion = Version.Parse(modInfo.ModLoaderVerison);
+                        Version ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
                         if (PluginVersion.CompareTo(ModRequestVersion) < 0)
                             Debug.LogWarningFormat(
                                 "ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModName,
@@ -846,7 +874,7 @@ namespace ModLoader
                     try
                     {
                         uniqueObjWaitList.Add(
-                            ResourceLoadHelper.LoadUniqueObjs(ModName, dir, GameSrouceAssembly, modInfo));
+                            ResourceLoadHelper.LoadUniqueObjs(ModName, dir, GameSrouceAssembly, Info));
                     }
                     catch (Exception ex)
                     {
@@ -874,6 +902,15 @@ namespace ModLoader
 
                     ModInfo Info = new ModInfo();
                     string ModName = Path.GetFileName(dir);
+                    if (!ModPacks.ContainsKey(ModName))
+                    {
+                        ModPacks[ModName] = new ModPack(Info, ModName,
+                            Instance.Config.Bind("是否加载某个模组",
+                                $"{ModName}_{Info.Name}_{Info.ModEditorVersion}_{Info.Version}", true,
+                                $"是否加载{ModName}"));
+                    }
+
+                    if (!ModPacks[ModName].EnableEntry.Value) continue;
 
                     try
                     {
@@ -2129,6 +2166,90 @@ namespace ModLoader
             {
                 Debug.LogWarning(ex.Message);
             }
+        }
+
+        public static bool ModManagerUIOn;
+        public static Vector2 ModManagerUIScrollViewPos;
+
+        public static Rect ModManagerUIWindowRect = new Rect(Screen.width * 0.1f, Screen.height * 0.1f,
+            Screen.width * 0.45f,
+            Screen.height * 0.45f);
+
+        public static bool ReqQuit;
+        public static float WaitTime;
+        // public static bool HadBootNew;
+
+        private void Update()
+        {
+            if (ReqQuit)
+            {
+                if (WaitTime > 0)
+                {
+                    WaitTime -= Time.deltaTime;
+                }
+                else
+                {
+                    Application.Quit();
+                }
+            }
+
+            if (Input.GetKey(KeyCode.LeftControl) ||
+                Input.GetKey(KeyCode.LeftCommand) ||
+                Input.GetKey(KeyCode.RightControl) ||
+                Input.GetKey(KeyCode.RightCommand))
+            {
+                if (Input.GetKeyUp(KeyCode.Tab))
+                {
+                    ModManagerUIOn = !ModManagerUIOn;
+                }
+            }
+        }
+
+        private void OnGUI()
+        {
+            if (!ModManagerUIOn)
+            {
+                return;
+            }
+
+            GUILayout.Window(1839021, ModManagerUIWindowRect,
+                ModManagerUIWindow, "ModManagerUI");
+        }
+
+        public static void ModManagerUIWindow(int id)
+        {
+            GUILayout.BeginVertical();
+            GUILayout.Space(40);
+            ModManagerUIScrollViewPos = GUILayout.BeginScrollView(ModManagerUIScrollViewPos);
+
+            foreach (var (key, val) in ModPacks)
+            {
+                ModManagerIns(val);
+            }
+
+            GUILayout.EndScrollView();
+
+            if (GUILayout.Button("应用(三秒后关闭)/Apply(Three seconds to close)"))
+            {
+                Instance.Config.Save();
+                ReqQuit = true;
+                WaitTime = 3;
+            }
+
+            GUILayout.EndVertical();
+        }
+
+        public static void ModManagerIns(ModPack modPack)
+        {
+            GUILayout.BeginHorizontal();
+
+            modPack.EnableEntry.Value = GUILayout.Toggle(modPack.EnableEntry.Value, modPack.ModInfo.Name);
+
+            GUILayout.Space(20);
+
+            GUILayout.Label($"文件名/FileName:{modPack.FileName}");
+
+            GUILayout.EndHorizontal();
         }
     }
 }

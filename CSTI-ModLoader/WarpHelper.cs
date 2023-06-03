@@ -166,5 +166,12 @@ namespace ModLoader
             var setter = dynamicMethod.CreateDelegate(typeof(Action<object, object>)) as Action<object, object>;
             return setter;
         }
+
+        public static void Deconstruct<TKey, TVal>(this KeyValuePair<TKey, TVal> keyValuePair, out TKey key,
+            out TVal val)
+        {
+            key = keyValuePair.Key;
+            val = keyValuePair.Value;
+        }
     }
 }
