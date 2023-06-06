@@ -35,6 +35,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ResourceLoadHelper.cs" />
+    <Compile Include="StringHelper.cs" />
     <Compile Include="WarpHelper.cs" />
     <Compile Include="WarpperFunction.cs" />
     <Compile Include="ModLoader.cs" />
@@ -56,6 +57,9 @@
     <Reference Include="BepInEx.Harmony">
       <HintPath>..\..\Libs\BepInEx.Harmony.dll</HintPath>
       <Private>False</Private>
+    </Reference>
+    <Reference Include="CSTI-ChatTreeLoader">
+      <HintPath>..\..\CSTI-LuaActionSupport\CSTI-ChatTreeLoader\bin\Release\CSTI-ChatTreeLoader.dll</HintPath>
     </Reference>
     <Reference Include="DotNetZip">
       <HintPath>..\..\Libs\DotNetZip.dll</HintPath>

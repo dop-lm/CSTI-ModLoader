@@ -13,10 +13,8 @@ using System.Collections;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using BepInEx.Configuration;
-using UnityEngine.SceneManagement;
-using UnityEngine.U2D;
+using ChatTreeLoader.Patchers;
 using Debug = UnityEngine.Debug;
-using Object = UnityEngine.Object;
 
 namespace ModLoader
 {
@@ -42,7 +40,7 @@ namespace ModLoader
         }
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.0.8")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.1.0")]
     public class ModLoader : BaseUnityPlugin
     {
         public static readonly AccessTools.FieldRef<Dictionary<string, string>> CurrentTextsFieldRef =
@@ -50,6 +48,7 @@ namespace ModLoader
                 "CurrentTexts"));
 
         public static ConfigEntry<bool> SetTexture2ReadOnly;
+        public static ConfigEntry<bool> TexCompatibilityMode;
         public static readonly Dictionary<string, ModPack> ModPacks = new Dictionary<string, ModPack>();
 
         public static Version PluginVersion;
@@ -139,6 +138,7 @@ namespace ModLoader
         private static List<ScriptableObjectPack> WaitForAddJournalPlayerCharacter = new List<ScriptableObjectPack>();
         private static List<ScriptableObjectPack> WaitForAddDefaultContentPage = new List<ScriptableObjectPack>();
         private static List<ScriptableObjectPack> WaitForAddMainContentPage = new List<ScriptableObjectPack>();
+        public static bool HasEncounterType;
 
         private void Awake()
         {
@@ -146,8 +146,16 @@ namespace ModLoader
             SetTexture2ReadOnly =
                 Config.Bind("是否将加载的纹理设置为只读", "SetTexture2ReadOnly", false,
                     "将加载的纹理设置为只读可以减少内存使用但是之后不能再读取纹理");
+            TexCompatibilityMode = Config.Bind("兼容性设置", "TexCompatibilityMode", false,
+                "开启后纹理占用内存约翻4倍，请仅在缺图时开启");
             // Plugin startup logic
             HarmonyInstance = new Harmony(Info.Metadata.GUID);
+            if (AccessTools.TypeByName("EncounterPopup") != null)
+            {
+                MainPatcher.DoPatch(HarmonyInstance);
+                HasEncounterType = true;
+            }
+
             PluginVersion = Version.Parse(Info.Metadata.Version.ToString());
 
             // var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public |
@@ -475,14 +483,9 @@ namespace ModLoader
                 {
                     if (!file.EndsWith(".zip"))
                         continue;
-                    ModInfo Info = new ModInfo();
-                    string ModName = Path.GetFileNameWithoutExtension(file);
-                    string ModDirName = Path.GetFileNameWithoutExtension(file);
-                    ModPacks[ModName] = new ModPack(Info, ModName,
-                        Instance.Config.Bind("是否加载某个模组",
-                            $"{ModName}_{Info.Name}_{Info.ModEditorVersion}_{Info.Version}", true,
-                            $"是否加载{ModName}"));
-                    if (!ModPacks[ModName].EnableEntry.Value) continue;
+                    var Info = new ModInfo();
+                    var ModName = Path.GetFileNameWithoutExtension(file);
+                    var ModDirName = Path.GetFileNameWithoutExtension(file);
                     //System.Collections.ObjectModel.ReadOnlyCollection<ZipArchiveEntry> entrys = null;
                     ICollection<ZipEntry> entrys;
 
@@ -500,10 +503,10 @@ namespace ModLoader
                             continue;
 
                         // Load Mod Info
-                        MemoryStream ms = new MemoryStream();
+                        var ms = new MemoryStream();
                         ModInfoZip.Extract(ms);
                         ms.Seek(0, SeekOrigin.Begin);
-                        using (StreamReader sr = new StreamReader(ms))
+                        using (var sr = new StreamReader(ms))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
 
                         if (Info.ModEditorVersion.IsNullOrWhiteSpace())
@@ -513,11 +516,17 @@ namespace ModLoader
                         if (!Info.Name.IsNullOrWhiteSpace())
                             ModName = Info.Name;
 
+                        ModPacks[ModName] = new ModPack(Info, ModName,
+                            Instance.Config.Bind("是否加载某个模组",
+                                $"{ModName}_{Info.Name}".EscapeStr(), true,
+                                $"是否加载{ModName}"));
+                        if (!ModPacks[ModName].EnableEntry.Value) continue;
+
                         Debug.Log(string.Format("ModLoader Load EditorZipMod {0} {1}", ModName,
                             Info.Version));
 
                         // Check Verison
-                        Version ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
+                        var ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
                         if (PluginVersion.CompareTo(ModRequestVersion) < 0)
                             Debug.LogWarningFormat(
                                 "ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModName,
@@ -537,10 +546,10 @@ namespace ModLoader
                             if (!(entry.FileName.StartsWith(ModDirName + @"/Resource") &&
                                   entry.FileName.EndsWith(".ab")))
                                 continue;
-                            MemoryStream ms = new MemoryStream();
+                            var ms = new MemoryStream();
                             entry.Extract(ms);
                             ms.Seek(0, SeekOrigin.Begin);
-                            AssetBundle ab = AssetBundle.LoadFromStream(ms);
+                            var ab = AssetBundle.LoadFromStream(ms);
                             foreach (var obj in ab.LoadAllAssets())
                             {
                                 if (obj is Sprite)
@@ -579,11 +588,12 @@ namespace ModLoader
                                    entry.FileName.EndsWith(".png"))))
                                 continue;
                             var sprite_name = Path.GetFileNameWithoutExtension(entry.FileName);
-                            Texture2D t2d = new Texture2D(2, 2);
-                            MemoryStream ms = new MemoryStream();
+                            var t2d = new Texture2D(0, 0,
+                                TexCompatibilityMode.Value ? TextureFormat.RGBA32 : TextureFormat.DXT5, 0, false);
+                            var ms = new MemoryStream();
                             entry.Extract(ms);
-                            ImageConversion.LoadImage(t2d, ms.ToArray());
-                            Sprite sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height), Vector2.zero);
+                            t2d.LoadImage(ms.ToArray());
+                            var sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height), Vector2.zero);
                             sprite.name = sprite_name;
                             if (!SpriteDict.ContainsKey(sprite_name))
                                 SpriteDict.Add(sprite_name, sprite);
@@ -606,7 +616,7 @@ namespace ModLoader
                             if (!(entry.FileName.StartsWith(ModDirName + @"/Resource/Audio") &&
                                   entry.FileName.EndsWith(".wav")))
                                 continue;
-                            MemoryStream ms = new MemoryStream();
+                            var ms = new MemoryStream();
                             entry.Extract(ms);
                             var clip_name = Path.GetFileNameWithoutExtension(entry.FileName);
                             var clip = GetAudioClipFromWav(ms.ToArray(), clip_name);
@@ -630,7 +640,7 @@ namespace ModLoader
                     // Load ScriptableObject
                     try
                     {
-                        var subclasses = from type in GameSrouceAssembly.GetTypes()
+                        var subclasses = from type in AccessTools.AllTypes()
                             where type.IsSubclassOf(typeof(ScriptableObject))
                             select type;
 
@@ -650,10 +660,10 @@ namespace ModLoader
                                         continue;
                                     string CardData;
                                     var obj = ScriptableObject.CreateInstance(type);
-                                    MemoryStream ms = new MemoryStream();
+                                    var ms = new MemoryStream();
                                     entry.Extract(ms);
                                     ms.Seek(0, SeekOrigin.Begin);
-                                    using (StreamReader sr = new StreamReader(ms))
+                                    using (var sr = new StreamReader(ms))
                                         CardData = sr.ReadToEnd();
                                     obj.name = obj_name;
                                     JsonUtility.FromJsonOverwrite(CardData, obj);
@@ -679,10 +689,10 @@ namespace ModLoader
                             if (!(entry.FileName.StartsWith(ModDirName + @"/Localization") &&
                                   entry.FileName.EndsWith(".csv")))
                                 continue;
-                            MemoryStream ms = new MemoryStream();
+                            var ms = new MemoryStream();
                             entry.Extract(ms);
                             ms.Seek(0, SeekOrigin.Begin);
-                            using (StreamReader sr = new StreamReader(ms))
+                            using (var sr = new StreamReader(ms))
                                 WaitForLoadCSVList.Add(new Tuple<string, string>(Path.GetFileName(entry.FileName),
                                     sr.ReadToEnd()));
                         }
@@ -706,7 +716,7 @@ namespace ModLoader
                                 if (!(entry.FileName.StartsWith(ModDirName + @"/" + type.Name) &&
                                       entry.FileName.EndsWith(".json")))
                                     continue;
-                                string CardName = Path.GetFileNameWithoutExtension(entry.FileName);
+                                var CardName = Path.GetFileNameWithoutExtension(entry.FileName);
                                 try
                                 {
                                     JsonData json;
@@ -714,7 +724,7 @@ namespace ModLoader
                                     entry.Extract(ms);
                                     ms.Seek(0, SeekOrigin.Begin);
                                     string CardData;
-                                    using (StreamReader sr = new StreamReader(ms))
+                                    using (var sr = new StreamReader(ms))
                                     {
                                         CardData = sr.ReadToEnd();
                                         json = JsonMapper.ToObject(CardData);
@@ -778,11 +788,11 @@ namespace ModLoader
                                   entry.FileName.EndsWith(".json")))
                                 continue;
                             string CardData;
-                            string Guid = Path.GetFileNameWithoutExtension(entry.FileName);
-                            MemoryStream ms = new MemoryStream();
+                            var Guid = Path.GetFileNameWithoutExtension(entry.FileName);
+                            var ms = new MemoryStream();
                             entry.Extract(ms);
                             ms.Seek(0, SeekOrigin.Begin);
-                            using (StreamReader sr = new StreamReader(ms))
+                            using (var sr = new StreamReader(ms))
                                 CardData = sr.ReadToEnd();
                             if (AllGUIDDict.TryGetValue(Guid, out var obj))
                                 WaitForWarpperEditorGameSourceGUIDList.Add(
@@ -825,12 +835,6 @@ namespace ModLoader
                     ModInfo Info = new ModInfo();
                     string ModName = Path.GetFileName(dir);
 
-                    ModPacks[ModName] = new ModPack(Info, ModName,
-                        Instance.Config.Bind("是否加载某个模组",
-                            $"{ModName}_{Info.Name}_{Info.ModEditorVersion}_{Info.Version}", true,
-                            $"是否加载{ModName}"));
-                    if (!ModPacks[ModName].EnableEntry.Value) continue;
-
                     try
                     {
                         // Load Mod Info
@@ -840,6 +844,12 @@ namespace ModLoader
                         // Check Name
                         if (!Info.Name.IsNullOrWhiteSpace())
                             ModName = Info.Name;
+
+                        ModPacks[ModName] = new ModPack(Info, ModName,
+                            Instance.Config.Bind("是否加载某个模组",
+                                $"{ModName}_{Info.Name}".EscapeStr(), true,
+                                $"是否加载{ModName}"));
+                        if (!ModPacks[ModName].EnableEntry.Value) continue;
 
                         Debug.Log($"ModLoader PreLoad Mod {ModName} {Info.Version}");
 
@@ -902,15 +912,6 @@ namespace ModLoader
 
                     ModInfo Info = new ModInfo();
                     string ModName = Path.GetFileName(dir);
-                    if (!ModPacks.ContainsKey(ModName))
-                    {
-                        ModPacks[ModName] = new ModPack(Info, ModName,
-                            Instance.Config.Bind("是否加载某个模组",
-                                $"{ModName}_{Info.Name}_{Info.ModEditorVersion}_{Info.Version}", true,
-                                $"是否加载{ModName}"));
-                    }
-
-                    if (!ModPacks[ModName].EnableEntry.Value) continue;
 
                     try
                     {
@@ -922,7 +923,17 @@ namespace ModLoader
                         if (!Info.Name.IsNullOrWhiteSpace())
                             ModName = Info.Name;
 
-                        Debug.Log(string.Format("ModLoader Load Mod {0} {1}", ModName, Info.Version));
+                        if (!ModPacks.ContainsKey(ModName))
+                        {
+                            ModPacks[ModName] = new ModPack(Info, ModName,
+                                Instance.Config.Bind("是否加载某个模组",
+                                    $"{ModName}_{Info.Name}".EscapeStr(), true,
+                                    $"是否加载{ModName}"));
+                        }
+
+                        if (!ModPacks[ModName].EnableEntry.Value) continue;
+
+                        Debug.Log($"ModLoader Load Mod {ModName} {Info.Version}");
 
                         // Check Verison
                         Version ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
@@ -1041,7 +1052,7 @@ namespace ModLoader
                     {
                         if (Directory.Exists(CombinePaths(dir, "ScriptableObject")))
                         {
-                            var subclasses = from type in GameSrouceAssembly.GetTypes()
+                            var subclasses = from type in AccessTools.AllTypes()
                                 where type.IsSubclassOf(typeof(ScriptableObject))
                                 select type;
 
@@ -1987,18 +1998,18 @@ namespace ModLoader
                     var (sprites, modName) = task.Result;
                     foreach (var (dat, name) in sprites)
                     {
-                        var texture2D = new Texture2D(0, 0, TextureFormat.DXT5, Texture.GenerateAllMips, false);
+                        var texture2D = new Texture2D(0, 0,
+                            TexCompatibilityMode.Value ? TextureFormat.RGBA32 : TextureFormat.DXT5, 0, false);
                         texture2D.LoadImage(dat, SetTexture2ReadOnly.Value);
                         var sprite = Sprite.Create(texture2D, new Rect(0, 0, texture2D.width, texture2D.height),
-                            Vector2.zero);
+                            Vector2.one * 0.5f);
                         sprite.name = name;
                         if (!SpriteDict.ContainsKey(name))
                         {
                             SpriteDict.Add(name, sprite);
                         }
                         else
-                            Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName,
-                                name);
+                            Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName, name);
                     }
                 }
 
@@ -2075,6 +2086,10 @@ namespace ModLoader
 
             try
             {
+                // if (HasEncounterType)
+                // {
+                //     TestCardAdd.AddTestCard();
+                // }
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
 
@@ -2177,7 +2192,7 @@ namespace ModLoader
 
         public static bool ReqQuit;
         public static float WaitTime;
-        // public static bool HadBootNew;
+        public static bool HadBootNew;
 
         private void Update()
         {
@@ -2186,6 +2201,13 @@ namespace ModLoader
                 if (WaitTime > 0)
                 {
                     WaitTime -= Time.deltaTime;
+                    // if (WaitTime < 1f && !HadBootNew)
+                    // {
+                    //     HadBootNew = true;
+                    //     var processStartInfo = Process.GetCurrentProcess().StartInfo;
+                    //     processStartInfo.FileName = Paths.ExecutablePath;
+                    //     Process.Start(processStartInfo);
+                    // }
                 }
                 else
                 {
@@ -2219,7 +2241,8 @@ namespace ModLoader
         public static void ModManagerUIWindow(int id)
         {
             GUILayout.BeginVertical();
-            GUILayout.Space(40);
+            TexCompatibilityMode.Value =
+                GUILayout.Toggle(TexCompatibilityMode.Value, "是否启用纹理兼容模式（开启后纹理占用内存约翻4倍，请仅在缺图时开启）");
             ModManagerUIScrollViewPos = GUILayout.BeginScrollView(ModManagerUIScrollViewPos);
 
             foreach (var (key, val) in ModPacks)
