@@ -1,19 +1,22 @@
 ﻿using System;
-using BepInEx;
-using HarmonyLib;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using UnityEngine;
+using System.Linq;
 using System.Reflection;
 using System.Text;
-using LitJson;
-using System.Linq;
-using Ionic.Zip;
-using System.Collections;
-using System.Diagnostics;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using BepInEx;
 using BepInEx.Configuration;
+using ChatTreeLoader;
 using ChatTreeLoader.Patchers;
+using HarmonyLib;
+using Ionic.Zip;
+using LitJson;
+using ModLoader.Patchers;
+using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 namespace ModLoader
@@ -40,7 +43,7 @@ namespace ModLoader
         }
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.1.0")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.1.1")]
     public class ModLoader : BaseUnityPlugin
     {
         public static readonly AccessTools.FieldRef<Dictionary<string, string>> CurrentTextsFieldRef =
@@ -152,8 +155,30 @@ namespace ModLoader
             HarmonyInstance = new Harmony(Info.Metadata.GUID);
             if (AccessTools.TypeByName("EncounterPopup") != null)
             {
+                FixPatcher.DoPatch(HarmonyInstance);
+                AllScriptableObjectWithoutGuidTypeDict[typeof(ModEncounter)] =
+                    new Dictionary<string, ScriptableObject>();
+                AllScriptableObjectWithoutGuidTypeDict[typeof(ModEncounterNode)] =
+                    new Dictionary<string, ScriptableObject>();
                 MainPatcher.DoPatch(HarmonyInstance);
                 HasEncounterType = true;
+            }
+
+            foreach (var type in AccessTools.AllTypes())
+            {
+                var hasSerializable = false;
+                foreach (var customAttributeData in type.CustomAttributes)
+                {
+                    if (customAttributeData.AttributeType == typeof(SerializableAttribute))
+                    {
+                        hasSerializable = true;
+                    }
+                }
+
+                if (hasSerializable)
+                {
+                    AllScriptableObjectWithoutGuidTypeDict[type] = new Dictionary<string, ScriptableObject>();
+                }
             }
 
             PluginVersion = Version.Parse(Info.Metadata.Version.ToString());
@@ -208,6 +233,7 @@ namespace ModLoader
             {
                 Debug.LogWarningFormat("{0} {1}", "GuideManagerStartPrefix", ex);
             }
+
 
             try
             {
@@ -588,12 +614,26 @@ namespace ModLoader
                                    entry.FileName.EndsWith(".png"))))
                                 continue;
                             var sprite_name = Path.GetFileNameWithoutExtension(entry.FileName);
-                            var t2d = new Texture2D(0, 0,
-                                TexCompatibilityMode.Value ? TextureFormat.RGBA32 : TextureFormat.DXT5, 0, false);
+                            var t2d = new Texture2D(0, 0, TextureFormat.RGBA32, 0, false);
                             var ms = new MemoryStream();
                             entry.Extract(ms);
-                            t2d.LoadImage(ms.ToArray());
-                            var sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height), Vector2.zero);
+                            var endTex = t2d;
+                            if (!TexCompatibilityMode.Value)
+                            {
+                                t2d.LoadImage(ms.ToArray());
+                                var texture2D = new Texture2D(endTex.width, endTex.height, TextureFormat.DXT5, 0,
+                                    false);
+                                texture2D.SetPixelData(t2d.GetRawTextureData<byte>(), 0);
+                                texture2D.Apply(false, SetTexture2ReadOnly.Value);
+                                endTex = t2d;
+                            }
+                            else
+                            {
+                                t2d.LoadImage(ms.ToArray(), SetTexture2ReadOnly.Value);
+                            }
+
+                            var sprite = Sprite.Create(endTex, new Rect(0, 0, endTex.width, endTex.height),
+                                Vector2.zero);
                             sprite.name = sprite_name;
                             if (!SpriteDict.ContainsKey(sprite_name))
                                 SpriteDict.Add(sprite_name, sprite);
@@ -1029,14 +1069,12 @@ namespace ModLoader
                                 var raw_data = File.ReadAllBytes(file);
                                 var clip_name = Path.GetFileNameWithoutExtension(file);
                                 var clip = GetAudioClipFromWav(raw_data, clip_name);
-                                if (clip)
-                                {
-                                    if (!AudioClipDict.ContainsKey(clip.name))
-                                        AudioClipDict.Add(clip.name, clip);
-                                    else
-                                        Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}",
-                                            ModName, clip.name);
-                                }
+                                if (!clip) continue;
+                                if (!AudioClipDict.ContainsKey(clip.name))
+                                    AudioClipDict.Add(clip.name, clip);
+                                else
+                                    Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}",
+                                        ModName, clip.name);
                                 //MBSingleton<GameLoad>.Instance.StartCoroutine(GetDataRequest(ModName, file));
                             }
                         }
@@ -1382,7 +1420,7 @@ namespace ModLoader
 
         private static void LoadLocalization()
         {
-            var regex = new System.Text.RegularExpressions.Regex("\\\\n");
+            var regex = new Regex("\\\\n");
             if (LocalizationManager.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "简体中文")
             {
                 foreach (var pair in WaitForLoadCSVList)
@@ -1683,6 +1721,11 @@ namespace ModLoader
             if (GameManager.DontRenameGOs)
                 yield break;
             fieldMaskObject.Value.name = instance.name + "_Mask";
+        }
+
+        public class MyScriptableObject : ScriptableObject
+        {
+            public int aaa;
         }
 
         private static bool FixFXMaskAwake(FXMask __instance)
@@ -1998,11 +2041,24 @@ namespace ModLoader
                     var (sprites, modName) = task.Result;
                     foreach (var (dat, name) in sprites)
                     {
-                        var texture2D = new Texture2D(0, 0,
-                            TexCompatibilityMode.Value ? TextureFormat.RGBA32 : TextureFormat.DXT5, 0, false);
-                        texture2D.LoadImage(dat, SetTexture2ReadOnly.Value);
-                        var sprite = Sprite.Create(texture2D, new Rect(0, 0, texture2D.width, texture2D.height),
-                            Vector2.one * 0.5f);
+                        var t2d = new Texture2D(0, 0, TextureFormat.RGBA32, 0, false);
+                        var endTex = t2d;
+                        if (!TexCompatibilityMode.Value)
+                        {
+                            t2d.LoadImage(dat);
+                            var texture2D = new Texture2D(endTex.width, endTex.height, TextureFormat.DXT5, 0,
+                                false);
+                            texture2D.SetPixelData(t2d.GetRawTextureData<byte>(), 0);
+                            texture2D.Apply(false, SetTexture2ReadOnly.Value);
+                            endTex = t2d;
+                        }
+                        else
+                        {
+                            t2d.LoadImage(dat, SetTexture2ReadOnly.Value);
+                        }
+
+                        var sprite = Sprite.Create(endTex, new Rect(0, 0, endTex.width, endTex.height),
+                            Vector2.zero);
                         sprite.name = name;
                         if (!SpriteDict.ContainsKey(name))
                         {
