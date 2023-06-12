@@ -15,7 +15,6 @@ using ChatTreeLoader.Patchers;
 using HarmonyLib;
 using Ionic.Zip;
 using LitJson;
-using ModLoader.Patchers;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -155,7 +154,6 @@ namespace ModLoader
             HarmonyInstance = new Harmony(Info.Metadata.GUID);
             if (AccessTools.TypeByName("EncounterPopup") != null)
             {
-                FixPatcher.DoPatch(HarmonyInstance);
                 AllScriptableObjectWithoutGuidTypeDict[typeof(ModEncounter)] =
                     new Dictionary<string, ScriptableObject>();
                 AllScriptableObjectWithoutGuidTypeDict[typeof(ModEncounterNode)] =
