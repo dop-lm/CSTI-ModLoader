@@ -34,8 +34,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="DataStruct\UnityContLoadInfo.cs" />
-    <Compile Include="LoaderUtil\CheckCanBeLoad.cs" />
     <Compile Include="LoaderUtil\PostSpriteLoad.cs" />
     <Compile Include="ResourceLoadHelper.cs" />
     <Compile Include="StringHelper.cs" />
@@ -124,6 +122,7 @@
     <Content Include="ExampleModify.json" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="DataStruct\" />
     <Folder Include="Patchers\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
