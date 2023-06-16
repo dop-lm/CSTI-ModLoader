@@ -15,6 +15,7 @@ using ChatTreeLoader.Patchers;
 using HarmonyLib;
 using Ionic.Zip;
 using LitJson;
+using ModLoader.LoaderUtil;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -30,9 +31,9 @@ namespace ModLoader
 
     public class ModPack
     {
-        public ModInfo ModInfo;
-        public string FileName;
-        public ConfigEntry<bool> EnableEntry;
+        public readonly ModInfo ModInfo;
+        public readonly string FileName;
+        public readonly ConfigEntry<bool> EnableEntry;
 
         public ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableEntry)
         {
@@ -42,9 +43,15 @@ namespace ModLoader
         }
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.1.1")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.1.5")]
     public class ModLoader : BaseUnityPlugin
     {
+        public static int MaxTexWidth = 420;
+
+        public static Dictionary<string, JsonData> UniqueIdObjectExtraData = new Dictionary<string, JsonData>();
+        public static Dictionary<int, JsonData> ScriptableObjectExtraData = new Dictionary<int, JsonData>();
+        public static Dictionary<object, JsonData> ClassObjectExtraData = new Dictionary<object, JsonData>();
+
         public static readonly AccessTools.FieldRef<Dictionary<string, string>> CurrentTextsFieldRef =
             AccessTools.StaticFieldRefAccess<Dictionary<string, string>>(AccessTools.Field(typeof(LocalizationManager),
                 "CurrentTexts"));
@@ -145,11 +152,13 @@ namespace ModLoader
         private void Awake()
         {
             Instance = this;
+            this.StartCoroutineEx(PostSpriteLoad.CompressOnLate(), out var controller);
+            PostSpriteLoad.Controller = controller;
             SetTexture2ReadOnly =
                 Config.Bind("是否将加载的纹理设置为只读", "SetTexture2ReadOnly", false,
                     "将加载的纹理设置为只读可以减少内存使用但是之后不能再读取纹理");
             TexCompatibilityMode = Config.Bind("兼容性设置", "TexCompatibilityMode", false,
-                "开启后纹理占用内存约翻4倍，请仅在缺图时开启");
+                "开启后纹理占用内存会增加，请仅在缺图时开启");
             // Plugin startup logic
             HarmonyInstance = new Harmony(Info.Metadata.GUID);
             if (AccessTools.TypeByName("EncounterPopup") != null)
@@ -579,7 +588,9 @@ namespace ModLoader
                                 if (obj is Sprite)
                                 {
                                     if (!SpriteDict.ContainsKey(obj.name))
+                                    {
                                         SpriteDict.Add(obj.name, obj as Sprite);
+                                    }
                                     else
                                         Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}",
                                             ModName, obj.name);
@@ -615,26 +626,37 @@ namespace ModLoader
                             var t2d = new Texture2D(0, 0, TextureFormat.RGBA32, 0, false);
                             var ms = new MemoryStream();
                             entry.Extract(ms);
-                            var endTex = t2d;
+                            t2d.LoadImage(ms.ToArray());
+                            // var resized = false;
+                            // if (t2d.width < t2d.height && t2d.width > MaxTexWidth)
+                            // {
+                            //     t2d.Resize(MaxTexWidth, t2d.height * MaxTexWidth / t2d.width);
+                            //     resized = true;
+                            // }
+                            //
+                            // if (t2d.height < t2d.width && t2d.height > MaxTexWidth)
+                            // {
+                            //     t2d.Resize(t2d.width * MaxTexWidth / t2d.height, MaxTexWidth);
+                            //     resized = true;
+                            // }
+                            //
+                            // if (resized)
+                            // {
+                            //     t2d.Apply();
+                            // }
+
                             if (!TexCompatibilityMode.Value)
                             {
-                                t2d.LoadImage(ms.ToArray());
-                                var texture2D = new Texture2D(endTex.width, endTex.height, TextureFormat.DXT5, 0,
-                                    false);
-                                texture2D.SetPixelData(t2d.GetRawTextureData<byte>(), 0);
-                                texture2D.Apply(false, SetTexture2ReadOnly.Value);
-                                endTex = t2d;
-                            }
-                            else
-                            {
-                                t2d.LoadImage(ms.ToArray(), SetTexture2ReadOnly.Value);
+                                t2d.ToCompress();
                             }
 
-                            var sprite = Sprite.Create(endTex, new Rect(0, 0, endTex.width, endTex.height),
+                            var sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height),
                                 Vector2.zero);
                             sprite.name = sprite_name;
                             if (!SpriteDict.ContainsKey(sprite_name))
+                            {
                                 SpriteDict.Add(sprite_name, sprite);
+                            }
                             else
                                 Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModName,
                                     sprite_name);
@@ -910,7 +932,7 @@ namespace ModLoader
                         if (Directory.Exists(picPath))
                         {
                             var files = Directory.GetFiles(picPath);
-                            spritesWaitList.Add(ResourceLoadHelper.LoadPictures(ModName, files));
+                            PostSpriteLoad.SpriteLoadQueue.Enqueue(ResourceLoadHelper.LoadPictures(ModName, files));
                         }
                     }
                     catch (Exception e)
@@ -934,6 +956,10 @@ namespace ModLoader
             catch (Exception e)
             {
                 Logger.LogError($"loading error :{e}");
+            }
+            finally
+            {
+                PostSpriteLoad.NoMoreSpriteLoadQueue = true;
             }
         }
 
@@ -1000,7 +1026,9 @@ namespace ModLoader
                                     if (obj is Sprite sprite)
                                     {
                                         if (!SpriteDict.ContainsKey(sprite.name))
+                                        {
                                             SpriteDict.Add(sprite.name, sprite);
+                                        }
                                         else
                                             Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}",
                                                 ModName, sprite.name);
@@ -2033,39 +2061,33 @@ namespace ModLoader
         {
             try
             {
-                foreach (var task in spritesWaitList)
-                {
-                    task.Wait();
-                    var (sprites, modName) = task.Result;
-                    foreach (var (dat, name) in sprites)
-                    {
-                        var t2d = new Texture2D(0, 0, TextureFormat.RGBA32, 0, false);
-                        var endTex = t2d;
-                        if (!TexCompatibilityMode.Value)
-                        {
-                            t2d.LoadImage(dat);
-                            var texture2D = new Texture2D(endTex.width, endTex.height, TextureFormat.DXT5, 0,
-                                false);
-                            texture2D.SetPixelData(t2d.GetRawTextureData<byte>(), 0);
-                            texture2D.Apply(false, SetTexture2ReadOnly.Value);
-                            endTex = t2d;
-                        }
-                        else
-                        {
-                            t2d.LoadImage(dat, SetTexture2ReadOnly.Value);
-                        }
-
-                        var sprite = Sprite.Create(endTex, new Rect(0, 0, endTex.width, endTex.height),
-                            Vector2.zero);
-                        sprite.name = name;
-                        if (!SpriteDict.ContainsKey(name))
-                        {
-                            SpriteDict.Add(name, sprite);
-                        }
-                        else
-                            Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName, name);
-                    }
-                }
+                // foreach (var task in spritesWaitList)
+                // {
+                //     task.Wait();
+                //     var (sprites, modName) = task.Result;
+                //     foreach (var (dat, name) in sprites)
+                //     {
+                //         var t2d = new Texture2D(0, 0, TextureFormat.RGBA32, 0, false);
+                //         t2d.LoadImage(dat);
+                //
+                //         if (!TexCompatibilityMode.Value)
+                //         {
+                //             t2d.ToCompress();
+                //         }
+                //
+                //         t2d.Apply(false, SetTexture2ReadOnly.Value);
+                //
+                //         var sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height),
+                //             Vector2.zero);
+                //         sprite.name = name;
+                //         if (!SpriteDict.ContainsKey(name))
+                //         {
+                //             SpriteDict.Add(name, sprite);
+                //         }
+                //         else
+                //             Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName, name);
+                //     }
+                // }
 
                 foreach (var task in uniqueObjWaitList)
                 {
@@ -2152,6 +2174,7 @@ namespace ModLoader
                 LoadMods(Path.Combine(Paths.BepInExRootPath, "plugins"));
 
                 LoadModsFromZip();
+                PostSpriteLoad.BeginCompress = true;
 
                 LoadFromPreLoadData();
 
@@ -2166,6 +2189,7 @@ namespace ModLoader
                 WarpperAllEditorGameSrouces();
 
                 MatchAndWarpperAllEditorGameSrouce();
+
                 stopwatch1.Stop();
                 Debug.LogWarning($"warp time taken:{stopwatch1.Elapsed}");
 
@@ -2180,6 +2204,10 @@ namespace ModLoader
             catch (Exception ex)
             {
                 Debug.LogWarning(ex.Message);
+            }
+            finally
+            {
+                PostSpriteLoad.CanEnd = true;
             }
         }
 
@@ -2244,6 +2272,10 @@ namespace ModLoader
             Screen.width * 0.45f,
             Screen.height * 0.45f);
 
+        public static Rect LoadSuccessUIWindowRect = new Rect(Screen.width * 0.45f, Screen.height * 0.45f,
+            Screen.width * 0.1f,
+            Screen.height * 0.1f);
+
         public static bool ReqQuit;
         public static float WaitTime;
         public static bool HadBootNew;
@@ -2281,8 +2313,22 @@ namespace ModLoader
             }
         }
 
+        public static float ShowLoadSuccess;
+
+        public static GUIStyle bigLabel;
+
         private void OnGUI()
         {
+            bigLabel ??= new(GUI.skin.label)
+            {
+                fontSize = 32
+            };
+            if (ShowLoadSuccess > 0)
+            {
+                ShowLoadSuccess -= Time.deltaTime;
+                GUILayout.Window(0x893ffa, LoadSuccessUIWindowRect, PostLoadSuccessWindow, "PostLoadSuccess");
+            }
+
             if (!ModManagerUIOn)
             {
                 return;
@@ -2292,11 +2338,19 @@ namespace ModLoader
                 ModManagerUIWindow, "ModManagerUI");
         }
 
-        public static void ModManagerUIWindow(int id)
+        private static void PostLoadSuccessWindow(int id)
+        {
+            GUILayout.BeginVertical();
+            GUILayout.Label("加载正式完成", bigLabel);
+            GUILayout.Label("Load All Success", bigLabel);
+            GUILayout.EndVertical();
+        }
+
+        private static void ModManagerUIWindow(int id)
         {
             GUILayout.BeginVertical();
             TexCompatibilityMode.Value =
-                GUILayout.Toggle(TexCompatibilityMode.Value, "是否启用纹理兼容模式（开启后纹理占用内存约翻4倍，请仅在缺图时开启）");
+                GUILayout.Toggle(TexCompatibilityMode.Value, "是否启用纹理兼容模式（开启后纹理占用内存会增加，请仅在缺图时开启）");
             ModManagerUIScrollViewPos = GUILayout.BeginScrollView(ModManagerUIScrollViewPos);
 
             foreach (var (key, val) in ModPacks)

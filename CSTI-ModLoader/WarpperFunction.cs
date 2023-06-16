@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using LitJson;
+using ModLoader.LoaderUtil;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using Object = System.Object;
@@ -39,7 +40,8 @@ namespace ModLoader
             }
             else if (field_type == typeof(Sprite))
             {
-                ObjectReferenceWarpper(obj, data, field_name, ModLoader.SpriteDict);
+                var (_, _, setter) = obj.GetType().FieldFromCache(field_name,getter_use:false);
+                obj.PostSetEnQueue(setter,data);
             }
             else if (field_type == typeof(AudioClip))
             {
@@ -119,6 +121,19 @@ namespace ModLoader
             if (!json.IsObject)
                 return;
             var obj_type = obj.GetType();
+            if (obj is UniqueIDScriptable idScriptable && json.ContainsKey(ExtraData))
+            {
+                ModLoader.UniqueIdObjectExtraData[idScriptable.UniqueID] = json[ExtraData];
+            }
+            else if (obj is ScriptableObject scriptableObject && json.ContainsKey(ExtraData))
+            {
+                ModLoader.ScriptableObjectExtraData[scriptableObject.GetInstanceID()] = json[ExtraData];
+            }
+            else if (!obj_type.IsValueType && json.ContainsKey(ExtraData))
+            {
+                ModLoader.ClassObjectExtraData[obj] = json[ExtraData];
+            }
+
             foreach (var key in json.Keys)
             {
                 try
@@ -422,6 +437,8 @@ namespace ModLoader
                 }
             }
         }
+
+        private static readonly string ExtraData = "额外数据ExtraData";
 
         public static void ObjectReferenceWarpper<TValueType>(Object obj, string data, string field_name,
             Dictionary<string, TValueType> dict)
