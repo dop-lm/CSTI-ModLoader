@@ -15,6 +15,7 @@ using ChatTreeLoader.Patchers;
 using HarmonyLib;
 using Ionic.Zip;
 using LitJson;
+using ModLoader.DataStruct;
 using ModLoader.LoaderUtil;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -51,6 +52,9 @@ namespace ModLoader
         public static Dictionary<string, JsonData> UniqueIdObjectExtraData = new Dictionary<string, JsonData>();
         public static Dictionary<int, JsonData> ScriptableObjectExtraData = new Dictionary<int, JsonData>();
         public static Dictionary<object, JsonData> ClassObjectExtraData = new Dictionary<object, JsonData>();
+
+        public static Dictionary<string, UnityContLoadInfo> UnityContSerializeJsonData =
+            new Dictionary<string, UnityContLoadInfo>();
 
         public static readonly AccessTools.FieldRef<Dictionary<string, string>> CurrentTextsFieldRef =
             AccessTools.StaticFieldRefAccess<Dictionary<string, string>>(AccessTools.Field(typeof(LocalizationManager),
@@ -163,10 +167,6 @@ namespace ModLoader
             HarmonyInstance = new Harmony(Info.Metadata.GUID);
             if (AccessTools.TypeByName("EncounterPopup") != null)
             {
-                AllScriptableObjectWithoutGuidTypeDict[typeof(ModEncounter)] =
-                    new Dictionary<string, ScriptableObject>();
-                AllScriptableObjectWithoutGuidTypeDict[typeof(ModEncounterNode)] =
-                    new Dictionary<string, ScriptableObject>();
                 MainPatcher.DoPatch(HarmonyInstance);
                 HasEncounterType = true;
             }
@@ -706,6 +706,12 @@ namespace ModLoader
 
                         foreach (var type in subclasses)
                         {
+                            if (!AllScriptableObjectWithoutGuidTypeDict.ContainsKey(type))
+                            {
+                                AllScriptableObjectWithoutGuidTypeDict[type] =
+                                    new Dictionary<string, ScriptableObject>();
+                            }
+
                             if (type.IsSubclassOf(typeof(UniqueIDScriptable)) || type == typeof(UniqueIDScriptable))
                                 continue;
                             foreach (var entry in entrys)
@@ -719,6 +725,26 @@ namespace ModLoader
                                     if (dict.ContainsKey(obj_name))
                                         continue;
                                     string CardData;
+                                    if (!type.CheckCanUnityLoad())
+                                    {
+                                        var memoryStream = new MemoryStream();
+                                        entry.Extract(memoryStream);
+                                        memoryStream.Seek(0, SeekOrigin.Begin);
+                                        using var streamReader = new StreamReader(memoryStream);
+                                        var jsonData = JsonMapper.ToObject(streamReader.ReadToEnd());
+                                        if (jsonData.ContainsKey("id"))
+                                        {
+                                            jsonData["id"].ToString().RegContSerializeData(entry.FileName, jsonData);
+                                        }
+                                        else
+                                        {
+                                            $"{ModName}__{entry.FileName}".RegContSerializeData(entry.FileName,
+                                                jsonData);
+                                        }
+
+                                        continue;
+                                    }
+
                                     var obj = ScriptableObject.CreateInstance(type);
                                     var ms = new MemoryStream();
                                     entry.Extract(ms);
@@ -1122,6 +1148,12 @@ namespace ModLoader
 
                             foreach (var type in subclasses)
                             {
+                                if (!AllScriptableObjectWithoutGuidTypeDict.ContainsKey(type))
+                                {
+                                    AllScriptableObjectWithoutGuidTypeDict[type] =
+                                        new Dictionary<string, ScriptableObject>();
+                                }
+
                                 if (type.IsSubclassOf(typeof(UniqueIDScriptable)) || type == typeof(UniqueIDScriptable))
                                     continue;
 
@@ -1138,8 +1170,24 @@ namespace ModLoader
                                         if (dict.ContainsKey(obj_name))
                                             continue;
                                         string CardData;
+                                        if (!type.CheckCanUnityLoad())
+                                        {
+                                            using var streamReader = new StreamReader(file);
+                                            var jsonData = JsonMapper.ToObject(streamReader.ReadToEnd());
+                                            if (jsonData.ContainsKey("id"))
+                                            {
+                                                jsonData["id"].ToString().RegContSerializeData(file, jsonData);
+                                            }
+                                            else
+                                            {
+                                                $"{ModName}__{obj_name}".RegContSerializeData(file, jsonData);
+                                            }
+
+                                            continue;
+                                        }
+
                                         var obj = ScriptableObject.CreateInstance(type);
-                                        using (StreamReader sr = new StreamReader(file))
+                                        using (var sr = new StreamReader(file))
                                             CardData = sr.ReadToEnd();
                                         obj.name = obj_name;
                                         JsonUtility.FromJsonOverwrite(CardData, obj);

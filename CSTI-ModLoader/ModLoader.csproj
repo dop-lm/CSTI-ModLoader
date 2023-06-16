@@ -34,6 +34,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="DataStruct\UnityContLoadInfo.cs" />
+    <Compile Include="LoaderUtil\CheckCanBeLoad.cs" />
     <Compile Include="LoaderUtil\PostSpriteLoad.cs" />
     <Compile Include="ResourceLoadHelper.cs" />
     <Compile Include="StringHelper.cs" />
@@ -67,6 +69,14 @@
     </Reference>
     <Reference Include="LitJSON, Version=0.18.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\LitJson.0.18.0\lib\net45\LitJSON.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.RuntimeDetour">
+      <HintPath>..\..\Libs\MonoMod.RuntimeDetour.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="MonoMod.Utils">
+      <HintPath>..\..\Libs\MonoMod.Utils.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />

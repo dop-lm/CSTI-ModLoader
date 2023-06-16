@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -128,7 +129,7 @@ namespace ModLoader.LoaderUtil
             }
             
             var graphicsArray = Resources.FindObjectsOfTypeAll<CardGraphics>();
-            foreach (var graphics in graphicsArray)
+            foreach (var graphics in graphicsArray.Where(graphics => graphics&&graphics.CardLogic))
             {
                 graphics.Setup(graphics.CardLogic);
             }
