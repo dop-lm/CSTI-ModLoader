@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModLoader", "CSTI-ModLoader
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamicModLoader", "DynamicModLoader\DynamicModLoader.csproj", "{1CE14441-18B5-4FAE-8C2B-91ECBF71D0FF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModLoaderInstaller", "ModLoaderInstaller\ModLoaderInstaller.csproj", "{D6D5C6BD-F1A9-4B69-8525-F52DC38341F3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{1CE14441-18B5-4FAE-8C2B-91ECBF71D0FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1CE14441-18B5-4FAE-8C2B-91ECBF71D0FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1CE14441-18B5-4FAE-8C2B-91ECBF71D0FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6D5C6BD-F1A9-4B69-8525-F52DC38341F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6D5C6BD-F1A9-4B69-8525-F52DC38341F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6D5C6BD-F1A9-4B69-8525-F52DC38341F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6D5C6BD-F1A9-4B69-8525-F52DC38341F3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
