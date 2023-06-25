@@ -25,7 +25,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -34,9 +34,13 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="LoaderUtil\DoWarpperLoader.cs" />
+    <Compile Include="LoaderUtil\LoadPreData.cs" />
     <Compile Include="LoaderUtil\PostSpriteLoad.cs" />
+    <Compile Include="LoaderUtil\ResourceDataLoader.cs" />
     <Compile Include="ResourceLoadHelper.cs" />
     <Compile Include="StringHelper.cs" />
+    <Compile Include="UI\MainUI.cs" />
     <Compile Include="WarpHelper.cs" />
     <Compile Include="WarpperFunction.cs" />
     <Compile Include="ModLoader.cs" />
@@ -59,9 +63,10 @@
       <HintPath>..\..\Libs\BepInEx.Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="CSTI-ChatTreeLoader">
-      <HintPath>..\..\CSTI-LuaActionSupport\CSTI-ChatTreeLoader\bin\Release\CSTI-ChatTreeLoader.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\..\CSTI-LuaActionSupport\CSTI-ChatTreeLoader\CSTI-ChatTreeLoader.csproj">
+      <Project>{A7DEC75F-D58F-4E55-98EC-6CA0AAC9F127}</Project>
+      <Name>CSTI-ChatTreeLoader</Name>
+    </ProjectReference>
     <Reference Include="DotNetZip">
       <HintPath>..\..\Libs\DotNetZip.dll</HintPath>
     </Reference>
@@ -114,12 +119,25 @@
       <HintPath>..\..\Libs\UnityEngine.SpriteMaskModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\..\Libs\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsModule">
+      <HintPath>..\..\Libs\UnityEngine.UIElementsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>..\..\Libs\UnityEngine.UIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ExampleModify.json" />
+    <Content Include="更新历史&amp;使用说明.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DataStruct\" />

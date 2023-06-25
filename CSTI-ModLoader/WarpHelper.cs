@@ -8,19 +8,15 @@ namespace ModLoader
 {
     public static class WarpHelper
     {
-        public static readonly Dictionary<Type, Dictionary<string, FieldInfo>> FieldInfoCache =
-            new Dictionary<Type, Dictionary<string, FieldInfo>>();
+        public static readonly Dictionary<Type, Dictionary<string, FieldInfo>> FieldInfoCache = new();
 
         public static readonly Dictionary<Type, Dictionary<string, Func<object, object>>>
-            FieldGetterDynamicMethodCache =
-                new Dictionary<Type, Dictionary<string, Func<object, object>>>();
+            FieldGetterDynamicMethodCache = new();
 
         public static readonly Dictionary<Type, Dictionary<string, Action<object, object>>>
-            FieldSetterDynamicMethodCache =
-                new Dictionary<Type, Dictionary<string, Action<object, object>>>();
+            FieldSetterDynamicMethodCache = new();
 
-        public static readonly Dictionary<Type, Func<object>> ClassConstructorCache =
-            new Dictionary<Type, Func<object>>();
+        public static readonly Dictionary<Type, Func<object>> ClassConstructorCache = new();
 
         public static Func<object> ConstructorFromCache(this Type type)
         {
@@ -130,12 +126,13 @@ namespace ModLoader
 
             return (fieldInfo, getter, setter);
         }
+        
+        private static readonly Type ObjType = typeof(object);
 
         public static Func<object, object> GenGetter(FieldInfo fieldInfo, Type type)
         {
             var fieldInfoFieldType = fieldInfo.FieldType;
-            var objType = typeof(object);
-            var dynamicMethod = new DynamicMethod("simple_getter", objType, new[] {objType}, true);
+            var dynamicMethod = new DynamicMethod("simple_getter", ObjType, new[] {ObjType}, true);
             var ilGenerator = dynamicMethod.GetILGenerator();
             ilGenerator.Emit(OpCodes.Ldarg_0);
             ilGenerator.Emit(type.IsValueType ? OpCodes.Unbox : OpCodes.Castclass, type);
@@ -153,8 +150,7 @@ namespace ModLoader
         public static Action<object, object> GenSetter(FieldInfo fieldInfo, Type type)
         {
             var fieldInfoFieldType = fieldInfo.FieldType;
-            var objType = typeof(object);
-            var dynamicMethod = new DynamicMethod("simple_setter", typeof(void), new[] {objType, objType}, true);
+            var dynamicMethod = new DynamicMethod("simple_setter", typeof(void), new[] {ObjType, ObjType}, true);
             var ilGenerator = dynamicMethod.GetILGenerator();
             ilGenerator.Emit(OpCodes.Ldarg_0);
             ilGenerator.Emit(type.IsValueType ? OpCodes.Unbox : OpCodes.Castclass, type);

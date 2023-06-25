@@ -1,0 +1,56 @@
+v1.0.0 能够载入按照一定格式编写的Json数据类型的Mod，目前理论支持自定义CardData、CharacterPerk、Objective、SelfTriggeredAction，其中CardData、CharacterPerk已经经过测试
+v1.0.1 增加导入自定义图片的功能，需要在Resource下新建一个Picture文件夹，然后把需要的图片放进去，目前支持jpg、png、jpeg，推荐png（抠图后效果更好）
+v1.0.2 增加版本确认，当ModLoader版本低于Mod需求版本时会有报警
+v1.0.3 增加GameStat自定义，修复一个BUG，增加报警提示时显示MOD名
+v1.0.4 增加两个WarpType，Add（4），Modify（5），一个新文件夹GameSourceModify，可以修改游戏内原有的UniqueIDScriptable对象，具体操作看编写说明
+v1.0.5 允许不完整的JsonMod文件
+v1.0.6 增加更多异常报警，可以在存档文件下的Player.log文件中查看，新增CharacterPerk选择PerkGroup的功能，具体看编写说明
+v1.0.7 修复CookingRecipe异常的BUG
+v1.0.8 添加导入自定义音效的功能，需要在Resource下新建一个Audio文件夹，然后把需要的音效放进去，目前仅支持wav
+v1.0.9 将导入自定义音效从使用Unity的UnityWebRequestMultimedia换成自定义的读取wav二进制文件生成AudioClip
+
+v1.1.0 添加对ModEditor生成的Mod的载入支持
+v1.1.1 使用Path.Combine处理所有路径
+v1.1.2 添加对ModEditor生成的游戏原数据修改的支持
+v1.1.3 打印更多的调试信息
+v1.1.4 添加对打包成ZIP格式的Mod的载入支持，仅允许UTF-8编码的ZIP，我也不知道怎么看是IBM437还是UTF-8，自己打包后尝试进游戏，没问题就行
+v1.1.5 增加对ScriptableObject自建类型的载入支持
+
+v1.2.0 增加自定义游戏角色的支持，增加对自定义剧本的支持，增加对自定义蓝图列表的支持，将Error报警换成Warning报警
+v1.2.1 禁止对游戏内原有卡牌属性的修改功能，只允许添加
+v1.2.2 修复自定义蓝图会在重置游戏时重复添加的BUG
+v1.2.3 允许根据CardTag和CardType使用GameSrouceModify进行修改（注意将对满足CardTag和CardType所有Mod数据都会生效）
+v1.2.4 允许自定义角色使用游戏内原有剧本
+v1.2.5 增加HarmonyInstanceID
+
+v1.3.0 增加对文件夹嵌套类型的Mod的载入支持，修复自定义类型ScriptableObject引用的BUG
+v1.3.1 载入游戏原始数据和载入Mod时指定游戏Assembly，对没有GUID的UniqueIDScriptable类型载入时报警并跳过
+v1.3.2 将Mod载入从GameLoadLoadGameDataPostfix移动至UniqueIDScriptableClearDictPrefix，由GameLoad完成Init
+v1.3.3 增加对游戏内自定义帮助的支持，Mod作者只需要在ScriptableObject文件夹下新建一个GuideEntry文件夹，然后在Editor中完成
+v1.3.4 修改GameSrouceModify的运行顺序，添加音频多声道支持，添加对过滤器的支持（游戏中的水、食物、工具、火）
+v1.3.5 修复双声道音效有一半时间空白的Bug
+
+v1.4.0 先凑合用，还得改点东西
+
+v2.0.0 针对游戏v1.0.4更新，添加Patch时的异常处理，现在不再支持非Editor格式的JsonMod（指老版本格式），GameSrouceModify下也能建子文件夹了
+v2.0.1 修复自定义剧本未加载的Bug
+v2.0.2 添加英文翻译支持，异步加载
+v2.0.3 反射优化，加载速度优化
+v2.0.4 修复无法加载不包含图片文件夹的模组的bug
+v2.0.5 更新LitJson DotNetZip库
+v2.0.6 修复zip mod加载bug
+v2.0.7 图片内存优化，添加了一项开关纹理只读的配置（默认关）
+v2.0.8 添加模组管理器ctrl(windows)/command(mac)+tab打开
+v2.0.9 添加对话系统
+v2.1.0 模组管理器中对模组名转义避免无法处理，允许加载外部ScriptableObject
+v2.1.1 修复纹理内存优化功能
+v2.1.2 更新内容均已无效
+v2.1.3 修复之前关于纹理内存优化的所有已知问题
+v2.1.4 完成纹理延迟加载功能，测试效果（COD加载时间45s->12s），刚进入游戏会卡一段时间，这段时间就是在加载图片，在加载完成前也可以进入存档游玩，但是会有一些物品缺图，等加载完成过图刷新一下就可以了
+v2.1.5 延迟加载功能改进，现在会自动更新卡面了
+v2.1.6 修复延迟加载的一些bug，管理器ui改进
+v2.1.7 添加商人系统
+v2.1.7.1 --修复bug
+v2.1.7.2 又修复bug
+v2.1.7.3 又又修复bug
+v2.1.8 修复商人系统的一些bug

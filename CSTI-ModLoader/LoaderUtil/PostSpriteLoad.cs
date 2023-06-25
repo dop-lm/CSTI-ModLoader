@@ -43,11 +43,10 @@ namespace ModLoader.LoaderUtil
             }
         }
 
-        public static readonly Dictionary<string, Queue<PostSetter>> PostSetQueue =
-            new Dictionary<string, Queue<PostSetter>>();
+        public static readonly Dictionary<string, Queue<PostSetter>> PostSetQueue = new();
 
         public static readonly Queue<Task<(List<(byte[] dat, string name)> sprites, string modName)>>
-            SpriteLoadQueue = new Queue<Task<(List<(byte[] dat, string name)> sprites, string modName)>>();
+            SpriteLoadQueue = new();
 
         public static bool NoMoreSpriteLoadQueue;
 
@@ -127,11 +126,18 @@ namespace ModLoader.LoaderUtil
                     postSetter.Set();
                 }
             }
-            
+
             var graphicsArray = Resources.FindObjectsOfTypeAll<CardGraphics>();
-            foreach (var graphics in graphicsArray.Where(graphics => graphics&&graphics.CardLogic))
+            foreach (var graphics in graphicsArray.Where(graphics => graphics && graphics.CardLogic))
             {
-                graphics.Setup(graphics.CardLogic);
+                try
+                {
+                    graphics.Setup(graphics.CardLogic);
+                }
+                catch (Exception e)
+                {
+                    ModLoader.Instance.CommonLogger.LogError(e);
+                }
             }
 
             ModLoader.ShowLoadSuccess += 0.5f;
@@ -147,7 +153,6 @@ namespace ModLoader.LoaderUtil
 
                 yield return null;
             }
-
         }
     }
 }
