@@ -16,6 +16,7 @@ using Ionic.Zip;
 using LitJson;
 using ModLoader.LoaderUtil;
 using ModLoader.UI;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
@@ -47,11 +48,9 @@ namespace ModLoader
         }
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.1.8")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.2.0")]
     public class ModLoader : BaseUnityPlugin
     {
-        public static int MaxTexWidth = 420;
-
         public ManualLogSource CommonLogger => Logger;
 
         public static readonly Dictionary<string, JsonData> UniqueIdObjectExtraData = new();
@@ -146,6 +145,37 @@ namespace ModLoader
         public static bool HasEncounterType;
         public static Image MainUIBackPanel;
         public static RectTransform MainUIBackPanelRT;
+
+        private void Start()
+        {
+            StartCoroutine(FontLoader());
+        }
+
+        public static AssetBundle FontAssetBundle;
+
+        private static IEnumerator FontLoader()
+        {
+            var assetBundleCreateRequest = AssetBundle.LoadFromStreamAsync(EmbeddedResources.CSTIFonts);
+            yield return assetBundleCreateRequest;
+            FontAssetBundle = assetBundleCreateRequest.assetBundle;
+            var assetBundleRequest = FontAssetBundle.LoadAssetAsync<TMP_FontAsset>("SourceHanSerifCN-SemiBold SDF");
+            yield return assetBundleRequest;
+            var font = assetBundleRequest.asset as TMP_FontAsset;
+            var toAddFallback = new HashSet<TMP_FontAsset>(Resources.FindObjectsOfTypeAll<FontSet>()
+                .SelectMany(set => set.Settings).Select(settings => settings.FontObject));
+
+            foreach (var fontAsset in toAddFallback)
+            {
+                if (fontAsset.fallbackFontAssetTable == null)
+                {
+                    fontAsset.fallbackFontAssetTable = new List<TMP_FontAsset> {font};
+                }
+                else
+                {
+                    fontAsset.fallbackFontAssetTable.Add(font);
+                }
+            }
+        }
 
         private void Awake()
         {
@@ -1824,8 +1854,18 @@ namespace ModLoader
         {
             if (ReqQuit)
             {
-                if (WaitTime > 0)
+                if (WaitTime > 0.5)
                 {
+                    WaitTime -= Time.deltaTime;
+                }
+                else if (WaitTime > 0)
+                {
+                    if (!HadBootNew)
+                    {
+                        HadBootNew = true;
+                        Process.Start("explorer.exe", Paths.ExecutablePath);
+                    }
+
                     WaitTime -= Time.deltaTime;
                 }
                 else
