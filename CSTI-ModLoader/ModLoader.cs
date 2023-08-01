@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BepInEx;
@@ -48,9 +49,14 @@ namespace ModLoader
         }
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.2.0")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.2.2")]
     public class ModLoader : BaseUnityPlugin
     {
+        static ModLoader()
+        {
+            NormalPatcher.DoPatch(HarmonyInstance);
+        }
+
         public ManualLogSource CommonLogger => Logger;
 
         public static readonly Dictionary<string, JsonData> UniqueIdObjectExtraData = new();
@@ -66,7 +72,7 @@ namespace ModLoader
 
         public static Version PluginVersion;
         public static Assembly GameSourceAssembly;
-        public static Harmony HarmonyInstance;
+        public static readonly Harmony HarmonyInstance = new("Dop.plugin.CSTI.ModLoader");
         public static ModLoader Instance;
 
         public static readonly Dictionary<string, Sprite> SpriteDict = new();
@@ -161,6 +167,7 @@ namespace ModLoader
             var assetBundleRequest = FontAssetBundle.LoadAssetAsync<TMP_FontAsset>("SourceHanSerifCN-SemiBold SDF");
             yield return assetBundleRequest;
             var font = assetBundleRequest.asset as TMP_FontAsset;
+            font!.atlasPopulationMode = AtlasPopulationMode.Dynamic;
             var toAddFallback = new HashSet<TMP_FontAsset>(Resources.FindObjectsOfTypeAll<FontSet>()
                 .SelectMany(set => set.Settings).Select(settings => settings.FontObject));
 
@@ -168,7 +175,7 @@ namespace ModLoader
             {
                 if (fontAsset.fallbackFontAssetTable == null)
                 {
-                    fontAsset.fallbackFontAssetTable = new List<TMP_FontAsset> {font};
+                    fontAsset.fallbackFontAssetTable = new List<TMP_FontAsset> { font };
                 }
                 else
                 {
@@ -194,7 +201,6 @@ namespace ModLoader
             TexCompatibilityMode = Config.Bind("兼容性设置", "TexCompatibilityMode", false,
                 "开启后纹理占用内存会增加，请仅在缺图时开启");
             // Plugin startup logic
-            HarmonyInstance = new Harmony(Info.Metadata.GUID);
             if (AccessTools.TypeByName("EncounterPopup") != null)
             {
                 MainPatcher.DoPatch(HarmonyInstance);
@@ -340,7 +346,8 @@ namespace ModLoader
                     isParent = true;
                     break;
                 }
-                else di2 = di2.Parent;
+
+                di2 = di2.Parent;
             }
 
             return isParent;
@@ -1415,17 +1422,15 @@ namespace ModLoader
             {
                 try
                 {
-                    if (!(item.obj is CardTabGroup))
+                    if (item.obj is not CardTabGroup itemObj)
                         continue;
 
-                    var obj = item.obj as CardTabGroup;
+                    itemObj.FillSortingList();
 
-                    obj.FillSortingList();
-
-                    if (!obj.name.StartsWith("Tab_"))
+                    if (!itemObj.name.StartsWith("Tab_"))
                         continue;
 
-                    if (obj.SubGroups.Count == 0)
+                    if (itemObj.SubGroups.Count == 0)
                     {
                         var json = JsonMapper.ToObject(item.CardData);
                         if (json.ContainsKey("BlueprintCardDataCardTabGroup") &&
@@ -1436,7 +1441,7 @@ namespace ModLoader
                             {
                                 if (group.name == json["BlueprintCardDataCardTabGroup"].ToString())
                                 {
-                                    group.SubGroups.Add(obj);
+                                    group.SubGroups.Add(itemObj);
                                     group.FillSortingList();
                                     break;
                                 }
@@ -1510,29 +1515,27 @@ namespace ModLoader
 
                 foreach (var obj in objs)
                 {
-                    if (obj.gameObject.name == "JournalTourist")
+                    if (obj.gameObject.name != "JournalTourist") continue;
+                    ContentDisplayer displayer = null;
+                    GameObject clone = null;
+                    try
                     {
-                        ContentDisplayer displayer = null;
-                        GameObject clone = null;
-                        try
-                        {
-                            clone = Instantiate(obj.gameObject);
-                            displayer = clone.GetComponent<ContentDisplayer>();
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.LogWarning("FXMask Warning " + ex.Message);
-                        }
-
-                        if (displayer == null)
-                            break;
-                        clone.name = "JournalDefaultSample";
-                        clone.hideFlags = HideFlags.HideAndDontSave;
-                        CustomGameObjectListDict.Add(clone.name, clone);
-                        CustomContentDisplayerDict.Add(clone.name, displayer);
-                        done = true;
-                        break;
+                        clone = Instantiate(obj.gameObject);
+                        displayer = clone.GetComponent<ContentDisplayer>();
                     }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning("FXMask Warning " + ex.Message);
+                    }
+
+                    if (displayer == null)
+                        break;
+                    clone.name = "JournalDefaultSample";
+                    clone.hideFlags = HideFlags.HideAndDontSave;
+                    CustomGameObjectListDict.Add(clone.name, clone);
+                    CustomContentDisplayerDict.Add(clone.name, displayer);
+                    done = true;
+                    break;
                 }
 
                 if (done)
@@ -1642,7 +1645,7 @@ namespace ModLoader
             {
                 try
                 {
-                    if (!(item.obj is PlayerCharacter))
+                    if (item.obj is not PlayerCharacter character)
                         continue;
 
                     var json = JsonMapper.ToObject(item.CardData);
@@ -1652,7 +1655,7 @@ namespace ModLoader
                         if (CustomContentDisplayerDict.TryGetValue(json["PlayerCharacterJournalName"].ToString(),
                                 out var displayer))
                         {
-                            (item.obj as PlayerCharacter).Journal = displayer;
+                            character.Journal = displayer;
                         }
                     }
                 }

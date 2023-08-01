@@ -39,7 +39,7 @@ namespace ModLoader.LoaderUtil
             }
             else
             {
-                PostSetQueue[id] = new Queue<PostSetter>(new[] {new PostSetter(setter, o, id)});
+                PostSetQueue[id] = new Queue<PostSetter>(new[] { new PostSetter(setter, o, id) });
             }
         }
 
@@ -65,7 +65,7 @@ namespace ModLoader.LoaderUtil
         {
             while (!BeginCompress)
             {
-                yield return new WaitForSeconds(0.1f);
+                yield return null;
             }
 
             while (SpriteLoadQueue.Count > 0 || !NoMoreSpriteLoadQueue)
@@ -81,7 +81,7 @@ namespace ModLoader.LoaderUtil
                 foreach (var (dat, name) in sprites)
                 {
                     var startTime = DateTime.Now;
-                    if ((startTime - loadStartTime).TotalMilliseconds > 20)
+                    if ((startTime - loadStartTime).TotalMilliseconds > 25)
                     {
                         loadStartTime = startTime;
                         yield return null;
@@ -107,6 +107,8 @@ namespace ModLoader.LoaderUtil
                             var postSetter = postSetters.Dequeue();
                             postSetter.Set();
                         }
+
+                        PostSetQueue.Remove(name);
                     }
                     else
                         Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName, name);
@@ -140,15 +142,18 @@ namespace ModLoader.LoaderUtil
                 }
             }
 
-            ModLoader.ShowLoadSuccess += 0.5f;
+            ModLoader.ShowLoadSuccess += 1.5f;
 
             while (ShouldCompress.Count > 0)
             {
                 var timeStart = DateTime.Now;
-                while ((DateTime.Now - timeStart).TotalMilliseconds < 20 && ShouldCompress.Count > 0)
+                while ((DateTime.Now - timeStart).TotalMilliseconds < 25 && ShouldCompress.Count > 0)
                 {
-                    var texture2D = ShouldCompress.Dequeue();
-                    texture2D.Compress(false);
+                    for (var i = 0; i < 4; i++)
+                    {
+                        var texture2D = ShouldCompress.Dequeue();
+                        texture2D.Compress(false);
+                    }
                 }
 
                 yield return null;

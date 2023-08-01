@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using HarmonyLib;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace ModLoader
 {
@@ -77,7 +79,7 @@ namespace ModLoader
             else
             {
                 fieldInfo = AccessTools.Field(type, field_name);
-                FieldInfoCache[type] = new Dictionary<string, FieldInfo> {{field_name, fieldInfo}};
+                FieldInfoCache[type] = new Dictionary<string, FieldInfo> { { field_name, fieldInfo } };
             }
 
             if (fieldInfo != null && getter_use)
@@ -98,7 +100,7 @@ namespace ModLoader
                 {
                     getter = GenGetter(fieldInfo, type);
                     FieldGetterDynamicMethodCache[type] = new Dictionary<string, Func<object, object>>
-                        {{field_name, getter}};
+                        { { field_name, getter } };
                 }
             }
 
@@ -120,24 +122,32 @@ namespace ModLoader
                 {
                     setter = GenSetter(fieldInfo, type);
                     FieldSetterDynamicMethodCache[type] = new Dictionary<string, Action<object, object>>
-                        {{field_name, setter}};
+                        { { field_name, setter } };
                 }
             }
 
             return (fieldInfo, getter, setter);
         }
-        
+
         private static readonly Type ObjType = typeof(object);
 
         public static Func<object, object> GenGetter(FieldInfo fieldInfo, Type type)
         {
             var fieldInfoFieldType = fieldInfo.FieldType;
-            var dynamicMethod = new DynamicMethod("simple_getter", ObjType, new[] {ObjType}, true);
+            var typeIsValueType = type.IsValueType;
+            var fieldTypeIsValueType = fieldInfoFieldType.IsValueType;
+            if (!typeIsValueType && !fieldTypeIsValueType)
+            {
+                var accessHelper = AccessHelper.ByOffset(UnsafeUtility.GetFieldOffset(fieldInfo));
+                return accessHelper.Get;
+            }
+
+            var dynamicMethod = new DynamicMethod("simple_getter", ObjType, new[] { ObjType }, true);
             var ilGenerator = dynamicMethod.GetILGenerator();
             ilGenerator.Emit(OpCodes.Ldarg_0);
-            ilGenerator.Emit(type.IsValueType ? OpCodes.Unbox : OpCodes.Castclass, type);
+            ilGenerator.Emit(typeIsValueType ? OpCodes.Unbox : OpCodes.Castclass, type);
             ilGenerator.Emit(OpCodes.Ldfld, fieldInfo);
-            if (fieldInfoFieldType.IsValueType)
+            if (fieldTypeIsValueType)
             {
                 ilGenerator.Emit(OpCodes.Box, fieldInfoFieldType);
             }
@@ -150,17 +160,100 @@ namespace ModLoader
         public static Action<object, object> GenSetter(FieldInfo fieldInfo, Type type)
         {
             var fieldInfoFieldType = fieldInfo.FieldType;
-            var dynamicMethod = new DynamicMethod("simple_setter", typeof(void), new[] {ObjType, ObjType}, true);
+            var isValueType = fieldInfoFieldType.IsValueType;
+            var typeIsValueType = type.IsValueType;
+            if (!typeIsValueType && !isValueType)
+            {
+                var accessHelper = AccessHelper.ByOffset(UnsafeUtility.GetFieldOffset(fieldInfo));
+                return accessHelper.Set;
+            }
+
+            var dynamicMethod = new DynamicMethod("simple_setter", typeof(void), new[] { ObjType, ObjType }, true);
             var ilGenerator = dynamicMethod.GetILGenerator();
             ilGenerator.Emit(OpCodes.Ldarg_0);
-            ilGenerator.Emit(type.IsValueType ? OpCodes.Unbox : OpCodes.Castclass, type);
+            ilGenerator.Emit(typeIsValueType ? OpCodes.Unbox : OpCodes.Castclass, type);
             ilGenerator.Emit(OpCodes.Ldarg_1);
-            ilGenerator.Emit(fieldInfoFieldType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass,
+            ilGenerator.Emit(isValueType ? OpCodes.Unbox_Any : OpCodes.Castclass,
                 fieldInfoFieldType);
             ilGenerator.Emit(OpCodes.Stfld, fieldInfo);
             ilGenerator.Emit(OpCodes.Ret);
             var setter = dynamicMethod.CreateDelegate(typeof(Action<object, object>)) as Action<object, object>;
             return setter;
+        }
+
+        public unsafe class AccessHelper
+        {
+            private static readonly Dictionary<int, WeakReference<AccessHelper>> UsedAccessHelper = new();
+            private readonly int Offset;
+            private static readonly UnsafeTool Unsafe = new();
+
+            public static AccessHelper ByOffset(int offset)
+            {
+                if (UsedAccessHelper.TryGetValue(offset, out var accessReference))
+                {
+                    if (accessReference.TryGetTarget(out var accessHelper))
+                    {
+                        return accessHelper;
+                    }
+
+                    accessHelper = new AccessHelper(offset);
+                    accessReference.SetTarget(accessHelper);
+                    return accessHelper;
+                }
+
+                var helper = new AccessHelper(offset);
+                UsedAccessHelper[offset] = new WeakReference<AccessHelper>(helper);
+                return helper;
+            }
+
+            private AccessHelper(int offset)
+            {
+                Offset = offset;
+                UsedAccessHelper[offset] = new WeakReference<AccessHelper>(this);
+            }
+
+            public object Get(object o)
+            {
+                var ptr = UnsafeUtility.PinGCObjectAndGetAddress(o, out var gcHandle);
+                var obj = Unsafe.ToObj(*(void**)((IntPtr)ptr + Offset));
+                UnsafeUtility.ReleaseGCObject(gcHandle);
+                return obj;
+            }
+
+            public void Set(object o, object val)
+            {
+                var ptr = UnsafeUtility.PinGCObjectAndGetAddress(o, out var gcHandle);
+                var ptrVal = UnsafeUtility.PinGCObjectAndGetAddress(val, out var gcHandle1);
+                *(void**)((IntPtr)ptr + Offset) = ptrVal;
+                UnsafeUtility.ReleaseGCObject(gcHandle);
+                UnsafeUtility.ReleaseGCObject(gcHandle1);
+            }
+
+            [StructLayout(LayoutKind.Explicit)]
+            private class UnsafeTool
+            {
+                public delegate void* Obj2PtrFunc(object o);
+
+                public delegate object Ptr2ObjFunc(void* o);
+
+                // ReSharper disable once NotAccessedField.Local
+                [FieldOffset(0)] private Func<object, object> __accessBackend;
+
+#pragma warning disable CS0649
+                [FieldOffset(0)] public Obj2PtrFunc ToPtr;
+                [FieldOffset(0)] public Ptr2ObjFunc ToObj;
+#pragma warning restore CS0649
+
+                public UnsafeTool()
+                {
+                    __accessBackend = __transform;
+                }
+
+                private object __transform(object o)
+                {
+                    return o;
+                }
+            }
         }
 
         public static void Deconstruct<TKey, TVal>(this KeyValuePair<TKey, TVal> keyValuePair, out TKey key,

@@ -1,6 +1,5 @@
 ﻿<Weavers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FodyWeavers.xsd">
   <ILMerge>
-    <ExcludeAssemblies>(?!SharpCompres)s.*</ExcludeAssemblies>
-    <IncludeAssemblies>SharpCompress</IncludeAssemblies>
+    <ExcludeAssemblies>(CSTI-ChatTreeLoader|DotNetZip|LitJSON).*</ExcludeAssemblies>
   </ILMerge>
 </Weavers>
