@@ -4,6 +4,7 @@ using System.Text;
 using BepInEx;
 using LitJson;
 using UnityEngine;
+using static ModLoader.ResourceLoadHelper;
 
 namespace ModLoader.LoaderUtil
 {
@@ -72,8 +73,8 @@ namespace ModLoader.LoaderUtil
                 Debug.LogError(e);
             }
         }
-        
-        
+
+
         public static void LoadData(string mods_dir)
         {
             try
@@ -110,7 +111,8 @@ namespace ModLoader.LoaderUtil
                         var ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
                         if (ModLoader.PluginVersion.CompareTo(ModRequestVersion) < 0)
                             Debug.LogWarningFormat(
-                                "ModLoader Version {0} is lower than {1} Request Version {2}", ModLoader.PluginVersion, ModName,
+                                "ModLoader Version {0} is lower than {1} Request Version {2}", ModLoader.PluginVersion,
+                                ModName,
                                 ModRequestVersion);
                     }
                     catch (Exception ex)
@@ -121,11 +123,11 @@ namespace ModLoader.LoaderUtil
                     // Load Pictures
                     try
                     {
-                        var picPath = ModLoader.CombinePaths(dir, "Resource", "Picture");
+                        var picPath = ModLoader.CombinePaths(dir, ResourcePat,PicturePat);
                         if (Directory.Exists(picPath))
                         {
                             var files = Directory.GetFiles(picPath);
-                            PostSpriteLoad.SpriteLoadQueue.Enqueue(ResourceLoadHelper.LoadPictures(ModName, files));
+                            PostSpriteLoad.SpriteLoadQueue.Enqueue(LoadPictures(ModName, files));
                         }
                     }
                     catch (Exception e)
@@ -137,7 +139,7 @@ namespace ModLoader.LoaderUtil
                     try
                     {
                         ModLoader.uniqueObjWaitList.Add(
-                            ResourceLoadHelper.LoadUniqueObjs(ModName, dir, ModLoader.GameSourceAssembly, Info));
+                            LoadUniqueObjs(ModName, dir, ModLoader.GameSourceAssembly, Info));
                     }
                     catch (Exception ex)
                     {
@@ -155,6 +157,5 @@ namespace ModLoader.LoaderUtil
                 PostSpriteLoad.NoMoreSpriteLoadQueue = true;
             }
         }
-
     }
 }

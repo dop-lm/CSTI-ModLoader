@@ -1,12 +1,43 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using JeremyAnsel.Media.Dds;
 using UnityEngine;
+using static ModLoader.ResourceLoadHelper;
 
 namespace ModLoader.LoaderUtil
 {
+    public class ImageEntry
+    {
+        public readonly string ImgPath;
+        public readonly string DdsPath;
+        public readonly string Name;
+
+        public ImageEntry(string imgPath)
+        {
+            ImgPath = imgPath;
+            Name = Path.GetFileNameWithoutExtension(imgPath);
+            var ddsPath = Path.ChangeExtension(imgPath, "dds");
+            if (File.Exists(ddsPath))
+            {
+                DdsPath = ddsPath;
+                return;
+            }
+
+            var fId = imgPath.Substring(imgPath.LastIndexOf(PicturePat, StringComparison.Ordinal)).Substring(8);
+            var resourcePat = imgPath.Substring(0,
+                imgPath.LastIndexOf(ResourcePat, StringComparison.Ordinal) - 1);
+            ddsPath = Path.Combine(resourcePat, ResourcePat, "Dxt", Path.ChangeExtension(fId, "dds"));
+            if (File.Exists(ddsPath))
+            {
+                DdsPath = ddsPath;
+            }
+        }
+    }
+
     public static class PostSpriteLoad
     {
         public class PostSetter
@@ -45,7 +76,7 @@ namespace ModLoader.LoaderUtil
 
         public static readonly Dictionary<string, Queue<PostSetter>> PostSetQueue = new();
 
-        public static readonly Queue<Task<(List<(byte[] dat, string name)> sprites, string modName)>>
+        public static readonly Queue<Task<(List<(byte[] dat, ImageEntry entry)> sprites, string modName)>>
             SpriteLoadQueue = new();
 
         public static bool NoMoreSpriteLoadQueue;
@@ -78,7 +109,7 @@ namespace ModLoader.LoaderUtil
 
                 var (sprites, modName) = task.Result;
                 var loadStartTime = DateTime.Now;
-                foreach (var (dat, name) in sprites)
+                foreach (var (dat, imageEntry) in sprites)
                 {
                     var startTime = DateTime.Now;
                     if ((startTime - loadStartTime).TotalMilliseconds > 25)
@@ -87,31 +118,53 @@ namespace ModLoader.LoaderUtil
                         yield return null;
                     }
 
-                    var t2d = new Texture2D(0, 0, TextureFormat.RGBA32, 0, false);
-                    t2d.LoadImage(dat);
+                    Texture2D t2d;
+                    Rect spriteSize;
+                    if (imageEntry.DdsPath != null)
+                    {
+                        var dds = DdsFile.FromStream(new MemoryStream(dat));
+                        spriteSize = new Rect(0, 0, dds.Width, dds.Height);
+                        var rawSize = new Vector2Int((dds.Width & 0b11) == 0 ? dds.Width : ((dds.Width >> 2) + 1) << 2,
+                            (dds.Height & 0b11) == 0 ? dds.Height : ((dds.Height >> 2) + 1) << 2);
+                        t2d = dds.PixelFormat.FourCC switch
+                        {
+                            DdsFourCC.DXT1 => new Texture2D(rawSize.x, rawSize.y, TextureFormat.DXT1, 0, false),
+                            DdsFourCC.DXT5 => new Texture2D(rawSize.x, rawSize.y, TextureFormat.DXT5, 0, false),
+                            _ => new Texture2D(dds.Width, dds.Height, TextureFormat.RGBA32, 0, false)
+                        };
+                        t2d.GetRawTextureData<byte>().CopyFrom(dds.Data);
+                        t2d.Apply();
+                        dds = null;
+                    }
+                    else
+                    {
+                        t2d = new Texture2D(0, 0, TextureFormat.RGBA32, 0, false);
+                        t2d.LoadImage(dat);
+                        spriteSize = new Rect(0, 0, t2d.width, t2d.height);
+                    }
 
-                    if (!ModLoader.TexCompatibilityMode.Value)
+                    if (imageEntry.DdsPath != null && !ModLoader.TexCompatibilityMode.Value)
                     {
                         t2d.Compress(false);
                     }
 
-                    var sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height),
+                    var sprite = Sprite.Create(t2d, spriteSize,
                         Vector2.zero);
-                    sprite.name = name;
-                    if (!ModLoader.SpriteDict.ContainsKey(name))
+                    sprite.name = imageEntry.Name;
+                    if (!ModLoader.SpriteDict.ContainsKey(imageEntry.Name))
                     {
-                        ModLoader.SpriteDict.Add(name, sprite);
-                        if (!PostSetQueue.TryGetValue(name, out var postSetters)) continue;
+                        ModLoader.SpriteDict.Add(imageEntry.Name, sprite);
+                        if (!PostSetQueue.TryGetValue(imageEntry.Name, out var postSetters)) continue;
                         while (postSetters.Count > 0)
                         {
                             var postSetter = postSetters.Dequeue();
                             postSetter.Set();
                         }
 
-                        PostSetQueue.Remove(name);
+                        PostSetQueue.Remove(imageEntry.Name);
                     }
                     else
-                        Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName, name);
+                        Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName, imageEntry);
                 }
             }
 
@@ -142,7 +195,7 @@ namespace ModLoader.LoaderUtil
                 }
             }
 
-            ModLoader.ShowLoadSuccess += 1.5f;
+            ModLoader.ShowLoadSuccess += 1.2f;
 
             while (ShouldCompress.Count > 0)
             {

@@ -99,7 +99,7 @@ namespace ModLoader安装包
             while (!HadInstall)
             {
                 Console.WriteLine(CultureInfo.CurrentCulture.EnglishName.Contains("Chinese")
-                    ? "无法搜索到游戏路径，请手动输入游戏路径(绝对路径)(exit = exit):"
+                    ? "无法搜索到游戏路径，请手动输入游戏路径(绝对路径)(exit = 退出):"
                     : "Unable to search the game path, please enter the game path manually(Absolute path)(exit = exit):");
                 var readLine = Console.ReadLine()?.Trim();
                 if (readLine?.StartsWith("exit", true, CultureInfo.CurrentCulture) is true)

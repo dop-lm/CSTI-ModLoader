@@ -3,7 +3,7 @@
     <Import Project="..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props" Condition="Exists('..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props')" />
     <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
     <PropertyGroup>
-        <Version>2.2.3</Version>
+        <Version>2.2.4</Version>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
         <ProjectGuid>{E53AE1E9-5D49-44E7-8134-7D4764AF2158}</ProjectGuid>

@@ -1,5 +1,7 @@
 ﻿<Weavers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FodyWeavers.xsd">
   <ILMerge>
-    <ExcludeAssemblies>(CSTI-ChatTreeLoader|DotNetZip|LitJSON).*</ExcludeAssemblies>
+    <ExcludeAssemblies>(CSTI\-ChatTreeLoader|DotNetZip|LitJSON).*</ExcludeAssemblies>
+    <IncludeAssemblies>(Pfim|JeremyAnsel\.DirectX\.D3D11|JeremyAnsel\.DirectX\.Dxgi|JeremyAnsel\.Media\.Dds).*</IncludeAssemblies>
+    <CompactMode>true</CompactMode>
   </ILMerge>
 </Weavers>

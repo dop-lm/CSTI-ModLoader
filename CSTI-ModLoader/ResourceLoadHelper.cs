@@ -7,27 +7,27 @@ using System.Threading;
 using System.Threading.Tasks;
 using BepInEx;
 using JetBrains.Annotations;
+using ModLoader.LoaderUtil;
 using UnityEngine;
 
 namespace ModLoader
 {
     public static class ResourceLoadHelper
     {
-        public static Task<(List<(byte[] dat, string name)> sprites, string modName)> LoadPictures(string ModName,
+        public static readonly string ResourcePat = "Resource";
+        public static readonly string PicturePat = "Picture";
+
+        public static Task<(List<(byte[] dat, ImageEntry entry)> sprites, string modName)> LoadPictures(string ModName,
             [NotNull] string[] pictures)
         {
-            var wait = new List<(Task<byte[]>, string)>();
-            foreach (var picture in pictures)
-            {
-                if (!picture.EndsWith(".jpg") && !picture.EndsWith(".jpeg") && !picture.EndsWith(".png"))
-                    continue;
-                var sprite_name = Path.GetFileNameWithoutExtension(picture);
-                wait.Add((LoadFile(picture), sprite_name));
-            }
+            var wait = (from picture in pictures
+                where picture.EndsWith(".jpg") || picture.EndsWith(".jpeg") || picture.EndsWith(".png")
+                let imageEntry = new ImageEntry(picture)
+                select (LoadFile(imageEntry), imageEntry)).ToList();
 
             return Task.Run(async () =>
             {
-                var dat = new List<(byte[] dat, string name)>();
+                var dat = new List<(byte[] dat, ImageEntry entry)>();
                 foreach (var (task, name) in wait)
                 {
                     dat.Add((await task, name));
@@ -55,11 +55,9 @@ namespace ModLoader
                 }
                 else
                 {
-                    foreach (var file in Directory.EnumerateFiles(Path.Combine(dir, type.Name), "*.json",
-                                 SearchOption.AllDirectories))
-                    {
-                        wait.Add((LoadFile(file), file, type));
-                    }
+                    wait.AddRange(Directory
+                        .EnumerateFiles(Path.Combine(dir, type.Name), "*.json", SearchOption.AllDirectories)
+                        .Select(file => (LoadFile(file), file, type)));
                 }
             }
 
@@ -75,8 +73,10 @@ namespace ModLoader
             });
         }
 
-        public static Task<byte[]> LoadFile(string pat)
+        private static Task<byte[]> LoadFile(string pat)
         {
+            return Task.Run(loadInner);
+
             async Task<byte[]> loadInner()
             {
                 using var f = new FileStream(pat, FileMode.Open);
@@ -84,8 +84,21 @@ namespace ModLoader
                 await f.CopyToAsync(ms);
                 return ms.ToArray();
             }
+        }
 
+        private static Task<byte[]> LoadFile(ImageEntry entry)
+        {
             return Task.Run(loadInner);
+
+            async Task<byte[]> loadInner()
+            {
+                using var f = entry.DdsPath != null
+                    ? new FileStream(entry.DdsPath, FileMode.Open)
+                    : new FileStream(entry.ImgPath, FileMode.Open);
+                using var ms = new MemoryStream();
+                await f.CopyToAsync(ms);
+                return ms.ToArray();
+            }
         }
     }
 

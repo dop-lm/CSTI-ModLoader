@@ -49,7 +49,7 @@ namespace ModLoader
         }
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.2.2")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.2.4")]
     public class ModLoader : BaseUnityPlugin
     {
         static ModLoader()
