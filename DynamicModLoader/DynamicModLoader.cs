@@ -8,11 +8,7 @@ using System.Reflection;
 using System.Text;
 using LitJson;
 using System.Linq;
-using Ionic.Zip;
-using System.Threading;
 using System.Collections;
-using System.Runtime.CompilerServices;
-using System.Security.Policy;
 
 namespace DynamicModLoader
 {

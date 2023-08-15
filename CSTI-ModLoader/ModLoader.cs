@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BepInEx;
@@ -49,7 +48,7 @@ namespace ModLoader
         }
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.2.4")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.3.1")]
     public class ModLoader : BaseUnityPlugin
     {
         static ModLoader()

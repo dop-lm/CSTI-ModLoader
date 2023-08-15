@@ -143,7 +143,7 @@ namespace ModLoader.LoaderUtil
                         spriteSize = new Rect(0, 0, t2d.width, t2d.height);
                     }
 
-                    if (imageEntry.DdsPath != null && !ModLoader.TexCompatibilityMode.Value)
+                    if (imageEntry.DdsPath == null && !ModLoader.TexCompatibilityMode.Value)
                     {
                         t2d.Compress(false);
                     }
@@ -164,7 +164,7 @@ namespace ModLoader.LoaderUtil
                         PostSetQueue.Remove(imageEntry.Name);
                     }
                     else
-                        Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName, imageEntry);
+                        Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName, imageEntry.Name);
                 }
             }
 
