@@ -22,10 +22,10 @@ namespace ModLoader.LoaderUtil
                     index += 4;
                     index += 4; // WAVE
 
-                    UInt16 NumChannels = 1;
-                    UInt32 SampleRate = 0;
-                    UInt16 BitsPerSample = 0;
-                    UInt16 BolckAlign = 1;
+                    ushort NumChannels = 1;
+                    uint SampleRate = 0;
+                    ushort BitsPerSample = 0;
+                    ushort BolckAlign = 1;
 
                     while (index < raw_data.Length)
                     {
@@ -57,17 +57,17 @@ namespace ModLoader.LoaderUtil
                                     if (BitsPerSample == 8)
                                         data[i + j] =
                                             BitConverter.ToChar(raw_data, index + BolckAlign * (i / NumChannels) + j) /
-                                            ((float) Char.MaxValue);
+                                            ((float) char.MaxValue);
                                     else if (BitsPerSample == 16)
                                         data[i + j] =
-                                            (BitConverter.ToInt16(raw_data,
-                                                index + BolckAlign * (i / NumChannels) + 2 * j)) /
-                                            ((float) Int16.MaxValue);
+                                            BitConverter.ToInt16(raw_data,
+                                                index + BolckAlign * (i / NumChannels) + 2 * j) /
+                                            (float) short.MaxValue;
                                     else if (BitsPerSample == 32)
                                         data[i + j] =
                                             BitConverter.ToInt32(raw_data,
                                                 index + BolckAlign * (i / NumChannels) + 4 * j) /
-                                            ((float) Int32.MaxValue);
+                                            ((float) int.MaxValue);
                                 }
                             }
 

@@ -3,7 +3,7 @@
     <Import Project="..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props" Condition="Exists('..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props')" />
     <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
     <PropertyGroup>
-        <Version>2.3.1</Version>
+        <Version>2.3.2.1</Version>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
         <ProjectGuid>{E53AE1E9-5D49-44E7-8134-7D4764AF2158}</ProjectGuid>
@@ -91,6 +91,7 @@
     <ItemGroup Label="resources">
         <EmbeddedResource Include="BepInEx_x64_5.4.21.0.zip" LogicalName="ModLoaderInstaller.BepInEx_x64_5.4.21.0.zip" />
         <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/CSTI-ChatTreeLoader.dll" LogicalName="ModLoaderInstaller.ChatTreeLoader.dll" />
+        <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/CSTI_LuaActionSupport.dll" LogicalName="ModLoaderInstaller.CSTILuaActionSupport.dll" />
         <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/DotNetZip.dll" LogicalName="ModLoaderInstaller.DotNetZip.dll" />
         <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/LitJSON.dll" LogicalName="ModLoaderInstaller.LitJSON.dll" />
         <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/ModLoader.dll" LogicalName="ModLoaderInstaller.ModLoader.dll" />

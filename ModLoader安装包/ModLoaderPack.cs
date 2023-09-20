@@ -10,6 +10,9 @@ namespace ModLoader安装包
         public static Stream BepInEx_unix =>
             typeof(ModLoaderPack).Assembly.GetManifestResourceStream("ModLoaderInstaller.BepInEx_unix_5.4.21.0.zip");
 
+        public static Stream CSTI_LuaActionSupport =>
+            typeof(ModLoaderPack).Assembly.GetManifestResourceStream("ModLoaderInstaller.CSTILuaActionSupport.dll");
+        
         public static Stream CSTI_ChatTreeLoader =>
             typeof(ModLoaderPack).Assembly.GetManifestResourceStream("ModLoaderInstaller.ChatTreeLoader.dll");
 

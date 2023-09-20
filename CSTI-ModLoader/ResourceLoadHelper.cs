@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BepInEx;
 using JetBrains.Annotations;
+using ModLoader.FFI;
 using ModLoader.LoaderUtil;
 using UnityEngine;
 
@@ -41,6 +42,12 @@ namespace ModLoader
             string ModName,
             [NotNull] string dir, Assembly GameSourceAssembly, ModInfo Info)
         {
+            var libPath = Path.Combine(dir, "JsonnetLib");
+            if (Directory.Exists(libPath))
+            {
+                JsonnetRuntime.JsonnetRuntimeAddPat(libPath);
+            }
+
             var wait = new List<(Task<byte[]>, string, Type)>();
             var subclasses = from type in GameSourceAssembly.GetTypes()
                 where type.IsSubclassOf(typeof(UniqueIDScriptable))
@@ -57,6 +64,9 @@ namespace ModLoader
                 {
                     wait.AddRange(Directory
                         .EnumerateFiles(Path.Combine(dir, type.Name), "*.json", SearchOption.AllDirectories)
+                        .Select(file => (LoadFile(file), file, type)));
+                    wait.AddRange(Directory
+                        .EnumerateFiles(Path.Combine(dir, type.Name), "*.jsonnet", SearchOption.AllDirectories)
                         .Select(file => (LoadFile(file), file, type)));
                 }
             }

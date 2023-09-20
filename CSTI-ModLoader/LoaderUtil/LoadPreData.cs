@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using BepInEx;
 using LitJson;
+using ModLoader.FFI;
 using UnityEngine;
 using static ModLoader.ResourceLoadHelper;
 
@@ -25,6 +26,11 @@ namespace ModLoader.LoaderUtil
                         try
                         {
                             var CardData = Encoding.UTF8.GetString(dat);
+                            if (Path.GetExtension(pat).EndsWith("jsonnet", true, null))
+                            {
+                                CardData = JsonnetRuntime.JsonnetEval(Path.GetFileNameWithoutExtension(pat), CardData);
+                            }
+
                             JsonData json = JsonMapper.ToObject(CardData);
 
                             if (!(json.ContainsKey("UniqueID") && json["UniqueID"].IsString &&
@@ -123,7 +129,7 @@ namespace ModLoader.LoaderUtil
                     // Load Pictures
                     try
                     {
-                        var picPath = ModLoader.CombinePaths(dir, ResourcePat,PicturePat);
+                        var picPath = ModLoader.CombinePaths(dir, ResourcePat, PicturePat);
                         if (Directory.Exists(picPath))
                         {
                             var files = Directory.GetFiles(picPath);

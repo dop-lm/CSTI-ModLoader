@@ -200,6 +200,10 @@ namespace ModLoader安装包
                 new FileStream(Path.Combine(ModLoaderPlugins, "CSTI-ChatTreeLoader.dll"), FileMode.Create);
             ModLoaderPack.CSTI_ChatTreeLoader.CopyTo(fileStreamCSTI_ChatTreeLoader);
 
+            using var fileStreamCSTI_LuaActionSupport =
+                new FileStream(Path.Combine(ModLoaderPlugins, "CSTI_LuaActionSupport.dll"), FileMode.Create);
+            ModLoaderPack.CSTI_LuaActionSupport.CopyTo(fileStreamCSTI_LuaActionSupport);
+
             using var fileStreamDotNetZip = new FileStream(Path.Combine(ModLoaderPlugins, "DotNetZip.dll"),
                 FileMode.Create);
             ModLoaderPack.DotNetZip.CopyTo(fileStreamDotNetZip);
