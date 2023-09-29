@@ -64,3 +64,5 @@ v2.3.0 换下版本号,修复了是否需要压缩纹理的判定
 v2.3.1 对话系统改进
 v2.3.2 lua支持合并进modLoader
 v2.3.2.x lua api 改进
+v2.3.3.0 jsonnet支持
+v2.3.3.x lua api 改进
