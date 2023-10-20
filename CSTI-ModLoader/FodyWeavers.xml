@@ -1,7 +1,9 @@
 ﻿<Weavers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FodyWeavers.xsd">
   <ILMerge>
     <ExcludeAssemblies>(CSTI\-ChatTreeLoader|DotNetZip|LitJSON|CSTI_LuaActionSupport).*</ExcludeAssemblies>
-    <IncludeAssemblies>(Pfim|JeremyAnsel\.DirectX\.D3D11|JeremyAnsel\.DirectX\.Dxgi|JeremyAnsel\.Media\.Dds).*</IncludeAssemblies>
-    <CompactMode>true</CompactMode>
+    <IncludeAssemblies>(NAudio|Pfim|JeremyAnsel|NVorbis).*</IncludeAssemblies>
+    <NamespacePrefix>
+      $_
+    </NamespacePrefix>
   </ILMerge>
 </Weavers>

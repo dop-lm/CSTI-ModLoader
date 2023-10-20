@@ -15,9 +15,11 @@ using HarmonyLib;
 using Ionic.Zip;
 using LitJson;
 using ModLoader.LoaderUtil;
+using ModLoader.Patchers;
 using ModLoader.UI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
 
@@ -48,12 +50,20 @@ namespace ModLoader
         }
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.3.3.9")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.3.4")]
     public class ModLoader : BaseUnityPlugin
     {
         static ModLoader()
         {
             NormalPatcher.DoPatch(HarmonyInstance);
+            try
+            {
+                HarmonyInstance.PatchAll(typeof(AudioFixPatcher));
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+            }
         }
 
         public ManualLogSource CommonLogger => Logger;
@@ -174,7 +184,7 @@ namespace ModLoader
             {
                 if (fontAsset.fallbackFontAssetTable == null)
                 {
-                    fontAsset.fallbackFontAssetTable = new List<TMP_FontAsset> { font };
+                    fontAsset.fallbackFontAssetTable = new List<TMP_FontAsset> {font};
                 }
                 else
                 {
@@ -513,8 +523,7 @@ namespace ModLoader
                                 $"是否加载{ModName}"));
                         if (!ModPacks[ModName].EnableEntry.Value) continue;
 
-                        Debug.Log(string.Format("ModLoader Load EditorZipMod {0} {1}", ModName,
-                            Info.Version));
+                        Debug.Log($"ModLoader Load EditorZipMod {ModName} {Info.Version}");
 
                         // Check Verison
                         var ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
@@ -554,13 +563,13 @@ namespace ModLoader
                                             ModName, obj.name);
                                 }
 
-                                if (obj is AudioClip)
+                                if (obj is AudioClip clip)
                                 {
-                                    if (!AudioClipDict.ContainsKey(obj.name))
-                                        AudioClipDict.Add(obj.name, obj as AudioClip);
+                                    if (!AudioClipDict.ContainsKey(clip.name))
+                                        AudioClipDict.Add(clip.name, clip);
                                     else
                                         Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}",
-                                            ModName, obj.name);
+                                            ModName, clip.name);
                                 }
                             }
                         }
@@ -631,15 +640,33 @@ namespace ModLoader
                     {
                         foreach (var entry in entrys)
                         {
-                            if (!(entry.FileName.StartsWith(ModDirName + @"/Resource/Audio") &&
-                                  entry.FileName.EndsWith(".wav")))
-                                continue;
-                            var ms = new MemoryStream();
-                            entry.Extract(ms);
-                            var clip_name = Path.GetFileNameWithoutExtension(entry.FileName);
-                            var clip = ResourceDataLoader.GetAudioClipFromWav(ms.ToArray(), clip_name);
-                            if (clip)
+                            if (!entry.FileName.StartsWith(ModDirName + "/Resource/Audio")) continue;
+                            if (entry.FileName.EndsWith(".wav", true, null))
                             {
+                                var clip_name = Path.GetFileNameWithoutExtension(entry.FileName);
+                                var clip = ResourceDataLoader.GetAudioClipFromWav(entry.OpenReader(), clip_name);
+                                if (!clip) continue;
+                                if (!AudioClipDict.ContainsKey(clip.name))
+                                    AudioClipDict.Add(clip.name, clip);
+                                else
+                                    Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}",
+                                        ModName, clip.name);
+                            }
+                            else if (entry.FileName.EndsWith(".mp3", true, null))
+                            {
+                                var clip_name = Path.GetFileNameWithoutExtension(entry.FileName);
+                                var clip = ResourceDataLoader.GetAudioClipFromMp3(entry.OpenReader(), clip_name);
+                                if (!clip) continue;
+                                if (!AudioClipDict.ContainsKey(clip.name))
+                                    AudioClipDict.Add(clip.name, clip);
+                                else
+                                    Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}",
+                                        ModName, clip.name);
+                            }else if (entry.FileName.EndsWith(".ogg", true, null))
+                            {
+                                var clip_name = Path.GetFileNameWithoutExtension(entry.FileName);
+                                var clip = ResourceDataLoader.GetAudioClipFromOgg(entry.OpenReader(), clip_name);
+                                if (!clip) continue;
                                 if (!AudioClipDict.ContainsKey(clip.name))
                                     AudioClipDict.Add(clip.name, clip);
                                 else
@@ -819,12 +846,10 @@ namespace ModLoader
                             ms.Seek(0, SeekOrigin.Begin);
                             using (var sr = new StreamReader(ms))
                                 CardData = sr.ReadToEnd();
-                            if (AllGUIDDict.TryGetValue(Guid, out var obj))
-                                WaitForWarpperEditorGameSourceGUIDList.Add(
-                                    new ScriptableObjectPack(obj, "", "", ModName, CardData));
-                            else
-                                WaitForWarpperEditorGameSourceGUIDList.Add(
-                                    new ScriptableObjectPack(null, Guid, "", ModName, CardData));
+                            WaitForWarpperEditorGameSourceGUIDList.Add(
+                                AllGUIDDict.TryGetValue(Guid, out var obj)
+                                    ? new ScriptableObjectPack(obj, "", "", ModName, CardData)
+                                    : new ScriptableObjectPack(null, Guid, "", ModName, CardData));
                         }
                     }
                     catch (Exception ex)
@@ -971,17 +996,42 @@ namespace ModLoader
                             var files = Directory.GetFiles(CombinePaths(dir, "Resource", "Audio"));
                             foreach (var file in files)
                             {
-                                if (!file.EndsWith(".wav"))
-                                    continue;
-                                var raw_data = File.ReadAllBytes(file);
-                                var clip_name = Path.GetFileNameWithoutExtension(file);
-                                var clip = ResourceDataLoader.GetAudioClipFromWav(raw_data, clip_name);
-                                if (!clip) continue;
-                                if (!AudioClipDict.ContainsKey(clip.name))
-                                    AudioClipDict.Add(clip.name, clip);
-                                else
-                                    Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}",
-                                        ModName, clip.name);
+                                if (file.EndsWith(".wav", true, null))
+                                {
+                                    var raw_data = File.Open(file, FileMode.Open);
+                                    var clip_name = Path.GetFileNameWithoutExtension(file);
+                                    var clip = ResourceDataLoader.GetAudioClipFromWav(raw_data, clip_name);
+                                    if (!clip) continue;
+                                    if (!AudioClipDict.ContainsKey(clip.name))
+                                        AudioClipDict.Add(clip.name, clip);
+                                    else
+                                        Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}",
+                                            ModName, clip.name);
+                                }
+                                else if (file.EndsWith(".mp3", true, null))
+                                {
+                                    var raw_data = File.Open(file, FileMode.Open);
+                                    var clip_name = Path.GetFileNameWithoutExtension(file);
+                                    var clip = ResourceDataLoader.GetAudioClipFromMp3(raw_data, clip_name);
+                                    if (!clip) continue;
+                                    if (!AudioClipDict.ContainsKey(clip.name))
+                                        AudioClipDict.Add(clip.name, clip);
+                                    else
+                                        Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}",
+                                            ModName, clip.name);
+                                }
+                                else if (file.EndsWith(".ogg", true, null))
+                                {
+                                    var raw_data = File.Open(file, FileMode.Open);
+                                    var clip_name = Path.GetFileNameWithoutExtension(file);
+                                    var clip = ResourceDataLoader.GetAudioClipFromOgg(raw_data, clip_name);
+                                    if (!clip) continue;
+                                    if (!AudioClipDict.ContainsKey(clip.name))
+                                        AudioClipDict.Add(clip.name, clip);
+                                    else
+                                        Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}",
+                                            ModName, clip.name);
+                                }
                                 //MBSingleton<GameLoad>.Instance.StartCoroutine(GetDataRequest(ModName, file));
                             }
                         }

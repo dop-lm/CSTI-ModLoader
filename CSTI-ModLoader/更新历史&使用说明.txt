@@ -66,3 +66,4 @@ v2.3.2 lua支持合并进modLoader
 v2.3.2.x lua api 改进
 v2.3.3.0 jsonnet支持
 v2.3.3.x lua api 改进
+v2.3.4 audio加载改进,支持mp3格式和ogg格式

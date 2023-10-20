@@ -1,92 +1,79 @@
 ﻿using System;
-using System.Text;
+using System.IO;
+using NAudio.FileFormats.Wav;
+using NAudio.Wave;
+using NVorbis;
 using UnityEngine;
 
 namespace ModLoader.LoaderUtil
 {
     public static class ResourceDataLoader
     {
-        public static AudioClip GetAudioClipFromWav(byte[] raw_data, string clip_name)
+        public static AudioClip GetAudioClipFromWav(Stream raw_data, string clip_name)
         {
-            AudioClip clip = null;
-            //var raw_data = System.IO.File.ReadAllBytes(file);
-            var raw_string = Encoding.ASCII.GetString(raw_data);
-            //var clip_name = Path.GetFileNameWithoutExtension(file);
+            var waveFileReader = new WaveFileReader(raw_data);
+            var waveFormat = waveFileReader.WaveFormat;
+            var clip = AudioClip.Create(clip_name, (int) waveFileReader.SampleCount,
+                waveFormat.Channels, waveFormat.SampleRate, false);
+            clip.name = clip_name;
+            clip.SetData(waveFileReader.ReadAllSamples(), 0);
+            return clip;
+        }
 
-            if (raw_string.Substring(0, 4) == "RIFF")
+        public static AudioClip GetAudioClipFromOgg(Stream raw_data, string clip_name)
+        {
+            var vorbisReader = new VorbisReader(raw_data, false);
+            var clip = AudioClip.Create(clip_name, (int) vorbisReader.TotalSamples,
+                vorbisReader.Channels, vorbisReader.SampleRate, false);
+            clip.name = clip_name;
+            clip.SetData(vorbisReader.ReadAllSamples(), 0);
+            return clip;
+        }
+
+        public static AudioClip GetAudioClipFromMp3(Stream raw_data, string clip_name)
+        {
+            var mp3FileReader = new Mp3FileReader(raw_data);
+            using var memoryStream = new MemoryStream();
+            WaveFileWriter.WriteWavFileToStream(memoryStream, mp3FileReader);
+            memoryStream.Seek(0, SeekOrigin.Begin);
+            return GetAudioClipFromWav(memoryStream, clip_name);
+        }
+
+        public static float[] ReadAllSamples(this WaveFileReader waveFileReader)
+        {
+            var buf = new float[waveFileReader.SampleCount * waveFileReader.WaveFormat.Channels];
+            var index = 0;
+            while (waveFileReader.SafeReadNextSampleFrame(out var _data) && _data != null)
             {
-                if (raw_string.Substring(8, 4) == "WAVE")
+                foreach (var simple in _data)
                 {
-                    int index = 4; //ChunkId
-                    var ChunkSize = BitConverter.ToUInt32(raw_data, 4);
-                    index += 4;
-                    index += 4; // WAVE
-
-                    ushort NumChannels = 1;
-                    uint SampleRate = 0;
-                    ushort BitsPerSample = 0;
-                    ushort BolckAlign = 1;
-
-                    while (index < raw_data.Length)
-                    {
-                        var SubchunkID = raw_string.Substring(index, 4);
-                        var SubchunkSize = BitConverter.ToUInt32(raw_data, index + 4);
-
-                        index += 8;
-                        if (SubchunkID == "fmt ")
-                        {
-                            var AudioFormat = BitConverter.ToUInt16(raw_data, index);
-                            NumChannels = BitConverter.ToUInt16(raw_data, index + 2);
-                            SampleRate = BitConverter.ToUInt32(raw_data, index + 4);
-                            var ByteRate = BitConverter.ToUInt32(raw_data, index + 8);
-                            BolckAlign = BitConverter.ToUInt16(raw_data, index + 12);
-                            BitsPerSample = BitConverter.ToUInt16(raw_data, index + 14);
-                            index += (int) SubchunkSize;
-                        }
-                        else if (SubchunkID == "data")
-                        {
-                            var data_len = (raw_data.Length - index);
-                            var data = new float[data_len / BolckAlign * NumChannels];
-
-                            //Debug.LogFormat("{0} {1} {2} {3} {4} {5}", NumChannels, BolckAlign, BitsPerSample, data_len, data.Length, SubchunkSize);
-
-                            for (int i = 0; i < data.Length; i += NumChannels)
-                            {
-                                for (int j = 0; j < NumChannels; j++)
-                                {
-                                    if (BitsPerSample == 8)
-                                        data[i + j] =
-                                            BitConverter.ToChar(raw_data, index + BolckAlign * (i / NumChannels) + j) /
-                                            ((float) char.MaxValue);
-                                    else if (BitsPerSample == 16)
-                                        data[i + j] =
-                                            BitConverter.ToInt16(raw_data,
-                                                index + BolckAlign * (i / NumChannels) + 2 * j) /
-                                            (float) short.MaxValue;
-                                    else if (BitsPerSample == 32)
-                                        data[i + j] =
-                                            BitConverter.ToInt32(raw_data,
-                                                index + BolckAlign * (i / NumChannels) + 4 * j) /
-                                            ((float) int.MaxValue);
-                                }
-                            }
-
-                            clip = AudioClip.Create(clip_name, data.Length / NumChannels, NumChannels, (int) SampleRate,
-                                false);
-                            clip.SetData(data, 0);
-
-                            index += (int) SubchunkSize;
-                            break;
-                        }
-                        else
-                        {
-                            index += (int) SubchunkSize;
-                        }
-                    }
+                    buf[index] = simple;
+                    index += 1;
                 }
             }
 
-            return clip;
+            return buf;
+        }
+
+        public static float[] ReadAllSamples(this VorbisReader vorbisReader)
+        {
+            var buf = new float[vorbisReader.TotalSamples];
+            vorbisReader.ReadSamples(buf.AsSpan());
+            return buf;
+        }
+
+        private static bool SafeReadNextSampleFrame(this WaveFileReader waveFileReader, out float[] data)
+        {
+            try
+            {
+                data = waveFileReader.ReadNextSampleFrame();
+                return true;
+            }
+            catch (Exception)
+            {
+                data = Array.Empty<float>();
+                return false;
+            }
         }
     }
 }
