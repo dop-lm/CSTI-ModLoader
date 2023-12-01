@@ -15,11 +15,9 @@ using HarmonyLib;
 using Ionic.Zip;
 using LitJson;
 using ModLoader.LoaderUtil;
-using ModLoader.Patchers;
 using ModLoader.UI;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Assertions;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
 
@@ -50,15 +48,14 @@ namespace ModLoader
         }
     }
 
-    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.3.4")]
+    [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", "2.3.4.10")]
     public class ModLoader : BaseUnityPlugin
     {
         static ModLoader()
         {
-            NormalPatcher.DoPatch(HarmonyInstance);
             try
             {
-                HarmonyInstance.PatchAll(typeof(AudioFixPatcher));
+                NormalPatcher.DoPatch(HarmonyInstance);
             }
             catch (Exception e)
             {
@@ -101,8 +98,7 @@ namespace ModLoader
         public static readonly Dictionary<string, ScriptableObject> AllScriptableObjectDict = new();
 
         public static readonly Dictionary<Type, Dictionary<string, ScriptableObject>>
-            AllScriptableObjectWithoutGuidTypeDict =
-                new();
+            AllScriptableObjectWithoutGuidTypeDict = new();
 
         public static readonly Dictionary<string, Type> ScriptableObjectKeyType = new();
 
@@ -552,15 +548,15 @@ namespace ModLoader
                             var ab = AssetBundle.LoadFromStream(ms);
                             foreach (var obj in ab.LoadAllAssets())
                             {
-                                if (obj is Sprite)
+                                if (obj is Sprite sprite)
                                 {
-                                    if (!SpriteDict.ContainsKey(obj.name))
+                                    if (!SpriteDict.ContainsKey(sprite.name))
                                     {
-                                        SpriteDict.Add(obj.name, obj as Sprite);
+                                        SpriteDict.Add(sprite.name, sprite);
                                     }
                                     else
                                         Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}",
-                                            ModName, obj.name);
+                                            ModName, sprite.name);
                                 }
 
                                 if (obj is AudioClip clip)
@@ -662,7 +658,8 @@ namespace ModLoader
                                 else
                                     Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}",
                                         ModName, clip.name);
-                            }else if (entry.FileName.EndsWith(".ogg", true, null))
+                            }
+                            else if (entry.FileName.EndsWith(".ogg", true, null))
                             {
                                 var clip_name = Path.GetFileNameWithoutExtension(entry.FileName);
                                 var clip = ResourceDataLoader.GetAudioClipFromOgg(entry.OpenReader(), clip_name);

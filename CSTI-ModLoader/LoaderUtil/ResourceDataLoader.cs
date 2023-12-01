@@ -57,7 +57,7 @@ namespace ModLoader.LoaderUtil
 
         public static float[] ReadAllSamples(this VorbisReader vorbisReader)
         {
-            var buf = new float[vorbisReader.TotalSamples];
+            var buf = new float[vorbisReader.TotalSamples * vorbisReader.Channels];
             vorbisReader.ReadSamples(buf.AsSpan());
             return buf;
         }

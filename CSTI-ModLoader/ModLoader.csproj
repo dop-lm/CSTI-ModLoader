@@ -41,7 +41,6 @@
         <Compile Include="LoaderUtil\LoadPreData.cs" />
         <Compile Include="LoaderUtil\PostSpriteLoad.cs" />
         <Compile Include="LoaderUtil\ResourceDataLoader.cs" />
-        <Compile Include="Patchers\AudioFix.cs" />
         <Compile Include="ResourceLoadHelper.cs" />
         <Compile Include="StringHelper.cs" />
         <Compile Include="UI\MainUI.cs" />
@@ -286,6 +285,7 @@
     </ItemGroup>
     <ItemGroup>
         <Folder Include="DataStruct\" />
+        <Folder Include="Patchers\" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <Import Project="..\packages\Fody.6.6.4\build\Fody.targets" Condition="Exists('..\packages\Fody.6.6.4\build\Fody.targets')" />
