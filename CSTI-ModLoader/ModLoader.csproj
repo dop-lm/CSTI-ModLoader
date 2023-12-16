@@ -8,8 +8,7 @@
 $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll" />
         </ItemGroup>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath1)" />
-        <Copy SourceFiles="@(OutputFiles_86)" DestinationFolder="$(OutputPath1)\x86" />
-        <Copy SourceFiles="@(OutputFiles_64)" DestinationFolder="$(OutputPath1)\x64" />
+        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath2)" />
     </Target>
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -43,10 +42,12 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll" />
         <WarningLevel>4</WarningLevel>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <OutputPath1>..\..\my-cstimods\ModLoader</OutputPath1>
+        <OutputPath2>D:\SteamLibrary\steamapps\common\Card Survival Tropical Island\BepInEx\plugins\ModLoader</OutputPath2>
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="EmbeddedResources.cs" />
         <Compile Include="FFI\JsonnetRuntime.cs" />
+        <Compile Include="GlobalUsings.cs" />
         <Compile Include="LoaderUtil\DoWarpperLoader.cs" />
         <Compile Include="LoaderUtil\LoadPreData.cs" />
         <Compile Include="LoaderUtil\PostSpriteLoad.cs" />

@@ -34,12 +34,12 @@ namespace DynamicModLoader
                 else
                     DynamicModLoader.LogErrorWithModInfo("CommonWarpper No Such Dict " + field_type.Name);
             }
-            else if (field_type == typeof(UnityEngine.Sprite))
+            else if (field_type == typeof(Sprite))
             {
 
                 ObjectReferenceWarpper(obj, data, field_name, DynamicModLoader.SpriteDict);
             }
-            else if (field_type == typeof(UnityEngine.AudioClip))
+            else if (field_type == typeof(AudioClip))
             {
                 ObjectReferenceWarpper(obj, data, field_name, DynamicModLoader.AudioClipDict);
             }
@@ -78,14 +78,14 @@ namespace DynamicModLoader
                 else
                     DynamicModLoader.LogErrorWithModInfo("CommonWarpper No Such Dict " + field_type.Name);
             }
-            else if (field_type == typeof(UnityEngine.Sprite))
+            else if (field_type == typeof(Sprite))
             {
                 if (warp_type == WarpType.ADD_REFERENCE)
                     ObjectAddReferenceWarpper(obj, data, field_name, DynamicModLoader.SpriteDict);
                 else
                     ObjectReferenceWarpper(obj, data, field_name, DynamicModLoader.SpriteDict);
             }
-            else if (field_type == typeof(UnityEngine.AudioClip))
+            else if (field_type == typeof(AudioClip))
             {
                 if (warp_type == WarpType.ADD_REFERENCE)
                     ObjectAddReferenceWarpper(obj, data, field_name, DynamicModLoader.AudioClipDict);
@@ -109,7 +109,7 @@ namespace DynamicModLoader
             }
         }
 
-        public static void JsonCommonWarpper(System.Object obj, LitJson.JsonData json)
+        public static void JsonCommonWarpper(System.Object obj, JsonData json)
         {
             if (!json.IsObject)
                 return;

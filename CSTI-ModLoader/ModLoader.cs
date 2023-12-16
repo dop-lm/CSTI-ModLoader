@@ -50,10 +50,10 @@ public class ModPack
     }
 }
 
-[BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", ModLoader.ModVersion)]
+[BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", ModVersion)]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.4.16";
+    public const string ModVersion = "2.3.4.17";
 
     static ModLoader()
     {
@@ -68,7 +68,7 @@ public class ModLoader : BaseUnityPlugin
         }
     }
 
-    public ManualLogSource CommonLogger => Logger;
+    public static ManualLogSource CommonLogger { get; private set; } = new("ModLoader");
 
     public static readonly Dictionary<string, JsonData> UniqueIdObjectExtraData = new();
     public static readonly Dictionary<int, JsonData> ScriptableObjectExtraData = new();
@@ -84,7 +84,7 @@ public class ModLoader : BaseUnityPlugin
     public static Version PluginVersion;
     public static Assembly GameSourceAssembly;
     public static readonly Harmony HarmonyInstance = new("Dop.plugin.CSTI.ModLoader");
-    public static ModLoader Instance;
+    public static ModLoader ModLoaderInstance;
 
     public static readonly Dictionary<string, Sprite> SpriteDict = new();
 
@@ -161,6 +161,7 @@ public class ModLoader : BaseUnityPlugin
     public static bool HasEncounterType;
     public static Image MainUIBackPanel;
     public static RectTransform MainUIBackPanelRT;
+    public bool ModLoaderUpdated;
 
     private void Start()
     {
@@ -196,6 +197,16 @@ public class ModLoader : BaseUnityPlugin
 
     private void Awake()
     {
+        ModLoaderInstance = this;
+        try
+        {
+            StartCoroutine(AutoUpdate.UpdateModIfNecessary());
+        }
+        catch (Exception e)
+        {
+            Logger.LogWarning(e);
+        }
+
         MainUI.CreatePanel();
         MainUIBackPanelRT.sizeDelta = new Vector2(1920, 1080) * 0.55f;
         MainUIBackPanelRT.position =
@@ -203,7 +214,6 @@ public class ModLoader : BaseUnityPlugin
                 1080 * (1 - 0.12f) - 1080 * 0.55f * 0.5f);
         MainUIBackPanelRT.gameObject.SetActive(false);
 
-        Instance = this;
         this.StartCoroutineEx(PostSpriteLoad.CompressOnLate(), out var controller);
         PostSpriteLoad.Controller = controller;
         Config.Bind("是否将加载的纹理设置为只读", "SetTexture2ReadOnly", false,
@@ -262,8 +272,6 @@ public class ModLoader : BaseUnityPlugin
 
         try
         {
-            // var LocalizationManagerLoadLanguagePostfixMethod =
-            //     new HarmonyMethod(typeof(ModLoader).GetMethod("LocalizationManagerLoadLanguagePostfix"));
             var LocalizationManagerLoadLanguagePostfixMethod =
                 new HarmonyMethod(typeof(ModLoader), nameof(LocalizationManagerLoadLanguagePostfix));
             // harmony.Patch(typeof(LocalizationManager).GetMethod("LoadLanguage", bindingFlags),
@@ -278,8 +286,6 @@ public class ModLoader : BaseUnityPlugin
 
         try
         {
-            // var GuideManagerStartPrefixMethod =
-            //     new HarmonyMethod(typeof(ModLoader).GetMethod("GuideManagerStartPrefix"));
             var GuideManagerStartPrefixMethod =
                 new HarmonyMethod(typeof(ModLoader), nameof(GuideManagerStartPrefix));
             // harmony.Patch(typeof(GuideManager).GetMethod("Start", bindingFlags),
@@ -295,8 +301,6 @@ public class ModLoader : BaseUnityPlugin
 
         try
         {
-            // var GraphicsManagerInitPostfixMethod =
-            //     new HarmonyMethod(typeof(ModLoader).GetMethod("GraphicsManagerInitPostfix"));
             var GraphicsManagerInitPostfixMethod =
                 new HarmonyMethod(typeof(ModLoader), nameof(GraphicsManagerInitPostfix));
             // harmony.Patch(typeof(GraphicsManager).GetMethod("Init", bindingFlags),
@@ -332,15 +336,6 @@ public class ModLoader : BaseUnityPlugin
         Logger.LogInfo("Plugin ModLoader is loaded! ");
         LoadPreData.LoadData(Path.Combine(Paths.BepInExRootPath, "plugins"));
         Logger.LogInfo("ModLoader Resource Preload being");
-
-        try
-        {
-            Task.Run(AutoUpdate.UpdateModIfNecessary);
-        }
-        catch (Exception e)
-        {
-            Logger.LogWarning(e);
-        }
     }
 
     public static string CombinePaths(params string[] paths)
@@ -528,7 +523,7 @@ public class ModLoader : BaseUnityPlugin
                         ModName = Info.Name;
 
                     ModPacks[ModName] = new ModPack(Info, ModName,
-                        Instance.Config.Bind("是否加载某个模组",
+                        ModLoaderInstance.Config.Bind("是否加载某个模组",
                             $"{ModName}_{Info.Name}".EscapeStr(), true,
                             $"是否加载{ModName}"));
                     if (!ModPacks[ModName].EnableEntry.Value) continue;
@@ -907,7 +902,7 @@ public class ModLoader : BaseUnityPlugin
                     if (!ModPacks.ContainsKey(ModName))
                     {
                         ModPacks[ModName] = new ModPack(Info, ModName,
-                            Instance.Config.Bind("是否加载某个模组",
+                            ModLoaderInstance.Config.Bind("是否加载某个模组",
                                 $"{ModName}_{Info.Name}".EscapeStr(), true,
                                 $"是否加载{ModName}"));
                     }
@@ -967,37 +962,6 @@ public class ModLoader : BaseUnityPlugin
                 {
                     Debug.LogWarningFormat("{0} Load Resource Error {1}", ModName, ex.Message);
                 }
-
-                /*
-                // Load Resource Custom Pictures
-                try
-                {
-                    if (Directory.Exists(CombinePaths(dir, "Resource", "Picture")))
-                    {
-                        var files = Directory.GetFiles(CombinePaths(dir, "Resource", "Picture"));
-                        spritesWaitList.Add(ResourceLoadHelper.LoadPictures(ModName, files));
-                        // foreach (var file in files)
-                        // {
-                        //     if (!file.EndsWith(".jpg") && !file.EndsWith(".jpeg") && !file.EndsWith(".png"))
-                        //         continue;
-                        //     var sprite_name = Path.GetFileNameWithoutExtension(file);
-                        //     Texture2D t2d = new Texture2D(2, 2);
-                        //     t2d.LoadImage(File.ReadAllBytes(file));
-                        //     Sprite sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height), Vector2.zero);
-                        //     sprite.name = sprite_name;
-                        //     if (!SpriteDict.ContainsKey(sprite_name))
-                        //         SpriteDict.Add(sprite_name, sprite);
-                        //     else
-                        //         Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModName,
-                        //             sprite_name);
-                        // }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarningFormat("{0} Load Resource Custom Pictures Error {1}", ModName,
-                        ex.Message);
-                }*/
 
                 // Load Resource Custom Audio
                 try
@@ -1909,6 +1873,10 @@ public class ModLoader : BaseUnityPlugin
         Screen.width * 0.1f,
         Screen.height * 0.1f);
 
+    public static Rect UpdateSuccessUIWindowRect = new(Screen.width * 0.4f, Screen.height * 0.4f,
+        Screen.width * 0.2f,
+        Screen.height * 0.2f);
+
     public static bool ReqQuit;
     public static float WaitTime;
     public static bool HadBootNew;
@@ -1958,7 +1926,7 @@ public class ModLoader : BaseUnityPlugin
 
     private void OnGUI()
     {
-        bigLabel ??= new(GUI.skin.label)
+        bigLabel ??= new GUIStyle(GUI.skin.label)
         {
             fontSize = 32
         };
@@ -1975,6 +1943,34 @@ public class ModLoader : BaseUnityPlugin
 
         GUILayout.Window(CurrentMainUIId, ModManagerUIWindowRect,
             ModLoaderMainUIWindow, "ModManagerUI");
+        if (ModLoaderUpdated)
+        {
+            GUILayout.Window(0, UpdateSuccessUIWindowRect, UpdateSuccessWindow, "更新完成 UpdateSuccess");
+
+            void UpdateSuccessWindow(int id)
+            {
+                GUILayout.BeginVertical();
+                
+                GUILayout.Label("ModLoader自动更新完成(ModLoader Auto Update Successs)\n是否重启？");
+                GUILayout.BeginHorizontal();
+
+                if (GUILayout.Button("重启并激活更新(ReloadGame)"))
+                {
+                    ReqQuit = true;
+                    WaitTime = 2.4f;
+                    ModLoaderUpdated = false;
+                }
+
+                if (GUILayout.Button("暂不重启(No)"))
+                {
+                    ModLoaderUpdated = false;
+                }
+                
+                GUILayout.EndHorizontal();
+                
+                GUILayout.EndVertical();
+            }
+        }
     }
 
     private static void PostLoadSuccessWindow(int id)
@@ -2028,7 +2024,7 @@ public class ModLoader : BaseUnityPlugin
 
         if (GUILayout.Button("应用(三秒后关闭)/Apply(Three seconds to close)"))
         {
-            Instance.Config.Save();
+            ModLoaderInstance.Config.Save();
             ReqQuit = true;
             WaitTime = 3;
         }

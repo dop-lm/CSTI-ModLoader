@@ -15,7 +15,7 @@ public static class LoadPreData
     {
         try
         {
-            foreach (var task in ModLoader.uniqueObjWaitList)
+            foreach (var task in uniqueObjWaitList)
             {
                 task.Wait();
                 var (uniqueObjs, modName) = task.Result;
@@ -50,19 +50,19 @@ public static class LoadPreData
                         //type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
 
                         var card_guid = card.UniqueID;
-                        ModLoader.AllGUIDDict.Add(card_guid, card);
+                        AllGUIDDict.Add(card_guid, card);
                         GameLoad.Instance.DataBase.AllData.Add(card);
 
-                        if (!ModLoader.WaitForWarpperEditorGuidDict.ContainsKey(card_guid))
-                            ModLoader.WaitForWarpperEditorGuidDict.Add(card_guid,
-                                new ModLoader.ScriptableObjectPack(card, "", CardPath, modName,
+                        if (!WaitForWarpperEditorGuidDict.ContainsKey(card_guid))
+                            WaitForWarpperEditorGuidDict.Add(card_guid,
+                                new ScriptableObjectPack(card, "", CardPath, modName,
                                     CardData));
                         else
                             Debug.LogWarningFormat(
                                 "{0} WaitForWarpperEditorGuidDict Same Key was Add {1}", modName, card_guid);
-                        if (!ModLoader.AllScriptableObjectDict.ContainsKey(card_guid))
-                            ModLoader.AllScriptableObjectDict.Add(card_guid, card);
-                        if (ModLoader.AllGUIDTypeDict.TryGetValue(type, out var dict))
+                        if (!AllScriptableObjectDict.ContainsKey(card_guid))
+                            AllScriptableObjectDict.Add(card_guid, card);
+                        if (AllGUIDTypeDict.TryGetValue(type, out var dict))
                             if (!dict.ContainsKey(card_guid))
                                 dict.Add(card_guid, card);
                     }
@@ -89,7 +89,7 @@ public static class LoadPreData
             foreach (var dir in dirs)
             {
                 //  Check if is a Mod Directory
-                if (!File.Exists(ModLoader.CombinePaths(dir, "ModInfo.json")))
+                if (!File.Exists(CombinePaths(dir, "ModInfo.json")))
                     continue;
 
                 ModInfo Info = new ModInfo();
@@ -98,26 +98,26 @@ public static class LoadPreData
                 try
                 {
                     // Load Mod Info
-                    using (StreamReader sr = new StreamReader(ModLoader.CombinePaths(dir, "ModInfo.json")))
+                    using (StreamReader sr = new StreamReader(CombinePaths(dir, "ModInfo.json")))
                         JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
 
                     // Check Name
                     if (!Info.Name.IsNullOrWhiteSpace())
                         ModName = Info.Name;
 
-                    ModLoader.ModPacks[ModName] = new ModPack(Info, ModName,
-                        ModLoader.Instance.Config.Bind("是否加载某个模组",
+                    ModPacks[ModName] = new ModPack(Info, ModName,
+                        ModLoaderInstance.Config.Bind("是否加载某个模组",
                             $"{ModName}_{Info.Name}".EscapeStr(), true,
                             $"是否加载{ModName}"));
-                    if (!ModLoader.ModPacks[ModName].EnableEntry.Value) continue;
+                    if (!ModPacks[ModName].EnableEntry.Value) continue;
 
                     Debug.Log($"ModLoader PreLoad Mod {ModName} {Info.Version}");
 
                     // Check Verison
                     var ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
-                    if (ModLoader.PluginVersion.CompareTo(ModRequestVersion) < 0)
+                    if (PluginVersion.CompareTo(ModRequestVersion) < 0)
                         Debug.LogWarningFormat(
-                            "ModLoader Version {0} is lower than {1} Request Version {2}", ModLoader.PluginVersion,
+                            "ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion,
                             ModName,
                             ModRequestVersion);
                 }
@@ -129,7 +129,7 @@ public static class LoadPreData
                 // Load Pictures
                 try
                 {
-                    var picPath = ModLoader.CombinePaths(dir, ResourcePat, PicturePat);
+                    var picPath = CombinePaths(dir, ResourcePat, PicturePat);
                     if (Directory.Exists(picPath))
                     {
                         var files = Directory.GetFiles(picPath);
@@ -144,8 +144,8 @@ public static class LoadPreData
                 // Load and init UniqueIDScriptable
                 try
                 {
-                    ModLoader.uniqueObjWaitList.Add(
-                        LoadUniqueObjs(ModName, dir, ModLoader.GameSourceAssembly, Info));
+                    uniqueObjWaitList.Add(
+                        LoadUniqueObjs(ModName, dir, GameSourceAssembly, Info));
                 }
                 catch (Exception ex)
                 {
@@ -156,7 +156,7 @@ public static class LoadPreData
         }
         catch (Exception e)
         {
-            ModLoader.Instance.CommonLogger.LogError($"loading error :{e}");
+            CommonLogger.LogError($"loading error :{e}");
         }
         finally
         {

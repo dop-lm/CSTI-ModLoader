@@ -176,7 +176,7 @@ namespace ModLoader安装包
                 // fastZip.ExtractZip(ModLoaderPack.BepInEx_x64, gamePath, FastZip.Overwrite.Always,
                 //     _ => true, ".*", ".*",
                 //     true, true);
-                SharpCompress.Archives.ArchiveFactory.Open(ModLoaderPack.BepInEx_x64).ExtractArch(gamePath, _ => true);
+                ArchiveFactory.Open(ModLoaderPack.BepInEx_x64).ExtractArch(gamePath, _ => true);
             }
 
             var plugins = Path.Combine(gamePath, "BepInEx", "plugins");

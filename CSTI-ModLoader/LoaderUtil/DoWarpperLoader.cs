@@ -12,7 +12,7 @@ public static class DoWarpperLoader
 {
     public static void MatchAndWarpperAllEditorGameSrouce()
     {
-        foreach (var item in ModLoader.AllGUIDDict.Values)
+        foreach (var item in AllGUIDDict.Values)
         {
             try
             {
@@ -20,10 +20,10 @@ public static class DoWarpperLoader
                 {
                     foreach (var tag in cardData.CardTags)
                     {
-                        if (!ModLoader.AllCardTagGuidCardDataDict.ContainsKey(tag.name))
-                            ModLoader.AllCardTagGuidCardDataDict.Add(tag.name, new Dictionary<string, CardData>());
+                        if (!AllCardTagGuidCardDataDict.ContainsKey(tag.name))
+                            AllCardTagGuidCardDataDict.Add(tag.name, new Dictionary<string, CardData>());
 
-                        if (ModLoader.AllCardTagGuidCardDataDict.TryGetValue(tag.name, out var dict))
+                        if (AllCardTagGuidCardDataDict.TryGetValue(tag.name, out var dict))
                             dict.Add(cardData.UniqueID, cardData);
                     }
                 }
@@ -34,7 +34,7 @@ public static class DoWarpperLoader
             }
         }
 
-        foreach (var item in ModLoader.WaitForMatchAndWarpperEditorGameSourceList)
+        foreach (var item in WaitForMatchAndWarpperEditorGameSourceList)
         {
             try
             {
@@ -45,21 +45,21 @@ public static class DoWarpperLoader
                 if (json.ContainsKey("MatchTagWarpData") && json["MatchTagWarpData"].IsArray &&
                     json["MatchTagWarpData"].Count > 0)
                 {
-                    if (!ModLoader.AllCardTagGuidCardDataDict.TryGetValue(json["MatchTagWarpData"][0].ToString(),
+                    if (!AllCardTagGuidCardDataDict.TryGetValue(json["MatchTagWarpData"][0].ToString(),
                             out var dict))
                         continue;
                     var MatchList = dict.Keys.ToList();
 
                     for (int i = 1; i < json["MatchTagWarpData"].Count; i++)
                     {
-                        if (ModLoader.AllCardTagGuidCardDataDict.TryGetValue(json["MatchTagWarpData"][i].ToString(),
+                        if (AllCardTagGuidCardDataDict.TryGetValue(json["MatchTagWarpData"][i].ToString(),
                                 out var next_dict))
                             MatchList = MatchList.Intersect(next_dict.Keys).ToList();
                     }
 
                     foreach (var match in MatchList)
                     {
-                        if (ModLoader.AllGUIDDict.TryGetValue(match, out var card))
+                        if (AllGUIDDict.TryGetValue(match, out var card))
                         {
                             if (card is CardData cardData)
                             {
@@ -89,20 +89,20 @@ public static class DoWarpperLoader
     {
         // var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
         //foreach (var item in WaitForWarpperEditorGameSourceGUIDList)
-        for (int i = 0; i < ModLoader.WaitForWarpperEditorGameSourceGUIDList.Count; i++)
+        for (int i = 0; i < WaitForWarpperEditorGameSourceGUIDList.Count; i++)
         {
-            var item = ModLoader.WaitForWarpperEditorGameSourceGUIDList[i];
+            var item = WaitForWarpperEditorGameSourceGUIDList[i];
             try
             {
                 if (item.obj == null)
                 {
-                    if (ModLoader.AllGUIDDict.TryGetValue(item.CardDirOrGuid, out var obj))
+                    if (AllGUIDDict.TryGetValue(item.CardDirOrGuid, out var obj))
                         item.obj = obj;
                     else
                         continue;
                 }
 
-                ModLoader.ProcessingScriptableObjectPack = item;
+                ProcessingScriptableObjectPack = item;
 
                 if (!item.CardData.IsNullOrWhiteSpace())
                 {
@@ -110,7 +110,7 @@ public static class DoWarpperLoader
                     if (json.ContainsKey("MatchTagWarpData") && json["MatchTagWarpData"].IsArray &&
                         json["MatchTagWarpData"].Count > 0)
                     {
-                        ModLoader.WaitForMatchAndWarpperEditorGameSourceList.Add(item);
+                        WaitForMatchAndWarpperEditorGameSourceList.Add(item);
                         continue;
                     }
 
@@ -140,17 +140,17 @@ public static class DoWarpperLoader
         
     public static void WarpperAllEditorMods()
     {
-        if (!ModLoader._onceWarp.DoOnce())
+        if (!_onceWarp.DoOnce())
         {
             return;
         }
 
         // var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-        foreach (var item in ModLoader.WaitForWarpperEditorGuidDict)
+        foreach (var item in WaitForWarpperEditorGuidDict)
         {
             try
             {
-                ModLoader.ProcessingScriptableObjectPack = item.Value;
+                ProcessingScriptableObjectPack = item.Value;
 
                 var json = JsonMapper.ToObject(item.Value.CardData);
                 WarpperFunction.JsonCommonWarpper(item.Value.obj, json);
@@ -163,13 +163,13 @@ public static class DoWarpperLoader
                         json.ContainsKey("BlueprintCardDataCardTabSubGroup") &&
                         json["BlueprintCardDataCardTabSubGroup"].IsString &&
                         !json["BlueprintCardDataCardTabSubGroup"].ToString().IsNullOrWhiteSpace())
-                        ModLoader.WaitForAddBlueprintCard.Add(new Tuple<string, string, CardData>(
+                        WaitForAddBlueprintCard.Add(new Tuple<string, string, CardData>(
                             json["BlueprintCardDataCardTabGroup"].ToString(),
                             json["BlueprintCardDataCardTabSubGroup"].ToString(), cardData));
 
                     if (json.ContainsKey("ItemCardDataCardTabGpGroup") &&
                         json["ItemCardDataCardTabGpGroup"].IsArray &&
-                        ModLoader.AllScriptableObjectWithoutGuidTypeDict.TryGetValue(typeof(CardTabGroup), out var dict))
+                        AllScriptableObjectWithoutGuidTypeDict.TryGetValue(typeof(CardTabGroup), out var dict))
                         for (int i = 0; i < json["ItemCardDataCardTabGpGroup"].Count; i++)
                             if (json["ItemCardDataCardTabGpGroup"][i].IsString &&
                                 dict.TryGetValue(json["ItemCardDataCardTabGpGroup"][i].ToString(),
@@ -180,7 +180,7 @@ public static class DoWarpperLoader
                         for (int i = 0; i < json["CardDataCardFilterGroup"].Count; i++)
                             if (json["CardDataCardFilterGroup"][i].IsString && !json["CardDataCardFilterGroup"][i]
                                     .ToString().IsNullOrWhiteSpace())
-                                ModLoader.WaitForAddCardFilterGroupCard.Add(new Tuple<string, CardData>(
+                                WaitForAddCardFilterGroupCard.Add(new Tuple<string, CardData>(
                                     json["CardDataCardFilterGroup"][i].ToString(), cardData));
 
                     Traverse.Create(cardData).Method("FillDropsList")?.GetValue();
@@ -194,7 +194,7 @@ public static class DoWarpperLoader
                 {
                     if (json.ContainsKey("CharacterPerkPerkGroup") && json["CharacterPerkPerkGroup"].IsString &&
                         !json["CharacterPerkPerkGroup"].ToString().IsNullOrWhiteSpace())
-                        ModLoader.WaitForAddPerkGroup.Add(new Tuple<string, CharacterPerk>(
+                        WaitForAddPerkGroup.Add(new Tuple<string, CharacterPerk>(
                             json["CharacterPerkPerkGroup"].ToString(), item.Value.obj as CharacterPerk));
                 }
                 else if (item.Value.obj is GameStat)
@@ -202,12 +202,12 @@ public static class DoWarpperLoader
                     if (json.ContainsKey("VisibleGameStatStatListTab") &&
                         json["VisibleGameStatStatListTab"].IsString &&
                         !json["VisibleGameStatStatListTab"].ToString().IsNullOrWhiteSpace())
-                        ModLoader.WaitForAddVisibleGameStat.Add(new Tuple<string, GameStat>(
+                        WaitForAddVisibleGameStat.Add(new Tuple<string, GameStat>(
                             json["VisibleGameStatStatListTab"].ToString(), item.Value.obj as GameStat));
                 }
                 else if (item.Value.obj is PlayerCharacter)
                 {
-                    if (ModLoader.AllGUIDTypeDict.TryGetValue(typeof(Gamemode), out var dict))
+                    if (AllGUIDTypeDict.TryGetValue(typeof(Gamemode), out var dict))
                     {
                         foreach (var pair in dict)
                         {
@@ -219,7 +219,7 @@ public static class DoWarpperLoader
                         }
                     }
 
-                    ModLoader.WaitForAddJournalPlayerCharacter.Add(new ModLoader.ScriptableObjectPack(item.Value.obj, "", "", "",
+                    WaitForAddJournalPlayerCharacter.Add(new ScriptableObjectPack(item.Value.obj, "", "", "",
                         item.Value.CardData));
                 }
             }
@@ -229,6 +229,6 @@ public static class DoWarpperLoader
             }
         }
 
-        ModLoader._onceWarp.SetDone();
+        _onceWarp.SetDone();
     }
 }

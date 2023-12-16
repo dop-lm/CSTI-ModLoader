@@ -55,7 +55,7 @@ public static class PostSpriteLoad
 
         public void Set()
         {
-            if (ModLoader.SpriteDict.TryGetValue(SpriteId, out var sprite))
+            if (SpriteDict.TryGetValue(SpriteId, out var sprite))
             {
                 SetterFunc(ToSetObj, sprite);
             }
@@ -143,7 +143,7 @@ public static class PostSpriteLoad
                     spriteSize = new Rect(0, 0, t2d.width, t2d.height);
                 }
 
-                if (imageEntry.DdsPath == null && !ModLoader.TexCompatibilityMode.Value)
+                if (imageEntry.DdsPath == null && !TexCompatibilityMode.Value)
                 {
                     t2d.Compress(false);
                 }
@@ -151,9 +151,9 @@ public static class PostSpriteLoad
                 var sprite = Sprite.Create(t2d, spriteSize,
                     Vector2.zero);
                 sprite.name = imageEntry.Name;
-                if (!ModLoader.SpriteDict.ContainsKey(imageEntry.Name))
+                if (!SpriteDict.ContainsKey(imageEntry.Name))
                 {
-                    ModLoader.SpriteDict.Add(imageEntry.Name, sprite);
+                    SpriteDict.Add(imageEntry.Name, sprite);
                     if (!PostSetQueue.TryGetValue(imageEntry.Name, out var postSetters)) continue;
                     while (postSetters.Count > 0)
                     {
@@ -191,11 +191,11 @@ public static class PostSpriteLoad
             }
             catch (Exception e)
             {
-                ModLoader.Instance.CommonLogger.LogError(e);
+                CommonLogger.LogError(e);
             }
         }
 
-        ModLoader.ShowLoadSuccess += 1.2f;
+        ShowLoadSuccess += 1.2f;
 
         while (ShouldCompress.Count > 0)
         {

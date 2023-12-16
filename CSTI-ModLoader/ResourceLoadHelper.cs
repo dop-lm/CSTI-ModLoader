@@ -54,7 +54,7 @@ public static class ResourceLoadHelper
             select type;
         foreach (var type in subclasses)
         {
-            if (!Directory.Exists(ModLoader.CombinePaths(dir, type.Name)))
+            if (!Directory.Exists(CombinePaths(dir, type.Name)))
                 continue;
             if (Info.ModEditorVersion.IsNullOrWhiteSpace())
             {

@@ -27,14 +27,14 @@ public class WarpperFunction
     {
         if (field_type.IsSubclassOf(typeof(UniqueIDScriptable)))
         {
-            ObjectReferenceWarpper(obj, data, field_name, ModLoader.AllGUIDDict);
+            ObjectReferenceWarpper(obj, data, field_name, AllGUIDDict);
         }
         else if (field_type.IsSubclassOf(typeof(ScriptableObject)))
         {
-            if (ModLoader.AllScriptableObjectWithoutGuidTypeDict.TryGetValue(field_type, out var type_dict))
+            if (AllScriptableObjectWithoutGuidTypeDict.TryGetValue(field_type, out var type_dict))
                 ObjectReferenceWarpper(obj, data, field_name, type_dict);
             else
-                ModLoader.LogErrorWithModInfo("CommonWarpper No Such Dict " + field_type.Name);
+                LogErrorWithModInfo("CommonWarpper No Such Dict " + field_type.Name);
         }
         else if (field_type == typeof(Sprite))
         {
@@ -43,20 +43,20 @@ public class WarpperFunction
         }
         else if (field_type == typeof(AudioClip))
         {
-            ObjectReferenceWarpper(obj, data, field_name, ModLoader.AudioClipDict);
+            ObjectReferenceWarpper(obj, data, field_name, AudioClipDict);
         }
         else if (field_type == typeof(WeatherSpecialEffect) ||
                  field_type.IsSubclassOf(typeof(WeatherSpecialEffect)))
         {
-            ObjectReferenceWarpper(obj, data, field_name, ModLoader.WeatherSpecialEffectDict);
+            ObjectReferenceWarpper(obj, data, field_name, WeatherSpecialEffectDict);
         }
         else if (field_type == typeof(ScriptableObject))
         {
-            ObjectReferenceWarpper(obj, data, field_name, ModLoader.AllScriptableObjectDict);
+            ObjectReferenceWarpper(obj, data, field_name, AllScriptableObjectDict);
         }
         else
         {
-            ModLoader.LogErrorWithModInfo("JsonCommonRefWarpper Unexpect Object Type " + field_type.Name);
+            LogErrorWithModInfo("JsonCommonRefWarpper Unexpect Object Type " + field_type.Name);
         }
     }
 
@@ -66,13 +66,13 @@ public class WarpperFunction
         if (field_type.IsSubclassOf(typeof(UniqueIDScriptable)))
         {
             if (warp_type == WarpType.ADD_REFERENCE)
-                ObjectAddReferenceWarpper(obj, data, field_name, ModLoader.AllGUIDDict);
+                ObjectAddReferenceWarpper(obj, data, field_name, AllGUIDDict);
             else
-                ObjectReferenceWarpper(obj, data, field_name, ModLoader.AllGUIDDict);
+                ObjectReferenceWarpper(obj, data, field_name, AllGUIDDict);
         }
         else if (field_type.IsSubclassOf(typeof(ScriptableObject)))
         {
-            if (ModLoader.AllScriptableObjectWithoutGuidTypeDict.TryGetValue(field_type, out var type_dict))
+            if (AllScriptableObjectWithoutGuidTypeDict.TryGetValue(field_type, out var type_dict))
             {
                 if (warp_type == WarpType.ADD_REFERENCE)
                     ObjectAddReferenceWarpper(obj, data, field_name, type_dict);
@@ -80,37 +80,37 @@ public class WarpperFunction
                     ObjectReferenceWarpper(obj, data, field_name, type_dict);
             }
             else
-                ModLoader.LogErrorWithModInfo("CommonWarpper No Such Dict " + field_type.Name);
+                LogErrorWithModInfo("CommonWarpper No Such Dict " + field_type.Name);
         }
         else if (field_type == typeof(Sprite))
         {
             if (warp_type == WarpType.ADD_REFERENCE)
-                ObjectAddReferenceWarpper(obj, data, field_name, ModLoader.SpriteDict);
+                ObjectAddReferenceWarpper(obj, data, field_name, SpriteDict);
             else
-                ObjectReferenceWarpper(obj, data, field_name, ModLoader.SpriteDict);
+                ObjectReferenceWarpper(obj, data, field_name, SpriteDict);
         }
         else if (field_type == typeof(AudioClip))
         {
             if (warp_type == WarpType.ADD_REFERENCE)
-                ObjectAddReferenceWarpper(obj, data, field_name, ModLoader.AudioClipDict);
+                ObjectAddReferenceWarpper(obj, data, field_name, AudioClipDict);
             else
-                ObjectReferenceWarpper(obj, data, field_name, ModLoader.AudioClipDict);
+                ObjectReferenceWarpper(obj, data, field_name, AudioClipDict);
         }
         else if (field_type == typeof(WeatherSpecialEffect) ||
                  field_type.IsSubclassOf(typeof(WeatherSpecialEffect)))
         {
-            ObjectReferenceWarpper(obj, data, field_name, ModLoader.WeatherSpecialEffectDict);
+            ObjectReferenceWarpper(obj, data, field_name, WeatherSpecialEffectDict);
         }
         else if (field_type == typeof(ScriptableObject))
         {
             if (warp_type == WarpType.ADD_REFERENCE)
-                ObjectAddReferenceWarpper(obj, data, field_name, ModLoader.AllScriptableObjectDict);
+                ObjectAddReferenceWarpper(obj, data, field_name, AllScriptableObjectDict);
             else
-                ObjectReferenceWarpper(obj, data, field_name, ModLoader.AllScriptableObjectDict);
+                ObjectReferenceWarpper(obj, data, field_name, AllScriptableObjectDict);
         }
         else
         {
-            ModLoader.LogErrorWithModInfo("JsonCommonRefWarpper Unexpect List Object Type " + field_type.Name);
+            LogErrorWithModInfo("JsonCommonRefWarpper Unexpect List Object Type " + field_type.Name);
         }
     }
 
@@ -121,15 +121,15 @@ public class WarpperFunction
         var obj_type = obj.GetType();
         if (obj is UniqueIDScriptable idScriptable && json.ContainsKey(ExtraData))
         {
-            ModLoader.UniqueIdObjectExtraData[idScriptable.UniqueID] = json[ExtraData];
+            UniqueIdObjectExtraData[idScriptable.UniqueID] = json[ExtraData];
         }
         else if (obj is ScriptableObject scriptableObject && json.ContainsKey(ExtraData))
         {
-            ModLoader.ScriptableObjectExtraData[scriptableObject.GetInstanceID()] = json[ExtraData];
+            ScriptableObjectExtraData[scriptableObject.GetInstanceID()] = json[ExtraData];
         }
         else if (!obj_type.IsValueType && json.ContainsKey(ExtraData))
         {
-            ModLoader.ClassObjectExtraData[obj] = json[ExtraData];
+            ClassObjectExtraData[obj] = json[ExtraData];
         }
 
         foreach (var key in json.Keys)
@@ -169,7 +169,7 @@ public class WarpperFunction
                             }
                             else
                             {
-                                ModLoader.LogErrorWithModInfo("CommonWarpper REFERENCE Must be list or array " +
+                                LogErrorWithModInfo("CommonWarpper REFERENCE Must be list or array " +
                                                               field_type.Name);
                             }
 
@@ -179,12 +179,12 @@ public class WarpperFunction
                                 if (fieldWarpData[i].IsString)
                                     list_data.Add(fieldWarpData[i].ToString());
                                 else
-                                    ModLoader.LogErrorWithModInfo(
+                                    LogErrorWithModInfo(
                                         "CommonWarpper REFERENCE Wrong SubWarpData Format " + field_type.Name);
                             }
 
                             if (list_data.Count != fieldWarpData.Count)
-                                ModLoader.LogErrorWithModInfo(
+                                LogErrorWithModInfo(
                                     "CommonWarpper REFERENCE Size Error" + field_type.Name);
 
                             JsonCommonRefWarpper(obj, list_data, field_name, sub_field_type,
@@ -192,7 +192,7 @@ public class WarpperFunction
                         }
                         else
                         {
-                            ModLoader.LogErrorWithModInfo("CommonWarpper REFERENCE Wrong WarpData Format " +
+                            LogErrorWithModInfo("CommonWarpper REFERENCE Wrong WarpData Format " +
                                                           field_type.Name);
                         }
                     }
@@ -224,7 +224,7 @@ public class WarpperFunction
                                         instance.Add(new_obj);
                                     }
                                     else
-                                        ModLoader.LogErrorWithModInfo(
+                                        LogErrorWithModInfo(
                                             "CommonWarpper ADD Wrong SubWarpData Format " + field_type.Name);
                                 }
                             }
@@ -247,7 +247,7 @@ public class WarpperFunction
                                         instance.SetValue(new_obj, i + start_idx);
                                     }
                                     else
-                                        ModLoader.LogErrorWithModInfo(
+                                        LogErrorWithModInfo(
                                             "CommonWarpper ADD Wrong SubWarpData Format " + field_type.Name);
                                 }
 
@@ -255,13 +255,13 @@ public class WarpperFunction
                             }
                             else
                             {
-                                ModLoader.LogErrorWithModInfo("CommonWarpper ADD Must be list or array " +
+                                LogErrorWithModInfo("CommonWarpper ADD Must be list or array " +
                                                               field_type.Name);
                             }
                         }
                         else
                         {
-                            ModLoader.LogErrorWithModInfo("CommonWarpper ADD Wrong WarpData Format " +
+                            LogErrorWithModInfo("CommonWarpper ADD Wrong WarpData Format " +
                                                           field_type.Name);
                         }
                     }
@@ -293,7 +293,7 @@ public class WarpperFunction
                                         instance[i] = target_obj;
                                     }
                                     else
-                                        ModLoader.LogErrorWithModInfo(
+                                        LogErrorWithModInfo(
                                             "CommonWarpper MODIFY Wrong SubWarpData Format " + field_type.Name);
                                 }
                             }
@@ -332,7 +332,7 @@ public class WarpperFunction
                                         instance.SetValue(target_obj, i);
                                     }
                                     else
-                                        ModLoader.LogErrorWithModInfo(
+                                        LogErrorWithModInfo(
                                             "CommonWarpper MODIFY Wrong SubWarpData Format " + field_type.Name);
                                 }
 
@@ -340,19 +340,19 @@ public class WarpperFunction
                             }
                             else
                             {
-                                ModLoader.LogErrorWithModInfo("CommonWarpper MODIFY Must be list or array " +
+                                LogErrorWithModInfo("CommonWarpper MODIFY Must be list or array " +
                                                               field_type.Name);
                             }
                         }
                         else
                         {
-                            ModLoader.LogErrorWithModInfo("CommonWarpper MODIFY Wrong WarpData Format " +
+                            LogErrorWithModInfo("CommonWarpper MODIFY Wrong WarpData Format " +
                                                           field_type.Name);
                         }
                     }
                     else
                     {
-                        ModLoader.LogErrorWithModInfo("CommonWarpper Unexpect WarpType");
+                        LogErrorWithModInfo("CommonWarpper Unexpect WarpType");
                     }
                 }
                 else if (key.EndsWith("WarpData"))
@@ -431,7 +431,7 @@ public class WarpperFunction
             }
             catch (Exception ex)
             {
-                ModLoader.LogErrorWithModInfo(string.Format("CommonWarpper {0} {1}", obj_type.Name, ex.Message));
+                LogErrorWithModInfo(string.Format("CommonWarpper {0} {1}", obj_type.Name, ex.Message));
             }
         }
     }
@@ -455,7 +455,7 @@ public class WarpperFunction
             }
             catch (Exception ex)
             {
-                ModLoader.LogErrorWithModInfo(string.Format("ObjectReferenceWarpper {0}.{1} {2}",
+                LogErrorWithModInfo(string.Format("ObjectReferenceWarpper {0}.{1} {2}",
                     obj.GetType().Name, field_name, ex.Message));
             }
         }
@@ -491,7 +491,7 @@ public class WarpperFunction
         }
         catch (Exception ex)
         {
-            ModLoader.LogErrorWithModInfo(string.Format("ObjectReferenceWarpper {0}.{1} {2}", obj.GetType().Name,
+            LogErrorWithModInfo(string.Format("ObjectReferenceWarpper {0}.{1} {2}", obj.GetType().Name,
                 field_name, ex.Message));
         }
     }
@@ -499,7 +499,7 @@ public class WarpperFunction
     public static void ObjectAddReferenceWarpper<TValueType>(Object obj, string data, string field_name,
         Dictionary<string, TValueType> dict)
     {
-        ModLoader.LogErrorWithModInfo(string.Format("ObjectAddReferenceWarpper {0}.{1} {2}", obj.GetType().Name,
+        LogErrorWithModInfo(string.Format("ObjectAddReferenceWarpper {0}.{1} {2}", obj.GetType().Name,
             field_name, "AddReferenceWarpper Only Vaild in List or Array Filed"));
     }
 
@@ -534,7 +534,7 @@ public class WarpperFunction
         }
         catch (Exception ex)
         {
-            ModLoader.LogErrorWithModInfo(string.Format("ObjectAddReferenceWarpper {0}.{1} {2}", obj.GetType().Name,
+            LogErrorWithModInfo(string.Format("ObjectAddReferenceWarpper {0}.{1} {2}", obj.GetType().Name,
                 field_name, ex.Message));
         }
     }

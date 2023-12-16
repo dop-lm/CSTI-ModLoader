@@ -22,8 +22,8 @@ public static class MainUI
             typeof(CanvasRenderer), typeof(Image));
         background.transform.SetParent(gameObjectTransform);
         var image = background.GetComponent<Image>();
-        ModLoader.MainUIBackPanel = image;
-        ModLoader.MainUIBackPanelRT = background.GetComponent<RectTransform>();
+        MainUIBackPanel = image;
+        MainUIBackPanelRT = background.GetComponent<RectTransform>();
         image.color = new Color(0.4f, 0.9f, 1, 0.4f);
         image.raycastTarget = true;
         image.maskable = true;

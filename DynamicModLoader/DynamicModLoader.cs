@@ -23,12 +23,12 @@ namespace DynamicModLoader
     [BepInPlugin("Dop.plugin.CSTI.DynamicModLoader", "DynamicModLoader", "1.1.0")]
     public class DynamicModLoader : BaseUnityPlugin
     {
-        public static System.Version PluginVersion;
+        public static Version PluginVersion;
 
-        public static Dictionary<string, UnityEngine.Sprite> SpriteDict = new Dictionary<string, UnityEngine.Sprite>();
+        public static Dictionary<string, Sprite> SpriteDict = new Dictionary<string, Sprite>();
 
-        public static Dictionary<string, UnityEngine.AudioClip> AudioClipDict =
-            new Dictionary<string, UnityEngine.AudioClip>();
+        public static Dictionary<string, AudioClip> AudioClipDict =
+            new Dictionary<string, AudioClip>();
 
         public static Dictionary<string, WeatherSpecialEffect> WeatherSpecialEffectDict =
             new Dictionary<string, WeatherSpecialEffect>();
@@ -107,8 +107,8 @@ namespace DynamicModLoader
         private void Awake()
         {
             // Plugin startup logic
-            Harmony.CreateAndPatchAll(typeof(DynamicModLoader), this.Info.Metadata.GUID);
-            PluginVersion = System.Version.Parse(this.Info.Metadata.Version.ToString());
+            Harmony.CreateAndPatchAll(typeof(DynamicModLoader), Info.Metadata.GUID);
+            PluginVersion = Version.Parse(Info.Metadata.Version.ToString());
             Logger.LogInfo("Plugin DynamicModLoader is loaded! ");
         }
 
@@ -311,20 +311,20 @@ namespace DynamicModLoader
                 }
                 catch (Exception ex)
                 {
-                    UnityEngine.Debug.LogWarning("LoadGameResource Error " + ex.Message);
+                    Debug.LogWarning("LoadGameResource Error " + ex.Message);
                 }
             }
 
-            foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(UnityEngine.Sprite)))
+            foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(Sprite)))
             {
                 if (!SpriteDict.ContainsKey(ele.name))
-                    SpriteDict.Add(ele.name, ele as UnityEngine.Sprite);
+                    SpriteDict.Add(ele.name, ele as Sprite);
             }
 
-            foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(UnityEngine.AudioClip)))
+            foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(AudioClip)))
             {
                 if (!AudioClipDict.ContainsKey(ele.name))
-                    AudioClipDict.Add(ele.name, ele as UnityEngine.AudioClip);
+                    AudioClipDict.Add(ele.name, ele as AudioClip);
             }
 
             foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(WeatherSpecialEffect)))
@@ -358,7 +358,7 @@ namespace DynamicModLoader
                         if (!Info.Name.IsNullOrWhiteSpace())
                             ModName = Info.Name;
 
-                        UnityEngine.Debug.Log(string.Format("DynamicModLoader Load Mod {0} {1}", ModName,
+                        Debug.Log(string.Format("DynamicModLoader Load Mod {0} {1}", ModName,
                             Info.Version));
 
                         // Check Verison
@@ -368,7 +368,7 @@ namespace DynamicModLoader
                     }
                     catch (Exception ex)
                     {
-                        UnityEngine.Debug.LogWarningFormat("{0} Check Version Error {1}", ModName, ex.Message);
+                        Debug.LogWarningFormat("{0} Check Version Error {1}", ModName, ex.Message);
                     }
 
                     // Load Resource
@@ -384,20 +384,20 @@ namespace DynamicModLoader
                                 AssetBundle ab = AssetBundle.LoadFromFile(file);
                                 foreach (var obj in ab.LoadAllAssets())
                                 {
-                                    if (obj.GetType() == typeof(UnityEngine.Sprite))
+                                    if (obj.GetType() == typeof(Sprite))
                                     {
                                         if (!SpriteDict.ContainsKey(obj.name))
-                                            SpriteDict.Add(obj.name, obj as UnityEngine.Sprite);
+                                            SpriteDict.Add(obj.name, obj as Sprite);
                                         else
-                                            SpriteDict[obj.name] = obj as UnityEngine.Sprite;
+                                            SpriteDict[obj.name] = obj as Sprite;
                                     }
 
-                                    if (obj.GetType() == typeof(UnityEngine.AudioClip))
+                                    if (obj.GetType() == typeof(AudioClip))
                                     {
                                         if (!AudioClipDict.ContainsKey(obj.name))
-                                            AudioClipDict.Add(obj.name, obj as UnityEngine.AudioClip);
+                                            AudioClipDict.Add(obj.name, obj as AudioClip);
                                         else
-                                            AudioClipDict[obj.name] = obj as UnityEngine.AudioClip;
+                                            AudioClipDict[obj.name] = obj as AudioClip;
                                     }
                                 }
                             }
@@ -405,7 +405,7 @@ namespace DynamicModLoader
                     }
                     catch (Exception ex)
                     {
-                        UnityEngine.Debug.LogWarningFormat("{0} Load Resource Error {1}", ModName, ex.Message);
+                        Debug.LogWarningFormat("{0} Load Resource Error {1}", ModName, ex.Message);
                     }
 
                     // Load Resource Custom Pictures
@@ -420,7 +420,7 @@ namespace DynamicModLoader
                                     continue;
                                 var sprite_name = Path.GetFileNameWithoutExtension(file);
                                 Texture2D t2d = new Texture2D(2, 2);
-                                ImageConversion.LoadImage(t2d, System.IO.File.ReadAllBytes(file));
+                                ImageConversion.LoadImage(t2d, File.ReadAllBytes(file));
                                 Sprite sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height), Vector2.zero);
                                 sprite.name = sprite_name;
                                 if (!SpriteDict.ContainsKey(sprite_name))
@@ -432,7 +432,7 @@ namespace DynamicModLoader
                     }
                     catch (Exception ex)
                     {
-                        UnityEngine.Debug.LogWarningFormat("{0} Load Resource Custom Pictures Error {1}", ModName,
+                        Debug.LogWarningFormat("{0} Load Resource Custom Pictures Error {1}", ModName,
                             ex.Message);
                     }
 
@@ -446,7 +446,7 @@ namespace DynamicModLoader
                             {
                                 if (!file.EndsWith(".wav"))
                                     continue;
-                                var raw_data = System.IO.File.ReadAllBytes(file);
+                                var raw_data = File.ReadAllBytes(file);
                                 var clip_name = Path.GetFileNameWithoutExtension(file);
                                 var clip = GetAudioClipFromWav(raw_data, clip_name);
                                 if (clip)
@@ -462,7 +462,7 @@ namespace DynamicModLoader
                     }
                     catch (Exception ex)
                     {
-                        UnityEngine.Debug.LogWarningFormat("{0} Load Resource Custom Audio Error {1}", ModName,
+                        Debug.LogWarningFormat("{0} Load Resource Custom Audio Error {1}", ModName,
                             ex.Message);
                     }
 
@@ -528,7 +528,7 @@ namespace DynamicModLoader
                     }
                     catch (Exception ex)
                     {
-                        UnityEngine.Debug.LogWarningFormat("{0} Load ScriptableObject Error {1}", ModName, ex.Message);
+                        Debug.LogWarningFormat("{0} Load ScriptableObject Error {1}", ModName, ex.Message);
                     }
 
                     // Load Localization
@@ -549,7 +549,7 @@ namespace DynamicModLoader
                     }
                     catch (Exception ex)
                     {
-                        UnityEngine.Debug.LogWarningFormat("{0} Load Localization Error {1}", ModName, ex.Message);
+                        Debug.LogWarningFormat("{0} Load Localization Error {1}", ModName, ex.Message);
                     }
 
                     // Load and init UniqueIDScriptable
@@ -610,7 +610,7 @@ namespace DynamicModLoader
                                                     new ScriptableObjectPack(card as UniqueIDScriptable, "", CardPath,
                                                         ModName, CardData));
                                             else
-                                                UnityEngine.Debug.LogWarningFormat(
+                                                Debug.LogWarningFormat(
                                                     "{0} WaitForWarpperEditorGuidDict Same Key was Add {1}", ModName,
                                                     card_guid);
 
@@ -625,7 +625,7 @@ namespace DynamicModLoader
                                     }
                                     catch (Exception ex)
                                     {
-                                        UnityEngine.Debug.LogWarningFormat("{0} EditorLoad {1} {2} Error {3}",
+                                        Debug.LogWarningFormat("{0} EditorLoad {1} {2} Error {3}",
                                             type.Name, ModName, CardName, ex.Message);
                                     }
                                 }
@@ -634,7 +634,7 @@ namespace DynamicModLoader
                     }
                     catch (Exception ex)
                     {
-                        UnityEngine.Debug.LogWarningFormat("{0} Load UniqueIDScriptable Error {1}", ModName,
+                        Debug.LogWarningFormat("{0} Load UniqueIDScriptable Error {1}", ModName,
                             ex.Message);
                     }
 
@@ -668,13 +668,13 @@ namespace DynamicModLoader
                     }
                     catch (Exception ex)
                     {
-                        UnityEngine.Debug.LogWarningFormat("{0} Load GameSourceModify Error {1}", ModName, ex.Message);
+                        Debug.LogWarningFormat("{0} Load GameSourceModify Error {1}", ModName, ex.Message);
                     }
                 }
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogWarning(ex.Message);
+                Debug.LogWarning(ex.Message);
             }
         }
 
@@ -1111,7 +1111,7 @@ namespace DynamicModLoader
                         ContentDisplayer displayer = null;
                         try
                         {
-                            clone = UnityEngine.Object.Instantiate(obj) as GameObject;
+                            clone = Instantiate(obj) as GameObject;
                             displayer = clone.GetComponent(typeof(ContentDisplayer)) as ContentDisplayer;
                         }
                         catch (Exception ex)
@@ -1157,7 +1157,7 @@ namespace DynamicModLoader
                         ContentDisplayer displayer = null;
                         try
                         {
-                            clone = UnityEngine.Object.Instantiate(sample) as GameObject;
+                            clone = Instantiate(sample) as GameObject;
                             displayer = clone.GetComponent(typeof(ContentDisplayer)) as ContentDisplayer;
                         }
                         catch (Exception ex)
@@ -1248,7 +1248,7 @@ namespace DynamicModLoader
                     {
                         for (int i = 0; i < transform.childCount; i++)
                         {
-                            GameObject.Destroy(transform.GetChild(i).gameObject);
+                            Destroy(transform.GetChild(i).gameObject);
                         }
                     }
 
@@ -1284,7 +1284,7 @@ namespace DynamicModLoader
             {
                 LoadGameResource();
 
-                LoadMods(Path.Combine(BepInEx.Paths.BepInExRootPath, "DynamicModDebug"));
+                LoadMods(Path.Combine(Paths.BepInExRootPath, "DynamicModDebug"));
 
                 LoadEditorScriptableObject();
 
@@ -1333,7 +1333,7 @@ namespace DynamicModLoader
 
                 ResetWarpperList();
 
-                LoadMods(Path.Combine(BepInEx.Paths.BepInExRootPath, "DynamicModDebug"));
+                LoadMods(Path.Combine(Paths.BepInExRootPath, "DynamicModDebug"));
 
                 LoadEditorScriptableObject();
 
