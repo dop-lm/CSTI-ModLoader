@@ -7,6 +7,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Unity.Collections;
 using UnityEngine;
 
 namespace ModLoader.Updater;
@@ -100,12 +101,11 @@ public static class AutoUpdate
         }
     }
 
-    public static IEnumerator DownloadAll(string baseUrl, List<string> urls, MyRef<List<WebResponse>> results)
+    public static IEnumerator DownloadAll(string baseUrl, List<string> urls, MyRef<List<MemoryStream>> results)
     {
-        var webRequests = urls.Select(url => WebRequest.Create(baseUrl + url).GetResponseAsync()).ToList();
-
-        foreach (var webRequest in webRequests)
+        foreach (var url in urls)
         {
+            var webRequest = WebRequest.Create(baseUrl + url).GetResponseAsync();
             while (!webRequest.IsCompleted)
             {
                 if (webRequest.IsFaulted || webRequest.IsCanceled)
@@ -117,7 +117,19 @@ public static class AutoUpdate
                 yield return null;
             }
 
-            if (webRequest.IsCanceled && results.Ref != null) results.Ref.Add(webRequest.Result);
+            if (webRequest.IsCompleted && results.Ref != null)
+            {
+                var buf = new MemoryStream();
+                webRequest.Result.GetResponseStream()!.CopyTo(buf);
+                buf.Seek(0, SeekOrigin.Begin);
+                results.Ref.Add(buf);
+            }
+            else
+            {
+                Debug.LogWarning($"下载 {url} 失败");
+                results.Ref = null;
+                yield break;
+            }
         }
     }
 
@@ -128,20 +140,18 @@ public static class AutoUpdate
 
         var ModLoaderLocation = ModLoaderInstance.Info.Location;
         var ModLoaderDir = Path.GetDirectoryName(ModLoaderLocation);
-        if (Directory.Exists(Path.Combine(ModLoaderDir!, NewVersion)))
+        if (!Directory.Exists(Path.Combine(ModLoaderDir!, NewVersion)))
         {
-            stat.Ref = true;
-            yield break;
+            Directory.CreateDirectory(Path.Combine(ModLoaderDir!, NewVersion));
         }
 
-        Directory.CreateDirectory(Path.Combine(ModLoaderDir!, NewVersion));
         if (!Environment.Is64BitOperatingSystem)
         {
             Debug.LogError("不支持32位系统");
             yield break;
         }
 
-        var results = new MyRef<List<WebResponse>>([]);
+        var results = new MyRef<List<MemoryStream>>([]);
         List<string> urls = null;
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -186,8 +196,8 @@ public static class AutoUpdate
 
         foreach (var (file, response) in urls.Zip(results.Ref, (s, response) => (file: s, response)))
         {
-            using var fileStream = new FileStream(Path.Combine(ModLoaderDir!, NewVersion, file), FileMode.Truncate);
-            response.GetResponseStream()!.CopyTo(fileStream);
+            using var fileStream = new FileStream(Path.Combine(ModLoaderDir!, NewVersion, file), FileMode.Create);
+            response.CopyTo(fileStream);
         }
 
         if (Directory.Exists(Path.Combine(ModLoaderDir, OldVersion)))
@@ -208,6 +218,7 @@ public static class AutoUpdate
 
         Directory.Delete(Path.Combine(ModLoaderDir, NewVersion), true);
         ModLoaderInstance.ModLoaderUpdated = true;
+        stat.Ref = true;
     }
 
     public static IEnumerator CheckNeedUpdate(MyRef<bool?> stat)

@@ -1894,7 +1894,7 @@ public class ModLoader : BaseUnityPlugin
                 if (!HadBootNew)
                 {
                     HadBootNew = true;
-                    Process.Start("explorer.exe", Paths.ExecutablePath);
+                    Process.Start("explorer.exe steam://rungameid/1694420");
                 }
 
                 WaitTime -= Time.deltaTime;
@@ -1936,13 +1936,12 @@ public class ModLoader : BaseUnityPlugin
             GUILayout.Window(0x893ffa, LoadSuccessUIWindowRect, PostLoadSuccessWindow, "PostLoadSuccess");
         }
 
-        if (!ModManagerUIOn)
+        if (ModManagerUIOn)
         {
-            return;
+            GUILayout.Window(CurrentMainUIId, ModManagerUIWindowRect,
+                ModLoaderMainUIWindow, "ModManagerUI");
         }
 
-        GUILayout.Window(CurrentMainUIId, ModManagerUIWindowRect,
-            ModLoaderMainUIWindow, "ModManagerUI");
         if (ModLoaderUpdated)
         {
             GUILayout.Window(0, UpdateSuccessUIWindowRect, UpdateSuccessWindow, "更新完成 UpdateSuccess");
@@ -1950,7 +1949,7 @@ public class ModLoader : BaseUnityPlugin
             void UpdateSuccessWindow(int id)
             {
                 GUILayout.BeginVertical();
-                
+
                 GUILayout.Label("ModLoader自动更新完成(ModLoader Auto Update Successs)\n是否重启？");
                 GUILayout.BeginHorizontal();
 
@@ -1965,9 +1964,9 @@ public class ModLoader : BaseUnityPlugin
                 {
                     ModLoaderUpdated = false;
                 }
-                
+
                 GUILayout.EndHorizontal();
-                
+
                 GUILayout.EndVertical();
             }
         }
