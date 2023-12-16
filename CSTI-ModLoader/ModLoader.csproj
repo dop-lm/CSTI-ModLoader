@@ -2,6 +2,15 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <Import Project="..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props" Condition="Exists('..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props')" />
     <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+    <Target Name="CopyOutputFiles" AfterTargets="Build">
+        <ItemGroup>
+            <OutputFiles Include="$(OutputPath)CSTI_LuaActionSupport.dll;$(OutputPath)CSTI-ChatTreeLoader.dll;$(OutputPath)DotNetZip.dll;
+$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll" />
+        </ItemGroup>
+        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath1)" />
+        <Copy SourceFiles="@(OutputFiles_86)" DestinationFolder="$(OutputPath1)\x86" />
+        <Copy SourceFiles="@(OutputFiles_64)" DestinationFolder="$(OutputPath1)\x64" />
+    </Target>
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -13,7 +22,7 @@
         <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
         <Deterministic>true</Deterministic>
-        <LangVersion>9</LangVersion>
+        <LangVersion>default</LangVersion>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <DebugSymbols>true</DebugSymbols>
@@ -33,6 +42,7 @@
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <OutputPath1>..\..\my-cstimods\ModLoader</OutputPath1>
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="EmbeddedResources.cs" />
@@ -44,6 +54,7 @@
         <Compile Include="ResourceLoadHelper.cs" />
         <Compile Include="StringHelper.cs" />
         <Compile Include="UI\MainUI.cs" />
+        <Compile Include="Updater\AutoUpdate.cs" />
         <Compile Include="WarpHelper.cs" />
         <Compile Include="WarpperFunction.cs" />
         <Compile Include="ModLoader.cs" />

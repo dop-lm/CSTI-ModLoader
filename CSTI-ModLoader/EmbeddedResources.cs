@@ -1,9 +1,8 @@
 ﻿using System.IO;
 
-namespace ModLoader
+namespace ModLoader;
+
+public static class EmbeddedResources
 {
-    public static class EmbeddedResources
-    {
-        public static Stream CSTIFonts => typeof(ModLoader).Assembly.GetManifestResourceStream("csti_fonts.bundle");
-    }
+    public static Stream CSTIFonts => typeof(ModLoader).Assembly.GetManifestResourceStream("csti_fonts.bundle");
 }
