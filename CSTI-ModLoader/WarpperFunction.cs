@@ -173,7 +173,7 @@ public class WarpperFunction
                                                               field_type.Name);
                             }
 
-                            List<string> list_data = new List<string>();
+                            List<string> list_data = [];
                             for (int i = 0; i < fieldWarpData.Count; i++)
                             {
                                 if (fieldWarpData[i].IsString)

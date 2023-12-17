@@ -7,7 +7,6 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Unity.Collections;
 using UnityEngine;
 
 namespace ModLoader.Updater;
@@ -166,8 +165,7 @@ public static class AutoUpdate
             urls =
             [
                 ModLoader, CSTI_ChatTreeLoader, CSTI_LuaActionSupport, DotNetZip, libJsonnet4CSTIModLoader_linux,
-                LitJSON,
-                liblua54_linux, 更新历史
+                LitJSON, liblua54_linux, 更新历史
             ];
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))

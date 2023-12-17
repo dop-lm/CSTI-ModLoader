@@ -5,7 +5,7 @@
     <Target Name="CopyOutputFiles" AfterTargets="Build">
         <ItemGroup>
             <OutputFiles Include="$(OutputPath)CSTI_LuaActionSupport.dll;$(OutputPath)CSTI-ChatTreeLoader.dll;$(OutputPath)DotNetZip.dll;
-$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll" />
+$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         </ItemGroup>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath1)" />
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath2)" />
@@ -291,7 +291,7 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll" />
     </ItemGroup>
     <ItemGroup>
         <Content Include="ExampleModify.json" />
-        <Content Include="更新历史&amp;使用说明.txt" />
+        <Content Include="更新历史.txt" />
         <Content Include="FodyWeavers.xml" />
         <EmbeddedResource Include="csti_fonts.bundle" LogicalName="csti_fonts.bundle" />
     </ItemGroup>

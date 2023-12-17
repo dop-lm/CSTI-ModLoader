@@ -53,7 +53,7 @@ public class ModPack
 [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", ModVersion)]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.4.17";
+    public const string ModVersion = "2.3.4.18";
 
     static ModLoader()
     {
@@ -135,29 +135,29 @@ public class ModLoader : BaseUnityPlugin
 
     public static readonly Dictionary<string, ScriptableObjectPack> WaitForWarpperEditorGuidDict = new();
 
-    private static readonly List<ScriptableObjectPack> WaitForWarpperEditorNoGuidList = new();
+    private static readonly List<ScriptableObjectPack> WaitForWarpperEditorNoGuidList = [];
 
-    public static readonly List<ScriptableObjectPack> WaitForWarpperEditorGameSourceGUIDList = new();
+    public static readonly List<ScriptableObjectPack> WaitForWarpperEditorGameSourceGUIDList = [];
 
-    public static readonly List<ScriptableObjectPack> WaitForMatchAndWarpperEditorGameSourceList = new();
+    public static readonly List<ScriptableObjectPack> WaitForMatchAndWarpperEditorGameSourceList = [];
 
-    private static readonly List<Tuple<string, string>> WaitForLoadCSVList = new();
+    private static readonly List<Tuple<string, string>> WaitForLoadCSVList = [];
 
-    public static readonly List<Tuple<string, string, CardData>> WaitForAddBlueprintCard = new();
+    public static readonly List<Tuple<string, string, CardData>> WaitForAddBlueprintCard = [];
 
     public static readonly List<Tuple<string, CardData>>
-        WaitForAddCardFilterGroupCard = new();
+        WaitForAddCardFilterGroupCard = [];
 
-    public static readonly List<Tuple<string, GameStat>> WaitForAddVisibleGameStat = new();
-    private static readonly List<GuideEntry> WaitForAddGuideEntry = new();
+    public static readonly List<Tuple<string, GameStat>> WaitForAddVisibleGameStat = [];
+    private static readonly List<GuideEntry> WaitForAddGuideEntry = [];
 
     public static readonly List<Tuple<string, CharacterPerk>>
-        WaitForAddPerkGroup = new();
+        WaitForAddPerkGroup = [];
 
-    private static readonly List<ScriptableObjectPack> WaitForAddCardTabGroup = new();
-    public static readonly List<ScriptableObjectPack> WaitForAddJournalPlayerCharacter = new();
-    private static readonly List<ScriptableObjectPack> WaitForAddDefaultContentPage = new();
-    private static readonly List<ScriptableObjectPack> WaitForAddMainContentPage = new();
+    private static readonly List<ScriptableObjectPack> WaitForAddCardTabGroup = [];
+    public static readonly List<ScriptableObjectPack> WaitForAddJournalPlayerCharacter = [];
+    private static readonly List<ScriptableObjectPack> WaitForAddDefaultContentPage = [];
+    private static readonly List<ScriptableObjectPack> WaitForAddMainContentPage = [];
     public static bool HasEncounterType;
     public static Image MainUIBackPanel;
     public static RectTransform MainUIBackPanelRT;
@@ -184,9 +184,10 @@ public class ModLoader : BaseUnityPlugin
 
         foreach (var fontAsset in toAddFallback)
         {
+            if (fontAsset.name == "LiberationSans SDF") continue;
             if (fontAsset.fallbackFontAssetTable == null)
             {
-                fontAsset.fallbackFontAssetTable = new List<TMP_FontAsset> {font};
+                fontAsset.fallbackFontAssetTable = [font];
             }
             else
             {
@@ -870,10 +871,10 @@ public class ModLoader : BaseUnityPlugin
         }
     }
 
-    static readonly List<Task<(List<(byte[] dat, string name)> sprites, string modName)>> spritesWaitList = new();
+    static readonly List<Task<(List<(byte[] dat, string name)> sprites, string modName)>> spritesWaitList = [];
 
     public static readonly List<Task<(List<(byte[] dat, string pat, Type type)> uniqueObjs, string modName)>>
-        uniqueObjWaitList = new();
+        uniqueObjWaitList = [];
 
     private static void LoadMods(string mods_dir)
     {
