@@ -32,10 +32,9 @@ public static class AutoUpdate
         {
             for (var i = 0; i < Math.Min(version1.Versions.Count, version2.Versions.Count); i++)
             {
-                if (version1.Versions[i] < version2.Versions[i])
-                {
-                    return true;
-                }
+                if (version1.Versions[i] < version2.Versions[i]) return true;
+
+                if (version1.Versions[i] > version2.Versions[i]) return false;
             }
 
             return false;
@@ -45,10 +44,9 @@ public static class AutoUpdate
         {
             for (var i = 0; i < Math.Min(version1.Versions.Count, version2.Versions.Count); i++)
             {
-                if (version1.Versions[i] > version2.Versions[i])
-                {
-                    return true;
-                }
+                if (version1.Versions[i] > version2.Versions[i]) return true;
+
+                if (version1.Versions[i] < version2.Versions[i]) return false;
             }
 
             return false;
@@ -239,7 +237,6 @@ public static class AutoUpdate
         }
 
         var s = Encoding.UTF8.GetString(buf);
-        Debug.Log(s);
         stat.Ref = MyVersion.Parse(ModVersion) < MyVersion.Parse(s);
     }
 

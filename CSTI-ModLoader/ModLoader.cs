@@ -36,24 +36,17 @@ public class ModInfo
     public string ModEditorVersion;
 }
 
-public class ModPack
+public class ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableEntry)
 {
-    public readonly ModInfo ModInfo;
-    public readonly string FileName;
-    public readonly ConfigEntry<bool> EnableEntry;
-
-    public ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableEntry)
-    {
-        ModInfo = modInfo;
-        FileName = fileName;
-        EnableEntry = enableEntry;
-    }
+    public readonly ModInfo ModInfo = modInfo;
+    public readonly string FileName = fileName;
+    public readonly ConfigEntry<bool> EnableEntry = enableEntry;
 }
 
 [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", ModVersion)]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.4.18";
+    public const string ModVersion = "2.3.5.1";
 
     static ModLoader()
     {
