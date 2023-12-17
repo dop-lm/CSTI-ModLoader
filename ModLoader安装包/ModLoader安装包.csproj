@@ -95,7 +95,7 @@
         <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/DotNetZip.dll" LogicalName="ModLoaderInstaller.DotNetZip.dll" />
         <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/LitJSON.dll" LogicalName="ModLoaderInstaller.LitJSON.dll" />
         <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/ModLoader.dll" LogicalName="ModLoaderInstaller.ModLoader.dll" />
-        <EmbeddedResource Include="../CSTI-ModLoader/更新历史&amp;使用说明.txt" LogicalName="ModLoaderInstaller.更新历史.txt" />
+        <EmbeddedResource Include="..\CSTI-ModLoader\更新历史.txt" LogicalName="ModLoaderInstaller.更新历史.txt" />
     </ItemGroup>
 
     <ItemGroup>
