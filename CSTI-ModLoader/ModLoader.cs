@@ -44,9 +44,10 @@ public class ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableE
 }
 
 [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", ModVersion)]
+[BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.5.1";
+    public const string ModVersion = "2.3.5.6";
 
     static ModLoader()
     {

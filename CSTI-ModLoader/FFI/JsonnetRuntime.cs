@@ -33,7 +33,7 @@ public static class JsonnetRuntime
         {
             return "";
         }
-
+        
         var bytes = new List<byte>(64);
         unsafe
         {
