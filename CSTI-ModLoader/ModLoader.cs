@@ -47,7 +47,7 @@ public class ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableE
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.5.6";
+    public const string ModVersion = "2.3.5.7";
 
     static ModLoader()
     {
@@ -390,13 +390,13 @@ public class ModLoader : BaseUnityPlugin
 
             try
             {
-                if (ele is UniqueIDScriptable)
+                if (ele is UniqueIDScriptable scriptable)
                 {
-                    if (!AllScriptableObjectDict.ContainsKey((ele as UniqueIDScriptable).UniqueID))
-                        AllScriptableObjectDict.Add((ele as UniqueIDScriptable).UniqueID, ele as ScriptableObject);
+                    if (!AllScriptableObjectDict.ContainsKey(scriptable.UniqueID))
+                        AllScriptableObjectDict.Add(scriptable.UniqueID, scriptable);
                     else
                         Debug.LogWarning("AllScriptableObjectDict Same Key was Add " +
-                                         (ele as UniqueIDScriptable).name);
+                                         scriptable.name);
                 }
                 else
                 {
