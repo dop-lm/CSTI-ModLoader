@@ -47,7 +47,7 @@ public class ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableE
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.5.7";
+    public const string ModVersion = "2.3.5.8";
 
     static ModLoader()
     {
