@@ -47,7 +47,7 @@ public class ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableE
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.5.8";
+    public const string ModVersion = "2.3.5.9";
 
     static ModLoader()
     {
@@ -106,23 +106,18 @@ public class ModLoader : BaseUnityPlugin
 
     public static readonly Dictionary<string, GameObject> CustomGameObjectListDict = new();
 
-    public struct ScriptableObjectPack
+    public struct ScriptableObjectPack(
+        ScriptableObject obj,
+        string CardDirOrGuid,
+        string CardPath,
+        string ModName,
+        string CardData = "")
     {
-        public ScriptableObjectPack(ScriptableObject obj, string CardDirOrGuid, string CardPath, string ModName,
-            string CardData = "")
-        {
-            this.obj = obj;
-            this.CardDirOrGuid = CardDirOrGuid;
-            this.CardPath = CardPath;
-            this.ModName = ModName;
-            this.CardData = CardData;
-        }
-
-        public ScriptableObject obj;
-        public readonly string CardDirOrGuid;
-        public string CardPath;
-        public readonly string ModName;
-        public readonly string CardData;
+        public ScriptableObject obj = obj;
+        public readonly string CardDirOrGuid = CardDirOrGuid;
+        public string CardPath = CardPath;
+        public readonly string ModName = ModName;
+        public readonly string CardData = CardData;
     }
 
     public static ScriptableObjectPack ProcessingScriptableObjectPack;

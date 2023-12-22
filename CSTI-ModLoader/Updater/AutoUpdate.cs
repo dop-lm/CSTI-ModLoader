@@ -219,7 +219,16 @@ public static class AutoUpdate
 
     public static IEnumerator CheckNeedUpdate(MyRef<bool?> stat)
     {
-        var response_task = WebRequest.Create(BaseDir + VersionFile).GetResponseAsync();
+        Task<WebResponse> response_task;
+        try
+        {
+            response_task = WebRequest.Create(BaseDir + VersionFile).GetResponseAsync();
+        }
+        catch (Exception)
+        {
+            yield break;
+        }
+
         while (!response_task.IsCompleted)
         {
             if (response_task.IsFaulted || response_task.IsCanceled) yield break;
