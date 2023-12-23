@@ -118,8 +118,7 @@ public static class LoadPreData
                     if (PluginVersion.CompareTo(ModRequestVersion) < 0)
                         Debug.LogWarningFormat(
                             "ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion,
-                            ModName,
-                            ModRequestVersion);
+                            ModName, ModRequestVersion);
                 }
                 catch (Exception ex)
                 {
@@ -132,7 +131,7 @@ public static class LoadPreData
                     var picPath = CombinePaths(dir, ResourcePat, PicturePat);
                     if (Directory.Exists(picPath))
                     {
-                        var files = Directory.GetFiles(picPath);
+                        var files = Directory.GetFiles(picPath, "*", SearchOption.AllDirectories);
                         PostSpriteLoad.SpriteLoadQueue.Enqueue(LoadPictures(ModName, files));
                     }
                 }

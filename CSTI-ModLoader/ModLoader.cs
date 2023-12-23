@@ -47,7 +47,7 @@ public class ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableE
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.5.9";
+    public const string ModVersion = "2.3.5.10";
 
     static ModLoader()
     {
@@ -240,9 +240,6 @@ public class ModLoader : BaseUnityPlugin
         }
 
         PluginVersion = Version.Parse(Info.Metadata.Version.ToString());
-
-        // var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public |
-        //                    BindingFlags.Static;
 
         try
         {
