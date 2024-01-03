@@ -15,6 +15,7 @@ using CSTI_LuaActionSupport;
 using HarmonyLib;
 using Ionic.Zip;
 using LitJson;
+using ModLoader.ExportUtil;
 using ModLoader.LoaderUtil;
 using ModLoader.UI;
 using ModLoader.Updater;
@@ -47,13 +48,17 @@ public class ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableE
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.5.10";
+    public const string ModVersion = "2.3.5.16";
+
+    public static Dictionary<string, string[]> AudiosPath = new();
+    public static Dictionary<string, string[]> PicsPath = new();
+    public static Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
     static ModLoader()
     {
         try
         {
-            LuaSupportRuntime.Init(SpriteDict);
+            LuaSupportRuntime.Init(SpriteDict, AllLuaFiles);
             NormalPatcher.DoPatch(HarmonyInstance);
         }
         catch (Exception e)
@@ -124,13 +129,13 @@ public class ModLoader : BaseUnityPlugin
 
     public static readonly Dictionary<string, ScriptableObjectPack> WaitForWarpperEditorGuidDict = new();
 
-    private static readonly List<ScriptableObjectPack> WaitForWarpperEditorNoGuidList = [];
+    public static readonly List<ScriptableObjectPack> WaitForWarpperEditorNoGuidList = [];
 
     public static readonly List<ScriptableObjectPack> WaitForWarpperEditorGameSourceGUIDList = [];
 
     public static readonly List<ScriptableObjectPack> WaitForMatchAndWarpperEditorGameSourceList = [];
 
-    private static readonly List<Tuple<string, string>> WaitForLoadCSVList = [];
+    public static readonly List<(string LocalName, string LocalContent)> WaitForLoadCSVList = [];
 
     public static readonly List<Tuple<string, string, CardData>> WaitForAddBlueprintCard = [];
 
@@ -175,13 +180,9 @@ public class ModLoader : BaseUnityPlugin
         {
             if (fontAsset.name == "LiberationSans SDF") continue;
             if (fontAsset.fallbackFontAssetTable == null)
-            {
                 fontAsset.fallbackFontAssetTable = [font];
-            }
             else
-            {
                 fontAsset.fallbackFontAssetTable.Add(font);
-            }
         }
     }
 
@@ -219,24 +220,15 @@ public class ModLoader : BaseUnityPlugin
 
         foreach (var type in AccessTools.AllTypes())
         {
-            if (!type.IsSubclassOf(typeof(ScriptableObject)))
-            {
-                continue;
-            }
+            if (!type.IsSubclassOf(typeof(ScriptableObject))) continue;
 
             var hasSerializable = false;
             foreach (var customAttributeData in type.CustomAttributes)
-            {
                 if (customAttributeData.AttributeType == typeof(SerializableAttribute))
-                {
                     hasSerializable = true;
-                }
-            }
 
             if (hasSerializable)
-            {
                 AllScriptableObjectWithoutGuidTypeDict[type] = new Dictionary<string, ScriptableObject>();
-            }
         }
 
         PluginVersion = Version.Parse(Info.Metadata.Version.ToString());
@@ -250,7 +242,7 @@ public class ModLoader : BaseUnityPlugin
             // harmony.Patch(typeof(UniqueIDScriptable).GetMethod("ClearDict", bindingFlags),
             //     prefix: UniqueIDScriptableClearDictPrefixMethod);
             HarmonyInstance.Patch(AccessTools.Method(typeof(UniqueIDScriptable), "ClearDict"),
-                prefix: UniqueIDScriptableClearDictPrefixMethod);
+                UniqueIDScriptableClearDictPrefixMethod);
         }
         catch (Exception ex)
         {
@@ -278,7 +270,7 @@ public class ModLoader : BaseUnityPlugin
             // harmony.Patch(typeof(GuideManager).GetMethod("Start", bindingFlags),
             //     prefix: GuideManagerStartPrefixMethod);
             HarmonyInstance.Patch(AccessTools.Method(typeof(GuideManager), "Start"),
-                prefix: GuideManagerStartPrefixMethod);
+                GuideManagerStartPrefixMethod);
         }
         catch (Exception ex)
         {
@@ -303,7 +295,7 @@ public class ModLoader : BaseUnityPlugin
         try
         {
             var fixFXMaskAwake = new HarmonyMethod(typeof(ModLoader), nameof(FixFXMaskAwake));
-            HarmonyInstance.Patch(AccessTools.Method(typeof(FXMask), "Awake"), prefix: fixFXMaskAwake);
+            HarmonyInstance.Patch(AccessTools.Method(typeof(FXMask), "Awake"), fixFXMaskAwake);
         }
         catch (Exception e)
         {
@@ -312,13 +304,11 @@ public class ModLoader : BaseUnityPlugin
 
 
         foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-        {
             if (assembly.GetName().Name == "Assembly-CSharp")
             {
                 GameSourceAssembly = assembly;
                 break;
             }
-        }
 
         Logger.LogInfo("Plugin ModLoader is loaded! ");
         LoadPreData.LoadData(Path.Combine(Paths.BepInExRootPath, "plugins"));
@@ -327,19 +317,16 @@ public class ModLoader : BaseUnityPlugin
 
     public static string CombinePaths(params string[] paths)
     {
-        if (paths == null)
-        {
-            throw new ArgumentNullException("paths");
-        }
+        if (paths == null) throw new ArgumentNullException("paths");
 
         return paths.Aggregate(Path.Combine);
     }
 
     public static bool IsSubDirectory(string dir, string parent_dir)
     {
-        DirectoryInfo di1 = new DirectoryInfo(parent_dir);
-        DirectoryInfo di2 = new DirectoryInfo(dir);
-        bool isParent = false;
+        var di1 = new DirectoryInfo(parent_dir);
+        var di2 = new DirectoryInfo(dir);
+        var isParent = false;
         while (di2.Parent != null)
         {
             if (di2.Parent.FullName == di1.FullName)
@@ -443,28 +430,22 @@ public class ModLoader : BaseUnityPlugin
         }
 
         foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(Sprite)))
-        {
             if (!SpriteDict.ContainsKey(ele.name))
                 SpriteDict.Add(ele.name, ele as Sprite);
             else
                 Debug.Log("SpriteDict Same Key was Add " + ele.name);
-        }
 
         foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(AudioClip)))
-        {
             if (!AudioClipDict.ContainsKey(ele.name))
                 AudioClipDict.Add(ele.name, ele as AudioClip);
             else
                 Debug.Log("AudioClipDict Same Key was Add " + ele.name);
-        }
 
         foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(WeatherSpecialEffect)))
-        {
             if (!WeatherSpecialEffectDict.ContainsKey(ele.name))
                 WeatherSpecialEffectDict.Add(ele.name, ele as WeatherSpecialEffect);
             else
                 Debug.Log("WeatherSpecialEffectDict Same Key was Add " + ele.name);
-        }
     }
 
     private static void LoadModsFromZip()
@@ -500,7 +481,9 @@ public class ModLoader : BaseUnityPlugin
                     ModInfoZip.Extract(ms);
                     ms.Seek(0, SeekOrigin.Begin);
                     using (var sr = new StreamReader(ms))
+                    {
                         JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
+                    }
 
                     if (Info.ModEditorVersion.IsNullOrWhiteSpace())
                         continue;
@@ -547,9 +530,7 @@ public class ModLoader : BaseUnityPlugin
                             if (obj is Sprite sprite)
                             {
                                 if (!SpriteDict.ContainsKey(sprite.name))
-                                {
                                     SpriteDict.Add(sprite.name, sprite);
-                                }
                                 else
                                     Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}",
                                         ModName, sprite.name);
@@ -604,18 +585,13 @@ public class ModLoader : BaseUnityPlugin
                         //     t2d.Apply();
                         // }
 
-                        if (!TexCompatibilityMode.Value)
-                        {
-                            t2d.ToCompress();
-                        }
+                        if (!TexCompatibilityMode.Value) t2d.ToCompress();
 
                         var sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height),
                             Vector2.zero);
                         sprite.name = sprite_name;
                         if (!SpriteDict.ContainsKey(sprite_name))
-                        {
                             SpriteDict.Add(sprite_name, sprite);
-                        }
                         else
                             Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", ModName,
                                 sprite_name);
@@ -685,10 +661,8 @@ public class ModLoader : BaseUnityPlugin
                     foreach (var type in subclasses)
                     {
                         if (!AllScriptableObjectWithoutGuidTypeDict.ContainsKey(type))
-                        {
                             AllScriptableObjectWithoutGuidTypeDict[type] =
                                 new Dictionary<string, ScriptableObject>();
-                        }
 
                         if (type.IsSubclassOf(typeof(UniqueIDScriptable)) || type == typeof(UniqueIDScriptable))
                             continue;
@@ -709,7 +683,10 @@ public class ModLoader : BaseUnityPlugin
                                 entry.Extract(ms);
                                 ms.Seek(0, SeekOrigin.Begin);
                                 using (var sr = new StreamReader(ms))
+                                {
                                     CardData = sr.ReadToEnd();
+                                }
+
                                 obj.name = obj_name;
                                 JsonUtility.FromJsonOverwrite(CardData, obj);
                                 dict.Add(obj_name, obj);
@@ -738,8 +715,10 @@ public class ModLoader : BaseUnityPlugin
                         entry.Extract(ms);
                         ms.Seek(0, SeekOrigin.Begin);
                         using (var sr = new StreamReader(ms))
-                            WaitForLoadCSVList.Add(new Tuple<string, string>(Path.GetFileName(entry.FileName),
+                        {
+                            WaitForLoadCSVList.Add((Path.GetFileName(entry.FileName),
                                 sr.ReadToEnd()));
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -755,65 +734,63 @@ public class ModLoader : BaseUnityPlugin
                         select type;
 
                     foreach (var type in subclasses)
+                    foreach (var entry in entrys)
                     {
-                        foreach (var entry in entrys)
+                        if (!(entry.FileName.StartsWith(ModDirName + @"/" + type.Name) &&
+                              entry.FileName.EndsWith(".json")))
+                            continue;
+                        var CardName = Path.GetFileNameWithoutExtension(entry.FileName);
+                        try
                         {
-                            if (!(entry.FileName.StartsWith(ModDirName + @"/" + type.Name) &&
-                                  entry.FileName.EndsWith(".json")))
+                            JsonData json;
+                            var ms = new MemoryStream();
+                            entry.Extract(ms);
+                            ms.Seek(0, SeekOrigin.Begin);
+                            string CardData;
+                            using (var sr = new StreamReader(ms))
+                            {
+                                CardData = sr.ReadToEnd();
+                                json = JsonMapper.ToObject(CardData);
+                            }
+
+                            if (!(json.ContainsKey("UniqueID") && json["UniqueID"].IsString &&
+                                  !json["UniqueID"].ToString().IsNullOrWhiteSpace()))
+                            {
+                                Debug.LogErrorFormat(
+                                    "{0} EditorLoadZip {1} {2} try to load a UniqueIDScriptable without GUID",
+                                    type.Name, ModName, CardName);
                                 continue;
-                            var CardName = Path.GetFileNameWithoutExtension(entry.FileName);
-                            try
-                            {
-                                JsonData json;
-                                var ms = new MemoryStream();
-                                entry.Extract(ms);
-                                ms.Seek(0, SeekOrigin.Begin);
-                                string CardData;
-                                using (var sr = new StreamReader(ms))
-                                {
-                                    CardData = sr.ReadToEnd();
-                                    json = JsonMapper.ToObject(CardData);
-                                }
-
-                                if (!(json.ContainsKey("UniqueID") && json["UniqueID"].IsString &&
-                                      !json["UniqueID"].ToString().IsNullOrWhiteSpace()))
-                                {
-                                    Debug.LogErrorFormat(
-                                        "{0} EditorLoadZip {1} {2} try to load a UniqueIDScriptable without GUID",
-                                        type.Name, ModName, CardName);
-                                    continue;
-                                }
-
-                                var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
-                                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                                JsonUtility.FromJsonOverwrite(CardData, card);
-
-                                card.name = $"{ModName}_{CardName}";
-                                //type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
-
-                                var card_guid = card.UniqueID;
-                                AllGUIDDict.Add(card_guid, card);
-                                GameLoad.Instance.DataBase.AllData.Add(card);
-
-                                if (!WaitForWarpperEditorGuidDict.ContainsKey(card_guid))
-                                    WaitForWarpperEditorGuidDict.Add(card_guid,
-                                        new ScriptableObjectPack(card, "", "", ModName,
-                                            CardData));
-                                else
-                                    Debug.LogWarningFormat(
-                                        "{0} WaitForWarpperEditorGuidDict Same Key was Add {1}", ModName,
-                                        card_guid);
-                                if (!AllScriptableObjectDict.ContainsKey(card_guid))
-                                    AllScriptableObjectDict.Add(card_guid, card);
-                                if (AllGUIDTypeDict.TryGetValue(type, out var dict))
-                                    if (!dict.ContainsKey(card_guid))
-                                        dict.Add(card_guid, card);
                             }
-                            catch (Exception ex)
-                            {
-                                Debug.LogWarningFormat("{0} EditorLoadZip {1} {2} Error {3}", type.Name,
-                                    ModName, CardName, ex.Message);
-                            }
+
+                            var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
+                            JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                            JsonUtility.FromJsonOverwrite(CardData, card);
+
+                            card.name = $"{ModName}_{CardName}";
+
+                            //type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
+                            var card_guid = card.UniqueID;
+                            AllGUIDDict.Add(card_guid, card);
+                            GameLoad.Instance.DataBase.AllData.Add(card);
+
+                            if (!WaitForWarpperEditorGuidDict.ContainsKey(card_guid))
+                                WaitForWarpperEditorGuidDict.Add(card_guid,
+                                    new ScriptableObjectPack(card, "", "", ModName,
+                                        CardData));
+                            else
+                                Debug.LogWarningFormat(
+                                    "{0} WaitForWarpperEditorGuidDict Same Key was Add {1}", ModName,
+                                    card_guid);
+                            if (!AllScriptableObjectDict.ContainsKey(card_guid))
+                                AllScriptableObjectDict.Add(card_guid, card);
+                            if (AllGUIDTypeDict.TryGetValue(type, out var dict))
+                                if (!dict.ContainsKey(card_guid))
+                                    dict.Add(card_guid, card);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogWarningFormat("{0} EditorLoadZip {1} {2} Error {3}", type.Name,
+                                ModName, CardName, ex.Message);
                         }
                     }
                 }
@@ -838,7 +815,10 @@ public class ModLoader : BaseUnityPlugin
                         entry.Extract(ms);
                         ms.Seek(0, SeekOrigin.Begin);
                         using (var sr = new StreamReader(ms))
+                        {
                             CardData = sr.ReadToEnd();
+                        }
+
                         WaitForWarpperEditorGameSourceGUIDList.Add(
                             AllGUIDDict.TryGetValue(Guid, out var obj)
                                 ? new ScriptableObjectPack(obj, "", "", ModName, CardData)
@@ -857,7 +837,7 @@ public class ModLoader : BaseUnityPlugin
         }
     }
 
-    static readonly List<Task<(List<(byte[] dat, string name)> sprites, string modName)>> spritesWaitList = [];
+    private static readonly List<Task<(List<(byte[] dat, string name)> sprites, string modName)>> spritesWaitList = [];
 
     public static readonly List<Task<(List<(byte[] dat, string pat, Type type)> uniqueObjs, string modName)>>
         uniqueObjWaitList = [];
@@ -873,33 +853,33 @@ public class ModLoader : BaseUnityPlugin
                 if (!File.Exists(CombinePaths(dir, "ModInfo.json")))
                     continue;
 
-                ModInfo Info = new ModInfo();
-                string ModName = Path.GetFileName(dir);
+                var Info = new ModInfo();
+                var ModName = Path.GetFileName(dir);
 
                 try
                 {
                     // Load Mod Info
-                    using (StreamReader sr = new StreamReader(CombinePaths(dir, "ModInfo.json")))
+                    using (var sr = new StreamReader(CombinePaths(dir, "ModInfo.json")))
+                    {
                         JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
+                    }
 
                     // Check Name
                     if (!Info.Name.IsNullOrWhiteSpace())
                         ModName = Info.Name;
 
                     if (!ModPacks.ContainsKey(ModName))
-                    {
                         ModPacks[ModName] = new ModPack(Info, ModName,
                             ModLoaderInstance.Config.Bind("是否加载某个模组",
                                 $"{ModName}_{Info.Name}".EscapeStr(), true,
                                 $"是否加载{ModName}"));
-                    }
 
                     if (!ModPacks[ModName].EnableEntry.Value) continue;
 
                     Debug.Log($"ModLoader Load Mod {ModName} {Info.Version}");
 
                     // Check Verison
-                    Version ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
+                    var ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
                     if (PluginVersion.CompareTo(ModRequestVersion) < 0)
                         Debug.LogWarningFormat(
                             "ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModName,
@@ -925,9 +905,7 @@ public class ModLoader : BaseUnityPlugin
                                 if (obj is Sprite sprite)
                                 {
                                     if (!SpriteDict.ContainsKey(sprite.name))
-                                    {
                                         SpriteDict.Add(sprite.name, sprite);
-                                    }
                                     else
                                         Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}",
                                             ModName, sprite.name);
@@ -956,8 +934,8 @@ public class ModLoader : BaseUnityPlugin
                     if (Directory.Exists(CombinePaths(dir, "Resource", "Audio")))
                     {
                         var files = Directory.GetFiles(CombinePaths(dir, "Resource", "Audio"));
+                        AudiosPath[Path.GetFileName(dir)] = files;
                         foreach (var file in files)
-                        {
                             if (file.EndsWith(".wav", true, null))
                             {
                                 var raw_data = File.Open(file, FileMode.Open);
@@ -994,8 +972,7 @@ public class ModLoader : BaseUnityPlugin
                                     Debug.LogWarningFormat("{0} AudioClipDict Same Key was Add {1}",
                                         ModName, clip.name);
                             }
-                            //MBSingleton<GameLoad>.Instance.StartCoroutine(GetDataRequest(ModName, file));
-                        }
+                        //MBSingleton<GameLoad>.Instance.StartCoroutine(GetDataRequest(ModName, file));
                     }
                 }
                 catch (Exception ex)
@@ -1016,10 +993,8 @@ public class ModLoader : BaseUnityPlugin
                         foreach (var type in subclasses)
                         {
                             if (!AllScriptableObjectWithoutGuidTypeDict.ContainsKey(type))
-                            {
                                 AllScriptableObjectWithoutGuidTypeDict[type] =
                                     new Dictionary<string, ScriptableObject>();
-                            }
 
                             if (type.IsSubclassOf(typeof(UniqueIDScriptable)) || type == typeof(UniqueIDScriptable))
                                 continue;
@@ -1040,7 +1015,10 @@ public class ModLoader : BaseUnityPlugin
 
                                     var obj = ScriptableObject.CreateInstance(type);
                                     using (var sr = new StreamReader(file))
+                                    {
                                         CardData = sr.ReadToEnd();
+                                    }
+
                                     obj.name = obj_name;
                                     JsonUtility.FromJsonOverwrite(CardData, obj);
                                     dict.Add(obj_name, obj);
@@ -1069,9 +1047,11 @@ public class ModLoader : BaseUnityPlugin
                         {
                             if (!file.EndsWith(".csv"))
                                 continue;
-                            using (StreamReader sr = new StreamReader(file))
-                                WaitForLoadCSVList.Add(new Tuple<string, string>(Path.GetFileName(file),
+                            using (var sr = new StreamReader(file))
+                            {
+                                WaitForLoadCSVList.Add((Path.GetFileName(file),
                                     sr.ReadToEnd()));
+                            }
                         }
                     }
                 }
@@ -1181,15 +1161,17 @@ public class ModLoader : BaseUnityPlugin
                     else
                     {
                         if (Directory.Exists(CombinePaths(dir, "GameSourceModify")))
-                        {
                             foreach (var file in Directory.EnumerateFiles(CombinePaths(dir, "GameSourceModify"),
                                          "*.json", SearchOption.AllDirectories))
                             {
-                                string CardPath = file;
+                                var CardPath = file;
                                 string CardData;
-                                string Guid = Path.GetFileNameWithoutExtension(file);
-                                using (StreamReader sr = new StreamReader(CardPath))
+                                var Guid = Path.GetFileNameWithoutExtension(file);
+                                using (var sr = new StreamReader(CardPath))
+                                {
                                     CardData = sr.ReadToEnd();
+                                }
+
                                 if (AllGUIDDict.TryGetValue(Guid, out var obj))
                                     WaitForWarpperEditorGameSourceGUIDList.Add(
                                         new ScriptableObjectPack(obj, "", "", ModName, CardData));
@@ -1197,7 +1179,6 @@ public class ModLoader : BaseUnityPlugin
                                     WaitForWarpperEditorGameSourceGUIDList.Add(
                                         new ScriptableObjectPack(null, Guid, "", ModName, CardData));
                             }
-                        }
                     }
                 }
                 catch (Exception ex)
@@ -1215,16 +1196,13 @@ public class ModLoader : BaseUnityPlugin
     private static void LoadEditorScriptableObject()
     {
         foreach (var item in WaitForWarpperEditorNoGuidList)
-        {
             try
             {
                 ProcessingScriptableObjectPack = item;
                 var json = JsonMapper.ToObject(item.CardData);
                 WarpperFunction.JsonCommonWarpper(item.obj, json);
                 if (item.obj is CardTabGroup && item.obj.name.StartsWith("Tab_"))
-                {
                     WaitForAddCardTabGroup.Add(new ScriptableObjectPack(item.obj, "", "", "", item.CardData));
-                }
 
                 if (item.obj is ContentPage)
                 {
@@ -1236,16 +1214,12 @@ public class ModLoader : BaseUnityPlugin
                             item.CardData));
                 }
 
-                if (item.obj is GuideEntry entry)
-                {
-                    WaitForAddGuideEntry.Add(entry);
-                }
+                if (item.obj is GuideEntry entry) WaitForAddGuideEntry.Add(entry);
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("LoadEditorScriptableObject " + ex.Message);
             }
-        }
     }
 
     public static readonly SimpleOnce _onceWarp = new();
@@ -1254,101 +1228,76 @@ public class ModLoader : BaseUnityPlugin
     {
         var regex = new Regex("\\\\n");
         if (LocalizationManager.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "简体中文")
-        {
             foreach (var pair in WaitForLoadCSVList)
-            {
                 try
                 {
                     if (pair.Item1.Contains("SimpCn"))
                     {
                         var CurrentTexts = CurrentTextsFieldRef();
-                        Dictionary<string, List<string>> dictionary = CSVParser.LoadFromString(pair.Item2);
+                        var dictionary = CSVParser.LoadFromString(pair.Item2);
                         foreach (var keyValuePair in dictionary)
-                        {
                             if (!CurrentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
                             {
                                 var ChLocal = regex.Replace(keyValuePair.Value[1], "\n");
-                                if (!ChLocal.Trim().IsNullOrWhiteSpace())
-                                {
-                                    CurrentTexts.Add(keyValuePair.Key, ChLocal);
-                                }
+                                if (!ChLocal.Trim().IsNullOrWhiteSpace()) CurrentTexts.Add(keyValuePair.Key, ChLocal);
                             }
-                        }
                     }
                 }
                 catch (Exception ex)
                 {
                     Debug.LogWarning("LoadLocalization " + ex.Message);
                 }
-            }
-        }
 
         if (LocalizationManager.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "English")
-        {
             foreach (var pair in WaitForLoadCSVList)
-            {
                 try
                 {
                     if (pair.Item1.Contains("SimpEn"))
                     {
                         var CurrentTexts = CurrentTextsFieldRef();
-                        Dictionary<string, List<string>> dictionary = CSVParser.LoadFromString(pair.Item2);
+                        var dictionary = CSVParser.LoadFromString(pair.Item2);
                         foreach (var keyValuePair in dictionary)
-                        {
                             if (!CurrentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
                             {
                                 var EnLocal = regex.Replace(keyValuePair.Value[0], "\n");
-                                if (!EnLocal.Trim().IsNullOrWhiteSpace())
-                                {
-                                    CurrentTexts.Add(keyValuePair.Key, EnLocal);
-                                }
+                                if (!EnLocal.Trim().IsNullOrWhiteSpace()) CurrentTexts.Add(keyValuePair.Key, EnLocal);
                             }
-                        }
                     }
                 }
                 catch (Exception ex)
                 {
                     Debug.LogWarning("LoadLocalization " + ex.Message);
                 }
-            }
-        }
     }
 
     private static void AddBlueprintCardData(GraphicsManager instance)
     {
         foreach (var tuple in WaitForAddBlueprintCard)
-        {
             try
             {
-                foreach (CardTabGroup group in instance.BlueprintModelsPopup.BlueprintTabs)
-                {
+                foreach (var group in instance.BlueprintModelsPopup.BlueprintTabs)
                     if (group.name == tuple.Item1)
                     {
                         group.ShopSortingList.Add(tuple.Item3);
-                        foreach (CardTabGroup sub_group in group.SubGroups)
-                        {
+                        foreach (var sub_group in group.SubGroups)
                             if (sub_group.name == tuple.Item2)
                             {
                                 sub_group.IncludedCards.Add(tuple.Item3);
                                 break;
                             }
-                        }
 
                         break;
                     }
-                }
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("AddBlueprintCardData " + ex.Message);
             }
-        }
     }
 
     private static void AddVisibleGameStat(GraphicsManager instance)
     {
         foreach (var tuple in WaitForAddVisibleGameStat)
-        {
             try
             {
                 // var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
@@ -1356,30 +1305,25 @@ public class ModLoader : BaseUnityPlugin
                 //     instance.AllStatsList.GetType().GetField("Tabs", bindingFlags)
                 //         .GetValue(instance.AllStatsList) as StatListTab[];
                 var StatList = Traverse.Create(instance.AllStatsList).Field<StatListTab[]>("Tabs").Value;
-                foreach (StatListTab list in StatList)
-                {
+                foreach (var list in StatList)
                     if (list.name == tuple.Item1)
                     {
                         list.ContainedStats.Add(tuple.Item2);
                         break;
                     }
-                }
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("AddVisibleGameStat " + ex.Message);
             }
-        }
     }
 
     private static void AddPerkGroup()
     {
         foreach (var tuple in WaitForAddPerkGroup)
-        {
             try
             {
                 if (AllGUIDTypeDict.TryGetValue(typeof(PerkGroup), out var dict))
-                {
                     if (dict.TryGetValue(tuple.Item1, out var group))
                     {
                         var obj = group as PerkGroup;
@@ -1389,19 +1333,16 @@ public class ModLoader : BaseUnityPlugin
                             obj.PerksList[obj.PerksList.Length - 1] = tuple.Item2;
                         }
                     }
-                }
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("AddPerkGroup " + ex.Message);
             }
-        }
     }
 
     private static void AddCardTabGroup(GraphicsManager instance)
     {
         foreach (var item in WaitForAddCardTabGroup)
-        {
             try
             {
                 if (!(item.obj is CardTabGroup tabGroup))
@@ -1424,13 +1365,11 @@ public class ModLoader : BaseUnityPlugin
             {
                 Debug.LogWarning("AddCardTabGroup " + ex.Message);
             }
-        }
     }
 
     private static void AddCardTabGroupOnce(GraphicsManager instance)
     {
         foreach (var item in WaitForAddCardTabGroup)
-        {
             try
             {
                 if (item.obj is not CardTabGroup itemObj)
@@ -1447,29 +1386,24 @@ public class ModLoader : BaseUnityPlugin
                     if (json.ContainsKey("BlueprintCardDataCardTabGroup") &&
                         json["BlueprintCardDataCardTabGroup"].IsString && !json["BlueprintCardDataCardTabGroup"]
                             .ToString().IsNullOrWhiteSpace())
-                    {
-                        foreach (CardTabGroup group in instance.BlueprintModelsPopup.BlueprintTabs)
-                        {
+                        foreach (var group in instance.BlueprintModelsPopup.BlueprintTabs)
                             if (group.name == json["BlueprintCardDataCardTabGroup"].ToString())
                             {
                                 group.SubGroups.Add(itemObj);
                                 group.FillSortingList();
                                 break;
                             }
-                        }
-                    }
                 }
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("AddCustomCardTabGroup " + ex.Message);
             }
-        }
     }
 
     private static void AddCardFilterGroupOnce()
     {
-        Dictionary<string, CardFilterGroup> CardFilterGroupDict = new Dictionary<string, CardFilterGroup>();
+        var CardFilterGroupDict = new Dictionary<string, CardFilterGroup>();
 
         foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(CardFilterGroup)))
         {
@@ -1485,10 +1419,7 @@ public class ModLoader : BaseUnityPlugin
 
     private static IEnumerator FXMaskPostAwake(FXMask instance)
     {
-        while (!AmbienceImageEffect.Instance)
-        {
-            yield return null;
-        }
+        while (!AmbienceImageEffect.Instance) yield return null;
 
         var tInstance = Traverse.Create(instance);
         tInstance.Field<RectTransform>("MyRectTr").Value = instance.GetComponent<RectTransform>();
@@ -1517,9 +1448,9 @@ public class ModLoader : BaseUnityPlugin
         return true;
     }
 
-    static IEnumerator WaiterForContentDisplayer()
+    private static IEnumerator WaiterForContentDisplayer()
     {
-        bool done = false;
+        var done = false;
         while (true)
         {
             var objs = Resources.FindObjectsOfTypeAll<ContentDisplayer>();
@@ -1549,17 +1480,13 @@ public class ModLoader : BaseUnityPlugin
                 break;
             }
 
-            if (done)
-            {
-                break;
-            }
+            if (done) break;
 
             yield return new WaitForSeconds(0.5f);
         }
 
         var displayers = Resources.FindObjectsOfTypeAll(typeof(ContentDisplayer));
         foreach (var displayer in displayers)
-        {
             try
             {
                 if (!CustomContentDisplayerDict.ContainsKey(displayer.name))
@@ -1569,15 +1496,10 @@ public class ModLoader : BaseUnityPlugin
             {
                 Debug.LogWarning("CustomContentDisplayerDict Warning " + ex.Message);
             }
-        }
 
-        while (!_onceWarp.Done())
-        {
-            yield return null;
-        }
+        while (!_onceWarp.Done()) yield return null;
 
         foreach (var item in WaitForAddDefaultContentPage)
-        {
             try
             {
                 if (CustomGameObjectListDict.ContainsKey(item.obj.name))
@@ -1596,16 +1518,10 @@ public class ModLoader : BaseUnityPlugin
                         Debug.LogWarning("FXMask Warning " + ex.Message);
                     }
 
-                    if (displayer == null)
-                    {
-                        continue;
-                    }
+                    if (displayer == null) continue;
 
                     var modPage = item.obj as ContentPage;
-                    if (modPage == null)
-                    {
-                        continue;
-                    }
+                    if (modPage == null) continue;
 
                     var tDisplayer = Traverse.Create(displayer);
                     var pages = tDisplayer.Field<List<ContentPage>>("ExplicitPageContent").Value;
@@ -1627,15 +1543,12 @@ public class ModLoader : BaseUnityPlugin
             {
                 Debug.LogWarning("WaiterForContentDisplayer WaitForAddDefaultContentPage " + ex.Message);
             }
-        }
 
         foreach (var item in WaitForAddMainContentPage)
-        {
             try
             {
                 var name_parts = item.obj.name.Split('_');
                 if (name_parts.Length > 2)
-                {
                     if (CustomContentDisplayerDict.TryGetValue(name_parts[0] + "_" + name_parts[1],
                             out var displayer))
                     {
@@ -1644,16 +1557,13 @@ public class ModLoader : BaseUnityPlugin
                             .GetValue(displayer) as IList;
                         pages.Add(item.obj);
                     }
-                }
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("WaiterForContentDisplayer WaitForAddMainContentPage " + ex.Message);
             }
-        }
 
         foreach (var item in WaitForAddJournalPlayerCharacter)
-        {
             try
             {
                 if (item.obj is not PlayerCharacter character)
@@ -1662,48 +1572,34 @@ public class ModLoader : BaseUnityPlugin
                 var json = JsonMapper.ToObject(item.CardData);
                 if (json.ContainsKey("PlayerCharacterJournalName") && json["PlayerCharacterJournalName"].IsString &&
                     !json["PlayerCharacterJournalName"].ToString().IsNullOrWhiteSpace())
-                {
                     if (CustomContentDisplayerDict.TryGetValue(json["PlayerCharacterJournalName"].ToString(),
                             out var displayer))
-                    {
                         character.Journal = displayer;
-                    }
-                }
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("WaiterForContentDisplayer PlayerCharacterJournalName " + ex.Message);
             }
-        }
     }
 
     private static void CustomGameObjectFixed()
     {
         foreach (var item in CustomGameObjectListDict)
-        {
             try
             {
                 var transform = item.Value.transform.Find("Shadow/GuideFrame/GuideContentPage/Content/Horizontal");
                 if (transform != null)
-                {
-                    for (int i = 0; i < transform.childCount; i++)
-                    {
+                    for (var i = 0; i < transform.childCount; i++)
                         Destroy(transform.GetChild(i).gameObject);
-                    }
-                }
 
                 transform = item.Value.transform.Find("Shadow/GuideFrame");
                 var fx = transform.gameObject.GetComponent(typeof(FXMask)) as FXMask;
-                if (fx)
-                {
-                    fx.enabled = true;
-                }
+                if (fx) fx.enabled = true;
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("CustomGameObjectFixed " + ex.Message);
             }
-        }
     }
 
     private static void AddPlayerCharacter(GuideManager instance)
@@ -1722,10 +1618,7 @@ public class ModLoader : BaseUnityPlugin
     {
         try
         {
-            foreach (var entry in WaitForAddGuideEntry)
-            {
-                instance.AllEntries.Add(entry);
-            }
+            foreach (var entry in WaitForAddGuideEntry) instance.AllEntries.Add(entry);
         }
         catch (Exception ex)
         {
@@ -1739,10 +1632,7 @@ public class ModLoader : BaseUnityPlugin
 
     public static void UniqueIDScriptableClearDictPrefix()
     {
-        if (!_once.DoOnce())
-        {
-            return;
-        }
+        if (!_once.DoOnce()) return;
 
         try
         {
@@ -1754,6 +1644,8 @@ public class ModLoader : BaseUnityPlugin
             stopwatch.Start();
 
             LoadGameResource();
+
+            LoadArchMod.LoadAllArchMod();
 
             LoadMods(Path.Combine(Paths.BepInExRootPath, "plugins"));
 
@@ -1782,7 +1674,7 @@ public class ModLoader : BaseUnityPlugin
             //AddPlayerCharacter(__instance);
 
             stopwatch.Stop();
-            Debug.Log("ModLoader Time taken: " + (stopwatch.Elapsed));
+            Debug.Log("ModLoader Time taken: " + stopwatch.Elapsed);
             _once.SetDone();
         }
         catch (Exception ex)
@@ -1896,13 +1788,11 @@ public class ModLoader : BaseUnityPlugin
             Input.GetKey(KeyCode.LeftCommand) ||
             Input.GetKey(KeyCode.RightControl) ||
             Input.GetKey(KeyCode.RightCommand))
-        {
             if (Input.GetKeyUp(KeyCode.Tab))
             {
                 ModManagerUIOn = !ModManagerUIOn;
                 MainUIBackPanelRT.gameObject.SetActive(ModManagerUIOn);
             }
-        }
     }
 
     public static float ShowLoadSuccess;
@@ -1924,10 +1814,8 @@ public class ModLoader : BaseUnityPlugin
         }
 
         if (ModManagerUIOn)
-        {
             GUILayout.Window(CurrentMainUIId, ModManagerUIWindowRect,
                 ModLoaderMainUIWindow, "ModManagerUI");
-        }
 
         if (ModLoaderUpdated)
         {
@@ -1947,10 +1835,7 @@ public class ModLoader : BaseUnityPlugin
                     ModLoaderUpdated = false;
                 }
 
-                if (GUILayout.Button("暂不重启(No)"))
-                {
-                    ModLoaderUpdated = false;
-                }
+                if (GUILayout.Button("暂不重启(No)")) ModLoaderUpdated = false;
 
                 GUILayout.EndHorizontal();
 
@@ -1974,11 +1859,12 @@ public class ModLoader : BaseUnityPlugin
         GUILayout.BeginHorizontal();
 
         var button0 = GUILayout.Button(id == 0 ? "管理器(Manager)♪(´▽｀)" : "管理器(Manager)");
-        if (button0)
-        {
-            id = 0;
-        }
+        if (button0) id = 0;
 
+        var button1 = GUILayout.Button(id == 1 ? "模组导出(Export)♪(´▽｀)" : "模组导出(Export)");
+        if (button1) id = 1;
+
+        CurrentMainUIId = id;
         GUILayout.EndHorizontal();
         GUILayout.EndScrollView();
         ModLoaderMainUIWindowById(id);
@@ -1991,6 +1877,9 @@ public class ModLoader : BaseUnityPlugin
             case 0:
                 ModManagerUIWindow();
                 break;
+            case 1:
+                ExportUI.ModExportUIWindow();
+                break;
         }
     }
 
@@ -2001,10 +1890,7 @@ public class ModLoader : BaseUnityPlugin
             GUILayout.Toggle(TexCompatibilityMode.Value, "是否启用纹理兼容模式（开启后纹理占用内存会增加，请仅在缺图时开启）");
         ModManagerUIScrollViewPos = GUILayout.BeginScrollView(ModManagerUIScrollViewPos);
 
-        foreach (var (key, val) in ModPacks)
-        {
-            ModManagerIns(val);
-        }
+        foreach (var (key, val) in ModPacks) ModManagerIns(val);
 
         GUILayout.EndScrollView();
 

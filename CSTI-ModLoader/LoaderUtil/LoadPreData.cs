@@ -132,6 +132,7 @@ public static class LoadPreData
                     if (Directory.Exists(picPath))
                     {
                         var files = Directory.GetFiles(picPath, "*", SearchOption.AllDirectories);
+                        PicsPath[Path.GetFileName(dir)] = files;
                         PostSpriteLoad.SpriteLoadQueue.Enqueue(LoadPictures(ModName, files));
                     }
                 }

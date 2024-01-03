@@ -431,7 +431,7 @@ public class WarpperFunction
             }
             catch (Exception ex)
             {
-                LogErrorWithModInfo(string.Format("CommonWarpper {0} {1}", obj_type.Name, ex.Message));
+                LogErrorWithModInfo($"CommonWarpper {obj_type.Name} {ex.Message}");
             }
         }
     }

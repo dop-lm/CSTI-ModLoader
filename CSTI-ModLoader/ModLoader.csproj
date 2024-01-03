@@ -5,7 +5,7 @@
     <Target Name="CopyOutputFiles" AfterTargets="Build">
         <ItemGroup>
             <OutputFiles Include="$(OutputPath)CSTI_LuaActionSupport.dll;$(OutputPath)CSTI-ChatTreeLoader.dll;$(OutputPath)DotNetZip.dll;
-$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
+$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt;$(OutputPath)K4os.Compression.LZ4.dll" />
         </ItemGroup>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath1)" />
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath2)" />
@@ -46,6 +46,9 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="EmbeddedResources.cs" />
+        <Compile Include="ExportUtil\ExportAll.cs" />
+        <Compile Include="ExportUtil\ExportUI.cs" />
+        <Compile Include="ExportUtil\LoadArchMod.cs" />
         <Compile Include="FFI\JsonnetRuntime.cs" />
         <Compile Include="GlobalUsings.cs" />
         <Compile Include="LoaderUtil\DoWarpperLoader.cs" />
@@ -103,6 +106,9 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         <Reference Include="JeremyAnsel.Media.Dds, Version=2.0.4.0, Culture=neutral, processorArchitecture=MSIL">
           <HintPath>..\packages\JeremyAnsel.Media.Dds.2.0.4\lib\net48\JeremyAnsel.Media.Dds.dll</HintPath>
         </Reference>
+        <Reference Include="K4os.Compression.LZ4, Version=1.3.6.0, Culture=neutral, PublicKeyToken=2186fa9121ef231d, processorArchitecture=MSIL">
+          <HintPath>..\packages\K4os.Compression.LZ4.1.3.6\lib\net462\K4os.Compression.LZ4.dll</HintPath>
+        </Reference>
         <Reference Include="LitJSON, Version=0.18.0.0, Culture=neutral, processorArchitecture=MSIL">
             <HintPath>..\packages\LitJson.0.18.0\lib\net45\LitJSON.dll</HintPath>
         </Reference>
@@ -132,8 +138,8 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         <Reference Include="System.AppContext, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.AppContext.4.3.0\lib\net463\System.AppContext.dll</HintPath>
         </Reference>
-        <Reference Include="System.Buffers, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Buffers.4.4.0\lib\netstandard2.0\System.Buffers.dll</HintPath>
+        <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+          <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
         </Reference>
         <Reference Include="System.ComponentModel.Composition" />
         <Reference Include="System.Console, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -171,8 +177,8 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         <Reference Include="System.Linq.Expressions, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Linq.Expressions.4.3.0\lib\net463\System.Linq.Expressions.dll</HintPath>
         </Reference>
-        <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Memory.4.5.3\lib\netstandard2.0\System.Memory.dll</HintPath>
+        <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+          <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
         </Reference>
         <Reference Include="System.Net.Http, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Net.Http.4.3.0\lib\net46\System.Net.Http.dll</HintPath>
@@ -181,8 +187,8 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
           <HintPath>..\packages\System.Net.Sockets.4.3.0\lib\net46\System.Net.Sockets.dll</HintPath>
         </Reference>
         <Reference Include="System.Numerics" />
-        <Reference Include="System.Numerics.Vectors, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Numerics.Vectors.4.4.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+        <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+          <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
         </Reference>
         <Reference Include="System.Reflection, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Reflection.4.3.0\lib\net462\System.Reflection.dll</HintPath>
@@ -190,8 +196,8 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         <Reference Include="System.Runtime, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Runtime.4.3.0\lib\net462\System.Runtime.dll</HintPath>
         </Reference>
-        <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.2\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+        <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+          <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
         </Reference>
         <Reference Include="System.Runtime.Extensions, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Runtime.Extensions.4.3.0\lib\net462\System.Runtime.Extensions.dll</HintPath>
