@@ -37,18 +37,19 @@ public class ModInfo
     public string ModEditorVersion;
 }
 
-public class ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableEntry)
+public class ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableEntry, bool loaded)
 {
     public readonly ModInfo ModInfo = modInfo;
     public readonly string FileName = fileName;
     public readonly ConfigEntry<bool> EnableEntry = enableEntry;
+    public bool Loaded = loaded;
 }
 
 [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", ModVersion)]
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.5.16";
+    public const string ModVersion = "2.3.5.17";
 
     public static Dictionary<string, string[]> AudiosPath = new();
     public static Dictionary<string, string[]> PicsPath = new();
@@ -492,10 +493,20 @@ public class ModLoader : BaseUnityPlugin
                     if (!Info.Name.IsNullOrWhiteSpace())
                         ModName = Info.Name;
 
-                    ModPacks[ModName] = new ModPack(Info, ModName,
-                        ModLoaderInstance.Config.Bind("是否加载某个模组",
-                            $"{ModName}_{Info.Name}".EscapeStr(), true,
-                            $"是否加载{ModName}"));
+                    if (!ModPacks.ContainsKey(ModName))
+                        ModPacks[ModName] = new ModPack(Info, ModName,
+                            ModLoaderInstance.Config.Bind("是否加载某个模组",
+                                $"{ModName}_{Info.Name}".EscapeStr(), true,
+                                $"是否加载{ModName}"), true);
+                    else if (ModPacks[ModName].Loaded)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        ModPacks[ModName].Loaded = true;
+                    }
+
                     if (!ModPacks[ModName].EnableEntry.Value) continue;
 
                     Debug.Log($"ModLoader Load EditorZipMod {ModName} {Info.Version}");
@@ -872,7 +883,11 @@ public class ModLoader : BaseUnityPlugin
                         ModPacks[ModName] = new ModPack(Info, ModName,
                             ModLoaderInstance.Config.Bind("是否加载某个模组",
                                 $"{ModName}_{Info.Name}".EscapeStr(), true,
-                                $"是否加载{ModName}"));
+                                $"是否加载{ModName}"), true);
+                    else
+                    {
+                        ModPacks[ModName].Loaded = true;
+                    }
 
                     if (!ModPacks[ModName].EnableEntry.Value) continue;
 

@@ -1,18 +1,50 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using BepInEx;
 using JetBrains.Annotations;
 using K4os.Compression.LZ4;
 using LitJson;
+using TMPro.SpriteAssetUtilities;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using UnityEngine.U2D;
+using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 namespace ModLoader.ExportUtil;
 
 public static class ExportAll
 {
+    public static bool CheckGenerateAtlas(IEnumerable<Texture2D> texture2Ds, int size)
+    {
+        var rects = new List<Rect>();
+        var vector2s = texture2Ds.Select(texture2D => new Vector2(texture2D.width, texture2D.height)).ToArray();
+        var generateAtlas = Texture2D.GenerateAtlas(
+            vector2s, 1, size,
+            rects);
+        if (!generateAtlas) return false;
+        for (var i = 0; i < rects.Count; i++)
+        {
+            if (Math.Abs(rects[i].width - vector2s[i].x) > 0.01) return false;
+            if (Math.Abs(rects[i].height - vector2s[i].y) > 0.01) return false;
+        }
+
+        return true;
+    }
+
+    public static (string, T) RandPop<T>(this Dictionary<string, T> dict)
+    {
+        if (dict.Count == 0) return default;
+        var i = Random.Range(0, dict.Count);
+        var s = dict.Keys.ToList()[i];
+        var item = dict[s];
+        dict.Remove(s);
+        return (s, item);
+    }
+
     internal static List<string> SplitPath(string path, string stop)
     {
         var list = new List<string>();
@@ -31,29 +63,10 @@ public static class ExportAll
         return list;
     }
 
-    public static void Write(this BinaryWriter writer, List<string> data)
-    {
-        writer.Write(data.Count);
-        foreach (var str in data)
-        {
-            writer.Write(str);
-        }
-    }
-
-    public static List<string> ReadListStr(this BinaryReader reader)
-    {
-        var count = reader.ReadInt32();
-        var list = new List<string>(count);
-        for (int i = 0; i < count; i++)
-        {
-            list.Add(reader.ReadString());
-        }
-
-        return list;
-    }
-
     public class ExportArch(string modPath)
     {
+        public int ModArchVersion = 2;
+
         public string ModPath = modPath;
 
         public string ModName = JsonMapper.ToObject(File.ReadAllText(Path.Combine(modPath, "ModInfo.json")))["Name"]
@@ -104,7 +117,7 @@ public static class ExportAll
                 }
             }
 
-            new BinaryWriter(AllData[ExportArchDataType.Local]).Write(LoadArchMod.EndFlg);
+            new BinaryWriter(AllData[ExportArchDataType.Local], Encoding.UTF8, true).Write(LoadArchMod.EndFlg);
             var bytes = AllData[ExportArchDataType.Local].ToArray();
             AllData[ExportArchDataType.Local].Close();
             AllData[ExportArchDataType.Local] = new MemoryStream();
@@ -113,7 +126,7 @@ public static class ExportAll
             var encodeLen = LZ4Codec.Encode(bytes, buffer.AsSpan(), LZ4Level.L03_HC);
             AllLz4Data[ExportArchDataType.Local].Add((buffer, encodeLen, bytes.Length));
 
-            new BinaryWriter(AllData[ExportArchDataType.Jsons]).Write(0);
+            new BinaryWriter(AllData[ExportArchDataType.Jsons], Encoding.UTF8, true).Write(0);
             bytes = AllData[ExportArchDataType.Jsons].ToArray();
             AllData[ExportArchDataType.Jsons].Close();
             AllData[ExportArchDataType.Jsons] = new MemoryStream();
@@ -122,7 +135,7 @@ public static class ExportAll
             encodeLen = LZ4Codec.Encode(bytes, buffer.AsSpan(), LZ4Level.L03_HC);
             AllLz4Data[ExportArchDataType.Jsons].Add((buffer, encodeLen, bytes.Length));
 
-            new BinaryWriter(AllData[ExportArchDataType.Lua]).Write(0);
+            new BinaryWriter(AllData[ExportArchDataType.Lua], Encoding.UTF8, true).Write(0);
             bytes = AllData[ExportArchDataType.Lua].ToArray();
             AllData[ExportArchDataType.Lua].Close();
             AllData[ExportArchDataType.Lua] = new MemoryStream();
@@ -130,6 +143,157 @@ public static class ExportAll
             buffer = new byte[maximumOutputSize];
             encodeLen = LZ4Codec.Encode(bytes, buffer.AsSpan(), LZ4Level.L03_HC);
             AllLz4Data[ExportArchDataType.Lua].Add((buffer, encodeLen, bytes.Length));
+        }
+
+        public void CollectImgV2()
+        {
+            var ImgPath = Path.Combine(ModPath, "Resource", "Picture");
+            if (!Directory.Exists(ImgPath)) return;
+            var curTexPackSize = 1024;
+            var texture2D = new Texture2D(curTexPackSize, curTexPackSize);
+            var allCacheTexture = new Dictionary<string, Texture2D>();
+            var cacheTexture = new Dictionary<string, Texture2D>();
+            foreach (var file in Directory.GetFiles(ImgPath, "*", SearchOption.AllDirectories))
+            {
+                var fileExtension = Path.GetExtension(file);
+                if (!fileExtension.EndsWith("png", StringComparison.OrdinalIgnoreCase) &&
+                    !fileExtension.EndsWith("jpg", StringComparison.OrdinalIgnoreCase) &&
+                    !fileExtension.EndsWith("jpeg", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var tmp = new MemoryStream();
+                    using var img = File.OpenRead(file);
+                    img.CopyTo(tmp);
+                    var bytes = tmp.ToArray();
+                    tmp.Close();
+
+                    var tmpTex = new Texture2D(0, 0);
+                    tmpTex.LoadImage(bytes);
+                    allCacheTexture[file] = tmpTex;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning(e);
+                }
+            }
+
+            var writer = new BinaryWriter(AllData[ExportArchDataType.Img], Encoding.UTF8, true);
+            while (allCacheTexture.Count > 0)
+            {
+                var (s, pop) = allCacheTexture.RandPop();
+                var cacheCurTexPackSize = curTexPackSize;
+                while (cacheCurTexPackSize < 8192)
+                {
+                    if (CheckGenerateAtlas(cacheTexture.Values.Append(pop), cacheCurTexPackSize)) break;
+                    cacheCurTexPackSize *= 2;
+                }
+
+
+                if (CheckGenerateAtlas(cacheTexture.Values.Append(pop), cacheCurTexPackSize))
+                {
+                    curTexPackSize = cacheCurTexPackSize;
+                    texture2D.Resize(curTexPackSize, curTexPackSize);
+                }
+
+                if (!CheckGenerateAtlas(cacheTexture.Values.Append(pop), curTexPackSize))
+                {
+                    if (cacheTexture.Count == 0)
+                    {
+                        pop.Compress(true);
+                        var rawTextureData = pop.GetRawTextureData();
+                        writer.Write(1);
+                        writer.Write(Path.GetFileName(s));
+                        writer.Write(pop.width);
+                        writer.Write(pop.height);
+                        writer.Write((int) pop.format);
+                        writer.Write(rawTextureData.Length);
+                        writer.Write(rawTextureData);
+                        Object.DestroyImmediate(pop);
+                    }
+                    else
+                    {
+                        var packTextures = texture2D.PackTextures(cacheTexture.Values.ToArray(),
+                            1, curTexPackSize, false);
+                        texture2D.Compress(true);
+                        var rawTextureData = texture2D.GetRawTextureData();
+                        writer.Write(2);
+                        writer.Write(packTextures);
+                        texture2D.name =
+                            $"ImgPack_{ModName}_{Random.Range(int.MinValue, int.MaxValue):X}_{Random.Range(int.MinValue, int.MaxValue):X}";
+                        writer.Write(texture2D.name);
+                        writer.Write(cacheTexture.Keys.ToList());
+                        writer.Write((int) texture2D.format);
+                        writer.Write(texture2D.width);
+                        writer.Write(rawTextureData.Length);
+                        writer.Write(rawTextureData);
+                        cacheTexture.Clear();
+                        curTexPackSize = 1024;
+                        Object.DestroyImmediate(texture2D);
+                        texture2D = new Texture2D(curTexPackSize, curTexPackSize);
+                        allCacheTexture[s] = pop;
+                    }
+
+                    if (AllData[ExportArchDataType.Img].Length > MaxBlockSizeForRes)
+                    {
+                        writer.Write(0);
+                        var maximumOutputSize =
+                            LZ4Codec.MaximumOutputSize((int) AllData[ExportArchDataType.Img].Length);
+                        var buffer = new byte[maximumOutputSize];
+                        var memoryStream = AllData[ExportArchDataType.Img];
+                        var bytes = memoryStream.ToArray();
+                        AllData[ExportArchDataType.Img].Close();
+                        AllData[ExportArchDataType.Img] = new MemoryStream();
+                        var encodeLen = LZ4Codec.Encode(bytes, buffer, LZ4Level.L03_HC);
+                        AllLz4Data[ExportArchDataType.Img].Add((buffer, encodeLen, bytes.Length));
+                        writer = new BinaryWriter(AllData[ExportArchDataType.Img]);
+                    }
+                }
+                else
+                {
+                    cacheTexture[s] = pop;
+                }
+
+                if (allCacheTexture.Count == 0)
+                {
+                    if (cacheTexture.Count != 0)
+                    {
+                        var packTextures = texture2D.PackTextures(cacheTexture.Values.ToArray(),
+                            1, curTexPackSize, false);
+                        texture2D.Compress(true);
+                        var rawTextureData = texture2D.GetRawTextureData();
+                        writer.Write(2);
+                        writer.Write(packTextures);
+                        texture2D.name =
+                            $"ImgPack_{ModName}_{Random.Range(int.MinValue, int.MaxValue):X}_{Random.Range(int.MinValue, int.MaxValue):X}";
+                        writer.Write(texture2D.name);
+                        writer.Write(cacheTexture.Keys.ToList());
+                        writer.Write((int) texture2D.format);
+                        writer.Write(texture2D.width);
+                        writer.Write(rawTextureData.Length);
+                        writer.Write(rawTextureData);
+                        cacheTexture.Clear();
+                        curTexPackSize = 1024;
+                        Object.DestroyImmediate(texture2D);
+                        texture2D = new Texture2D(curTexPackSize, curTexPackSize);
+                    }
+
+                    writer.Write(0);
+                    var maximumOutputSize =
+                        LZ4Codec.MaximumOutputSize((int) AllData[ExportArchDataType.Img].Length);
+                    var buffer = new byte[maximumOutputSize];
+                    var memoryStream = AllData[ExportArchDataType.Img];
+                    var bytes = memoryStream.ToArray();
+                    AllData[ExportArchDataType.Img].Close();
+                    AllData[ExportArchDataType.Img] = new MemoryStream();
+                    var encodeLen = LZ4Codec.Encode(bytes, buffer, LZ4Level.L03_HC);
+                    AllLz4Data[ExportArchDataType.Img].Add((buffer, encodeLen, bytes.Length));
+                    writer = new BinaryWriter(AllData[ExportArchDataType.Img], Encoding.UTF8, true);
+                }
+            }
         }
 
         public void CollectImg()
@@ -239,11 +403,20 @@ public static class ExportAll
             AllLz4Data[ExportArchDataType.Audio].Add((buffer, encodeL, dataBuf.Length));
         }
 
+        public string GetExt()
+        {
+            return ModArchVersion switch
+            {
+                2 => ".modArch_V2",
+                _ => ".modArch"
+            };
+        }
+
         public void CollectAllToPat(string pat)
         {
             if (!Directory.Exists(pat)) return;
             using var memoryStream = CollectAll();
-            using var fileStream = File.OpenWrite(Path.Combine(pat, ModName + ".modArch"));
+            using var fileStream = File.OpenWrite(Path.Combine(pat, ModName + GetExt()));
             memoryStream.Seek(0, SeekOrigin.Begin);
             memoryStream.CopyTo(fileStream);
         }
@@ -252,7 +425,16 @@ public static class ExportAll
         {
             CollectObj();
             CollectAudio();
-            CollectImg();
+            switch (ModArchVersion)
+            {
+                case 1:
+                    CollectImg();
+                    break;
+                case 2:
+                    CollectImgV2();
+                    break;
+            }
+
             var memoryStream = new MemoryStream();
             var binaryWriter = new BinaryWriter(memoryStream, Encoding.UTF8, true);
             binaryWriter.Write(ModName);

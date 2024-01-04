@@ -105,10 +105,11 @@ public static class LoadPreData
                     if (!Info.Name.IsNullOrWhiteSpace())
                         ModName = Info.Name;
 
-                    ModPacks[ModName] = new ModPack(Info, ModName,
-                        ModLoaderInstance.Config.Bind("是否加载某个模组",
-                            $"{ModName}_{Info.Name}".EscapeStr(), true,
-                            $"是否加载{ModName}"));
+                    if (!ModPacks.ContainsKey(ModName))
+                        ModPacks[ModName] = new ModPack(Info, ModName,
+                            ModLoaderInstance.Config.Bind("是否加载某个模组",
+                                $"{ModName}_{Info.Name}".EscapeStr(), true,
+                                $"是否加载{ModName}"), false);
                     if (!ModPacks[ModName].EnableEntry.Value) continue;
 
                     Debug.Log($"ModLoader PreLoad Mod {ModName} {Info.Version}");

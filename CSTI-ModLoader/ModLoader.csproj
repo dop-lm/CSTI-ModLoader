@@ -49,6 +49,7 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt;$(OutputPat
         <Compile Include="ExportUtil\ExportAll.cs" />
         <Compile Include="ExportUtil\ExportUI.cs" />
         <Compile Include="ExportUtil\LoadArchMod.cs" />
+        <Compile Include="ExportUtil\RWUtil.cs" />
         <Compile Include="FFI\JsonnetRuntime.cs" />
         <Compile Include="GlobalUsings.cs" />
         <Compile Include="LoaderUtil\DoWarpperLoader.cs" />

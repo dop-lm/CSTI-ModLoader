@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using BepInEx;
 using HarmonyLib;
+using JetBrains.Annotations;
 using K4os.Compression.LZ4;
 using LitJson;
 using ModLoader.LoaderUtil;
@@ -16,13 +17,37 @@ public static class LoadArchMod
 {
     public const string EndFlg = "_End_";
 
+    private delegate Sprite CreateSpriteWithoutTextureScripting_InjectedDelegate(ref Rect rect, ref Vector2 pivot,
+        float pixelsToUnits, Texture2D texture);
+
+    private static CreateSpriteWithoutTextureScripting_InjectedDelegate CreateSpriteWithoutTextureScripting_Injected =
+        (CreateSpriteWithoutTextureScripting_InjectedDelegate) AccessTools.DeclaredMethod(typeof(Sprite),
+                nameof(CreateSpriteWithoutTextureScripting_Injected))
+            .CreateDelegate(typeof(CreateSpriteWithoutTextureScripting_InjectedDelegate));
+
     public static void LoadAllArchMod()
     {
+        foreach (var file in Directory.EnumerateFiles(Paths.PluginPath, "*.modArch_V2", SearchOption.AllDirectories))
+        {
+            try
+            {
+                var loadMod = LoadMod(file, 2);
+                if (loadMod == null) continue;
+                Debug.Log(loadMod);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+            }
+        }
+
         foreach (var file in Directory.EnumerateFiles(Paths.PluginPath, "*.modArch", SearchOption.AllDirectories))
         {
             try
             {
-                Debug.Log(LoadMod(file));
+                var loadMod = LoadMod(file, 1);
+                if (loadMod == null) continue;
+                Debug.Log(loadMod);
             }
             catch (Exception e)
             {
@@ -31,23 +56,18 @@ public static class LoadArchMod
         }
     }
 
-    public static string LoadMod(string modPath)
+    [CanBeNull]
+    public static string LoadMod(string modPath, int version)
     {
         if (!File.Exists(modPath)) return $"文件 {modPath} 不存在";
-        if (!Path.GetExtension(modPath).EndsWith("modArch", StringComparison.OrdinalIgnoreCase))
-            return $"文件 {modPath} 格式不符合";
-        var buffer = new MemoryStream();
-        using (var fileStream = File.OpenRead(modPath))
-        {
-            fileStream.CopyTo(buffer);
-            buffer.Seek(0, SeekOrigin.Begin);
-        }
-
-        using var binaryReader = new BinaryReader(buffer, Encoding.UTF8);
+        using var fileStream = File.OpenRead(modPath);
+        using var binaryReader = new BinaryReader(fileStream, Encoding.UTF8);
         var modName = binaryReader.ReadString();
         if (ModPacks.TryGetValue(modName, out var pack))
         {
             if (!pack.EnableEntry.Value) return $"{modName} 模组被禁用";
+            if (pack.Loaded) return null;
+            pack.Loaded = true;
         }
         else
         {
@@ -55,23 +75,26 @@ public static class LoadArchMod
                 {Name = modName, ModLoaderVerison = ModVersion, ModEditorVersion = "", Version = "0.0.0"};
             ModPacks[modName] = new ModPack(modInfo, modName, ModLoaderInstance.Config.Bind("是否加载某个模组",
                 $"{Path.GetFileNameWithoutExtension(modPath)}_{modName}".EscapeStr(), true,
-                $"是否加载{modName}"));
+                $"是否加载{modName}"), true);
         }
 
         var blk = binaryReader.ReadString();
         while (blk != EndFlg)
         {
-            LoadModArchBLK(blk, binaryReader, modName);
+            LoadModArchBLK(blk, binaryReader, modName, version);
             blk = binaryReader.ReadString();
         }
 
         return $"加载 {modName} 成功";
     }
 
-    public static void LoadModArchBLK(string blk, BinaryReader reader, string modName)
+    public static void LoadModArchBLK(string blk, BinaryReader reader, string modName, int version)
     {
         switch (blk)
         {
+            case "ImgBLK" when version == 2:
+                LoadImgBLK_V2(reader, modName);
+                break;
             case "ImgBLK":
                 LoadImgBLK(reader, modName);
                 break;
@@ -90,6 +113,84 @@ public static class LoadArchMod
             default:
                 break;
         }
+    }
+
+    public static void LoadImgBLK_V2(BinaryReader reader, string modName)
+    {
+        var dateTime1 = DateTime.Now;
+        var blkCount = reader.ReadInt32();
+        for (var i = 0; i < blkCount; i++)
+        {
+            var lz4Len = reader.ReadInt32();
+            var blkLen = reader.ReadInt32();
+            var bytes = reader.ReadBytes(lz4Len);
+            var buffer = new byte[blkLen];
+            LZ4Codec.Decode(bytes, buffer);
+            var memoryStream = new MemoryStream(buffer);
+            buffer = null;
+            var binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
+            while (true)
+            {
+                var itemFlg = binaryReader.ReadInt32();
+                if (itemFlg == 0) break;
+                if (itemFlg == 1)
+                {
+                    var ImgName = binaryReader.ReadString();
+                    var sprite_name = Path.GetFileNameWithoutExtension(ImgName);
+                    var width = binaryReader.ReadInt32();
+                    var height = binaryReader.ReadInt32();
+                    var graphicsFormat = (TextureFormat) binaryReader.ReadInt32();
+                    var imgDataLen = binaryReader.ReadInt32();
+                    var imgData = binaryReader.ReadBytes(imgDataLen);
+                    var t2d = new Texture2D(width, height, graphicsFormat, -1, false);
+                    t2d.LoadRawTextureData(imgData);
+                    t2d.Apply(false, false);
+                    t2d.name = ImgName;
+                    var sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height),
+                        Vector2.zero);
+                    sprite.name = sprite_name;
+                    if (!SpriteDict.ContainsKey(sprite_name))
+                        SpriteDict.Add(sprite_name, sprite);
+                    else
+                        Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName,
+                            sprite_name);
+                }
+                else if (itemFlg == 2)
+                {
+                    var rects = binaryReader.ReadRects();
+                    var texture2D_name = binaryReader.ReadString();
+                    var listStr = binaryReader.ReadListStr();
+                    var graphicsFormat = (TextureFormat) binaryReader.ReadInt32();
+                    var texPackSize = binaryReader.ReadInt32();
+                    var imgDataLen = binaryReader.ReadInt32();
+                    var imgData = binaryReader.ReadBytes(imgDataLen);
+                    var t2d = new Texture2D(texPackSize, texPackSize, graphicsFormat, -1, false)
+                    {
+                        name = texture2D_name
+                    };
+                    t2d.LoadRawTextureData(imgData);
+                    t2d.Apply(false, false);
+                    for (var j = 0; j < listStr.Count; j++)
+                    {
+                        var sprite_name = Path.GetFileNameWithoutExtension(listStr[j]);
+                        var rect = rects[j];
+                        var rect1 = new Rect(rect.x * texPackSize, rect.y * texPackSize, rect.width * texPackSize,
+                            rect.height * texPackSize);
+                        var pivot = Vector2.one * 0.5f;
+                        var sprite = Sprite.Create(t2d, rect1, pivot, 100, 0, SpriteMeshType.FullRect);
+                        sprite.name = sprite_name;
+                        if (!SpriteDict.ContainsKey(sprite_name))
+                            SpriteDict.Add(sprite_name, sprite);
+                        else
+                            Debug.LogWarningFormat("{0} SpriteDict Same Key was Add {1}", modName,
+                                sprite_name);
+                    }
+                }
+            }
+        }
+
+        var dateTime2 = DateTime.Now;
+        Debug.Log($"加载模组{modName}中的图片总用时为: {dateTime2 - dateTime1:g}");
     }
 
     public static void LoadLuaBLK(BinaryReader reader, string modName)
@@ -168,7 +269,8 @@ public static class LoadArchMod
 
                     obj.name = obj_name;
                     JsonUtility.FromJsonOverwrite(json, obj);
-                    dict.Add(obj_name, obj);
+                    if (!dict.ContainsKey(obj_name))
+                        dict.Add(obj_name, obj);
                     WaitForWarpperEditorNoGuidList.Add(new ScriptableObjectPack(obj,
                         "", "", modName, json));
                     if (!AllScriptableObjectDict.ContainsKey(obj_name))
@@ -191,7 +293,6 @@ public static class LoadArchMod
                     try
                     {
                         var jsonData = JsonMapper.ToObject(json);
-                        ;
 
                         if (!(jsonData.ContainsKey("UniqueID") && jsonData["UniqueID"].IsString &&
                               !jsonData["UniqueID"].ToString().IsNullOrWhiteSpace()))
@@ -210,8 +311,11 @@ public static class LoadArchMod
 
                         //type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
                         var card_guid = card.UniqueID;
-                        AllGUIDDict.Add(card_guid, card);
-                        GameLoad.Instance.DataBase.AllData.Add(card);
+                        if (!AllGUIDDict.ContainsKey(card_guid))
+                        {
+                            AllGUIDDict.Add(card_guid, card);
+                            GameLoad.Instance.DataBase.AllData.Add(card);
+                        }
 
                         if (!WaitForWarpperEditorGuidDict.ContainsKey(card_guid))
                             WaitForWarpperEditorGuidDict.Add(card_guid,
@@ -287,10 +391,11 @@ public static class LoadArchMod
                 var imgDataLen = binaryReader.ReadInt32();
                 var imgData = binaryReader.ReadBytes(imgDataLen);
                 var sprite_name = Path.GetFileNameWithoutExtension(ImgName);
-                var t2d = new Texture2D(width, height, graphicsFormat, false);
+                var t2d = new Texture2D(width, height, graphicsFormat, -1, false);
                 t2d.LoadRawTextureData(imgData);
+                t2d.Apply(false, false);
                 var sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height),
-                    Vector2.zero);
+                    Vector2.zero, 100, 0, SpriteMeshType.FullRect);
                 sprite.name = sprite_name;
                 if (!SpriteDict.ContainsKey(sprite_name))
                     SpriteDict.Add(sprite_name, sprite);
@@ -326,6 +431,7 @@ public static class LoadArchMod
                 var audioDataLen = binaryReader.ReadInt32();
                 var audioData = binaryReader.ReadBytes(audioDataLen);
                 stream.Write(audioData, 0, audioDataLen);
+                stream.Seek(0, SeekOrigin.Begin);
                 audioData = null;
                 if (AudioName.EndsWith(".wav", true, null))
                 {
