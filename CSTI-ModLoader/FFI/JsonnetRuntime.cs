@@ -40,7 +40,7 @@ public static class JsonnetRuntime
             while (true)
             {
                 var runtimeRead = JsonnetRuntimeRead(eval);
-                for (int i = 0; i < 64; i++)
+                for (var i = 0; i < 64; i++)
                 {
                     if (runtimeRead.Data[i] == 0)
                     {

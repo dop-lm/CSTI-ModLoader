@@ -5,9 +5,8 @@ using System.Linq;
 using System.Text;
 using BepInEx;
 using HarmonyLib;
-using JetBrains.Annotations;
-using K4os.Compression.LZ4;
 using LitJson;
+using LZ4;
 using ModLoader.LoaderUtil;
 using UnityEngine;
 
@@ -17,16 +16,22 @@ public static class LoadArchMod
 {
     public const string EndFlg = "_End_";
 
-    private delegate Sprite CreateSpriteWithoutTextureScripting_InjectedDelegate(ref Rect rect, ref Vector2 pivot,
-        float pixelsToUnits, Texture2D texture);
-
-    private static CreateSpriteWithoutTextureScripting_InjectedDelegate CreateSpriteWithoutTextureScripting_Injected =
-        (CreateSpriteWithoutTextureScripting_InjectedDelegate) AccessTools.DeclaredMethod(typeof(Sprite),
-                nameof(CreateSpriteWithoutTextureScripting_Injected))
-            .CreateDelegate(typeof(CreateSpriteWithoutTextureScripting_InjectedDelegate));
-
     public static void LoadAllArchMod()
     {
+        foreach (var file in Directory.EnumerateFiles(Paths.PluginPath, "*.modArch_V3", SearchOption.AllDirectories))
+        {
+            try
+            {
+                var loadMod = LoadMod(file, 3);
+                if (loadMod == null) continue;
+                Debug.Log(loadMod);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+            }
+        }
+
         foreach (var file in Directory.EnumerateFiles(Paths.PluginPath, "*.modArch_V2", SearchOption.AllDirectories))
         {
             try
@@ -56,12 +61,12 @@ public static class LoadArchMod
         }
     }
 
-    [CanBeNull]
-    public static string LoadMod(string modPath, int version)
+    public static string? LoadMod(string modPath, int version)
     {
         if (!File.Exists(modPath)) return $"文件 {modPath} 不存在";
-        using var fileStream = File.OpenRead(modPath);
-        using var binaryReader = new BinaryReader(fileStream, Encoding.UTF8);
+        var startTime = DateTime.Now;
+        using var fileStream = new BufferedStream(File.OpenRead(modPath), 1024 * 1024);
+        using var binaryReader = new BinaryReader(fileStream, Encoding.UTF8, true);
         var modName = binaryReader.ReadString();
         if (ModPacks.TryGetValue(modName, out var pack))
         {
@@ -85,14 +90,18 @@ public static class LoadArchMod
             blk = binaryReader.ReadString();
         }
 
+        var endTime = DateTime.Now;
+        Debug.Log($"加载模组:{modName} 文件总用时:{endTime - startTime:g}");
         return $"加载 {modName} 成功";
     }
 
     public static void LoadModArchBLK(string blk, BinaryReader reader, string modName, int version)
     {
+        DateTime startTime;
+        DateTime endTime;
         switch (blk)
         {
-            case "ImgBLK" when version == 2:
+            case "ImgBLK" when version >= 2:
                 LoadImgBLK_V2(reader, modName);
                 break;
             case "ImgBLK":
@@ -104,8 +113,17 @@ public static class LoadArchMod
             case "LocalBLK":
                 LoadLocalBLK(reader, modName);
                 break;
+            case "JsonsBLK" when version >= 3:
+                startTime = DateTime.Now;
+                LoadJsonsBLK_V3(reader, modName);
+                endTime = DateTime.Now;
+                Debug.Log($"加载模组 {modName} 中的json用时:{endTime - startTime:g}");
+                break;
             case "JsonsBLK":
+                startTime = DateTime.Now;
                 LoadJsonsBLK(reader, modName);
+                endTime = DateTime.Now;
+                Debug.Log($"加载模组 {modName} 中的json用时:{endTime - startTime:g}");
                 break;
             case "LuaBLK":
                 LoadLuaBLK(reader, modName);
@@ -125,7 +143,7 @@ public static class LoadArchMod
             var blkLen = reader.ReadInt32();
             var bytes = reader.ReadBytes(lz4Len);
             var buffer = new byte[blkLen];
-            LZ4Codec.Decode(bytes, buffer);
+            LZ4Codec.Decode(bytes, 0, bytes.Length, buffer, 0, buffer.Length, true);
             var memoryStream = new MemoryStream(buffer);
             buffer = null;
             var binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
@@ -161,10 +179,11 @@ public static class LoadArchMod
                     var texture2D_name = binaryReader.ReadString();
                     var listStr = binaryReader.ReadListStr();
                     var graphicsFormat = (TextureFormat) binaryReader.ReadInt32();
-                    var texPackSize = binaryReader.ReadInt32();
+                    var texPackSizeWidth = binaryReader.ReadInt32();
+                    var texPackSizeHeight = binaryReader.ReadInt32();
                     var imgDataLen = binaryReader.ReadInt32();
                     var imgData = binaryReader.ReadBytes(imgDataLen);
-                    var t2d = new Texture2D(texPackSize, texPackSize, graphicsFormat, -1, false)
+                    var t2d = new Texture2D(texPackSizeWidth, texPackSizeHeight, graphicsFormat, -1, false)
                     {
                         name = texture2D_name
                     };
@@ -174,8 +193,8 @@ public static class LoadArchMod
                     {
                         var sprite_name = Path.GetFileNameWithoutExtension(listStr[j]);
                         var rect = rects[j];
-                        var rect1 = new Rect(rect.x * texPackSize, rect.y * texPackSize, rect.width * texPackSize,
-                            rect.height * texPackSize);
+                        var rect1 = new Rect(rect.x * texPackSizeWidth, rect.y * texPackSizeHeight,
+                            rect.width * texPackSizeWidth, rect.height * texPackSizeHeight);
                         var pivot = Vector2.one * 0.5f;
                         var sprite = Sprite.Create(t2d, rect1, pivot, 100, 0, SpriteMeshType.FullRect);
                         sprite.name = sprite_name;
@@ -202,7 +221,7 @@ public static class LoadArchMod
             var blkLen = reader.ReadInt32();
             var bytes = reader.ReadBytes(lz4Len);
             var buffer = new byte[blkLen];
-            LZ4Codec.Decode(bytes, buffer);
+            LZ4Codec.Decode(bytes, 0, bytes.Length, buffer, 0, buffer.Length, true);
             var memoryStream = new MemoryStream(buffer);
             buffer = null;
             var binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
@@ -233,6 +252,9 @@ public static class LoadArchMod
         var allUniqueIDScriptableTypes = (from type in AccessTools.AllTypes()
             where type.IsSubclassOf(typeof(UniqueIDScriptable))
             select type).ToList();
+        var allScriptableObjectTypes = (from type in AccessTools.AllTypes()
+            where type.IsSubclassOf(typeof(ScriptableObject)) && !type.IsSubclassOf(typeof(UniqueIDScriptable))
+            select type).ToList();
         var blkCount = reader.ReadInt32();
         for (var i = 0; i < blkCount; i++)
         {
@@ -240,7 +262,7 @@ public static class LoadArchMod
             var blkLen = reader.ReadInt32();
             var bytes = reader.ReadBytes(lz4Len);
             var buffer = new byte[blkLen];
-            LZ4Codec.Decode(bytes, buffer);
+            LZ4Codec.Decode(bytes, 0, bytes.Length, buffer, 0, buffer.Length, true);
             var memoryStream = new MemoryStream(buffer);
             buffer = null;
             var binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
@@ -253,37 +275,45 @@ public static class LoadArchMod
                 if (listStr.Count == 0) continue;
                 if (listStr[0] == "ModInfo.json")
                 {
-                    Debug.Log($"正在加载打包模组:{modName}");
+                    // Debug.Log($"正在加载打包模组:{modName}");
                 }
                 else if (listStr[0] == "ScriptableObject")
                 {
-                    if (listStr.Count < 1) continue;
-                    var obj_name = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(listStr.Last()));
-                    var (type, dict) =
-                        AllScriptableObjectWithoutGuidTypeDict.FirstOrDefault(pair => pair.Key.Name == listStr[1]);
+                    if (listStr.Count < 3) continue;
+                    var obj_name = Path.GetFileNameWithoutExtension(listStr.Last());
+                    var find_ScriptableObjectT =
+                        allScriptableObjectTypes.FirstOrDefault(type1 => type1.Name == listStr[1]);
+                    if (!AllScriptableObjectWithoutGuidTypeDict.ContainsKey(find_ScriptableObjectT))
+                    {
+                        AllScriptableObjectWithoutGuidTypeDict[find_ScriptableObjectT] =
+                            new Dictionary<string, ScriptableObject>();
+                    }
+
+                    var dict = AllScriptableObjectWithoutGuidTypeDict[find_ScriptableObjectT];
                     if (dict == null) continue;
                     if (dict.ContainsKey(obj_name))
                         continue;
 
-                    var obj = ScriptableObject.CreateInstance(type);
+                    var obj = ScriptableObject.CreateInstance(find_ScriptableObjectT);
 
                     obj.name = obj_name;
                     JsonUtility.FromJsonOverwrite(json, obj);
                     if (!dict.ContainsKey(obj_name))
                         dict.Add(obj_name, obj);
+                    var jsonData = JsonMapper.ToObject(json);
                     WaitForWarpperEditorNoGuidList.Add(new ScriptableObjectPack(obj,
-                        "", "", modName, json));
+                        "", "", modName, new JsonKVProvider(jsonData)));
                     if (!AllScriptableObjectDict.ContainsKey(obj_name))
                         AllScriptableObjectDict.Add(obj_name, obj);
                 }
                 else if (listStr[0] == "GameSourceModify")
                 {
                     var Guid = Path.GetFileNameWithoutExtension(listStr.Last());
-
+                    var jsonData = JsonMapper.ToObject(json);
                     WaitForWarpperEditorGameSourceGUIDList.Add(
                         AllGUIDDict.TryGetValue(Guid, out var obj)
-                            ? new ScriptableObjectPack(obj, "", "", modName, json)
-                            : new ScriptableObjectPack(null, Guid, "", modName, json));
+                            ? new ScriptableObjectPack(obj, "", "", modName, new JsonKVProvider(jsonData))
+                            : new ScriptableObjectPack(null, Guid, "", modName, new JsonKVProvider(jsonData)));
                 }
                 else
                 {
@@ -320,7 +350,155 @@ public static class LoadArchMod
                         if (!WaitForWarpperEditorGuidDict.ContainsKey(card_guid))
                             WaitForWarpperEditorGuidDict.Add(card_guid,
                                 new ScriptableObjectPack(card, "", "", modName,
-                                    json));
+                                    new JsonKVProvider(jsonData)));
+                        else
+                            Debug.LogWarningFormat(
+                                "{0} WaitForWarpperEditorGuidDict Same Key was Add {1}", modName,
+                                card_guid);
+                        if (!AllScriptableObjectDict.ContainsKey(card_guid))
+                            AllScriptableObjectDict.Add(card_guid, card);
+                        if (AllGUIDTypeDict.TryGetValue(type, out var dict))
+                            if (!dict.ContainsKey(card_guid))
+                                dict.Add(card_guid, card);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarningFormat("{0} EditorLoadZip {1} {2} Error {3}", type.Name,
+                            modName, CardName, ex.Message);
+                    }
+                }
+            }
+        }
+    }
+
+    public static void LoadJsonsBLK_V3(BinaryReader reader, string modName)
+    {
+        var allUniqueIDScriptableTypes = (from type in AccessTools.AllTypes()
+            where type.IsSubclassOf(typeof(UniqueIDScriptable))
+            select type).ToList();
+        var allScriptableObjectTypes = (from type in AccessTools.AllTypes()
+            where type.IsSubclassOf(typeof(ScriptableObject))
+            select type).ToList();
+        var blkCount = reader.ReadInt32();
+        for (var i = 0; i < blkCount; i++)
+        {
+            var lz4Len = reader.ReadInt32();
+            var blkLen = reader.ReadInt32();
+            var bytes = reader.ReadBytes(lz4Len);
+            var buffer = new byte[blkLen];
+            LZ4Codec.Decode(bytes, 0, bytes.Length, buffer, 0, buffer.Length, true);
+            var memoryStream = new MemoryStream(buffer);
+            buffer = null;
+            var binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
+            StringMapper mapper = new StringMapper();
+            while (true)
+            {
+                var itemFlg = binaryReader.ReadInt32();
+                if (itemFlg == 0) break;
+                if (itemFlg == 2)
+                {
+                    mapper.Read(binaryReader);
+                    continue;
+                }
+
+                var listStr = binaryReader.ReadListStr();
+                var mapperItem = MapperItem.Read(binaryReader, mapper);
+                if (mapperItem == null) continue;
+                if (!mapperItem.IsObject) continue;
+                var mapperObject = (MapperObject) mapperItem;
+                if (listStr.Count == 0) continue;
+                if (listStr[0] == "ModInfo.json")
+                {
+                    // Debug.Log($"正在加载打包模组:{modName}");
+                }
+                else if (listStr[0] == "ScriptableObject")
+                {
+                    if (listStr.Count < 3) continue;
+                    var obj_name = Path.GetFileNameWithoutExtension(listStr.Last());
+                    var find_ScriptableObjectT =
+                        allScriptableObjectTypes.FirstOrDefault(type1 => type1.Name == listStr[1]);
+                    if (!AllScriptableObjectWithoutGuidTypeDict.ContainsKey(find_ScriptableObjectT))
+                    {
+                        AllScriptableObjectWithoutGuidTypeDict[find_ScriptableObjectT] =
+                            new Dictionary<string, ScriptableObject>();
+                    }
+
+                    var dict = AllScriptableObjectWithoutGuidTypeDict[find_ScriptableObjectT];
+                    if (dict == null) continue;
+                    if (dict.ContainsKey(obj_name))
+                        continue;
+
+                    var obj = ScriptableObject.CreateInstance(find_ScriptableObjectT);
+
+                    obj.name = obj_name;
+                    try
+                    {
+                        JsonUtility.FromJsonOverwrite(mapperObject.ToJson(), obj);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError(e);
+                        Debug.LogWarning(mapperObject.ToJson());
+                    }
+
+                    if (!dict.ContainsKey(obj_name))
+                        dict.Add(obj_name, obj);
+                    WaitForWarpperEditorNoGuidList.Add(new ScriptableObjectPack(obj,
+                        "", "", modName, mapperObject));
+                    if (!AllScriptableObjectDict.ContainsKey(obj_name))
+                        AllScriptableObjectDict.Add(obj_name, obj);
+                }
+                else if (listStr[0] == "GameSourceModify")
+                {
+                    var Guid = Path.GetFileNameWithoutExtension(listStr.Last());
+
+                    WaitForWarpperEditorGameSourceGUIDList.Add(
+                        AllGUIDDict.TryGetValue(Guid, out var obj)
+                            ? new ScriptableObjectPack(obj, "", "", modName, mapperObject)
+                            : new ScriptableObjectPack(null, Guid, "", modName, mapperObject));
+                }
+                else
+                {
+                    var type = allUniqueIDScriptableTypes.FirstOrDefault(type => type.Name == listStr[0]);
+                    if (type == null) continue;
+                    var CardName = Path.GetFileNameWithoutExtension(listStr.Last());
+                    try
+                    {
+                        if (!(mapperObject.ContainsKey("UniqueID") && mapperObject["UniqueID"].IsString &&
+                              !mapperObject["UniqueID"].ToString().IsNullOrWhiteSpace()))
+                        {
+                            Debug.LogErrorFormat(
+                                "{0} EditorLoadZip {1} {2} try to load a UniqueIDScriptable without GUID",
+                                type.Name, modName, CardName);
+                            continue;
+                        }
+
+                        var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
+                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                        try
+                        {
+                            JsonUtility.FromJsonOverwrite(mapperObject.ToJson(), card);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError(e);
+                            Debug.LogWarning(mapperObject.ToJson());
+                        }
+
+                        card.name = $"{modName}_{CardName}";
+
+                        //type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
+                        var card_guid = card.UniqueID;
+                        if (!AllGUIDDict.ContainsKey(card_guid))
+                        {
+                            AllGUIDDict.Add(card_guid, card);
+                            GameLoad.Instance.DataBase.AllData.Add(card);
+                        }
+
+                        if (!WaitForWarpperEditorGuidDict.ContainsKey(card_guid))
+                            WaitForWarpperEditorGuidDict.Add(card_guid,
+                                new ScriptableObjectPack(card, "", "", modName,
+                                    mapperObject));
                         else
                             Debug.LogWarningFormat(
                                 "{0} WaitForWarpperEditorGuidDict Same Key was Add {1}", modName,
@@ -350,7 +528,7 @@ public static class LoadArchMod
             var blkLen = reader.ReadInt32();
             var bytes = reader.ReadBytes(lz4Len);
             var buffer = new byte[blkLen];
-            LZ4Codec.Decode(bytes, buffer);
+            LZ4Codec.Decode(bytes, 0, bytes.Length, buffer, 0, buffer.Length, true);
             var memoryStream = new MemoryStream(buffer);
             buffer = null;
             var binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
@@ -373,7 +551,7 @@ public static class LoadArchMod
             var blkLen = reader.ReadInt32();
             var bytes = reader.ReadBytes(lz4Len);
             var buffer = new byte[blkLen];
-            LZ4Codec.Decode(bytes, buffer);
+            LZ4Codec.Decode(bytes, 0, bytes.Length, buffer, 0, buffer.Length, true);
             var memoryStream = new MemoryStream(buffer);
             buffer = null;
             var binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
@@ -415,7 +593,7 @@ public static class LoadArchMod
             var blkLen = reader.ReadInt32();
             var bytes = reader.ReadBytes(lz4Len);
             var buffer = new byte[blkLen];
-            LZ4Codec.Decode(bytes, buffer);
+            LZ4Codec.Decode(bytes, 0, bytes.Length, buffer, 0, buffer.Length, true);
             var memoryStream = new MemoryStream(buffer);
             buffer = null;
             var binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);

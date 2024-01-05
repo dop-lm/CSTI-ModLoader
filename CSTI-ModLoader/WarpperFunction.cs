@@ -2,10 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using LitJson;
+using ModLoader.ExportUtil;
 using ModLoader.LoaderUtil;
 using UnityEngine;
-using Object = System.Object;
+using Object = object;
 
 namespace ModLoader;
 
@@ -38,8 +38,8 @@ public class WarpperFunction
         }
         else if (field_type == typeof(Sprite))
         {
-            var (_, _, setter) = obj.GetType().FieldFromCache(field_name,getter_use:false);
-            obj.PostSetEnQueue(setter,data);
+            var (_, _, setter) = obj.GetType().FieldFromCache(field_name, getter_use: false);
+            obj.PostSetEnQueue(setter, data);
         }
         else if (field_type == typeof(AudioClip))
         {
@@ -114,10 +114,9 @@ public class WarpperFunction
         }
     }
 
-    public static void JsonCommonWarpper(Object obj, JsonData json)
+    public static void JsonCommonWarpper(Object obj, KVProvider json)
     {
-        if (!json.IsObject)
-            return;
+        if (!json.IsObject) return;
         var obj_type = obj.GetType();
         if (obj is UniqueIDScriptable idScriptable && json.ContainsKey(ExtraData))
         {
@@ -131,7 +130,7 @@ public class WarpperFunction
         {
             ClassObjectExtraData[obj] = json[ExtraData];
         }
-
+        
         foreach (var key in json.Keys)
         {
             try
@@ -170,17 +169,22 @@ public class WarpperFunction
                             else
                             {
                                 LogErrorWithModInfo("CommonWarpper REFERENCE Must be list or array " +
-                                                              field_type.Name);
+                                                    field_type.Name);
                             }
 
+
                             List<string> list_data = [];
-                            for (int i = 0; i < fieldWarpData.Count; i++)
+                            for (var i = 0; i < fieldWarpData.Count; i++)
                             {
                                 if (fieldWarpData[i].IsString)
+                                {
                                     list_data.Add(fieldWarpData[i].ToString());
+                                }
                                 else
+                                {
                                     LogErrorWithModInfo(
                                         "CommonWarpper REFERENCE Wrong SubWarpData Format " + field_type.Name);
+                                }
                             }
 
                             if (list_data.Count != fieldWarpData.Count)
@@ -193,7 +197,7 @@ public class WarpperFunction
                         else
                         {
                             LogErrorWithModInfo("CommonWarpper REFERENCE Wrong WarpData Format " +
-                                                          field_type.Name);
+                                                field_type.Name);
                         }
                     }
                     else if ((int) keyData == (int) WarpType.ADD)
@@ -211,7 +215,7 @@ public class WarpperFunction
                             {
                                 sub_field_type = field.FieldType.GetGenericArguments().Single();
                                 var instance = getter(obj) as IList;
-                                for (int i = 0; i < fieldWarpData.Count; i++)
+                                for (var i = 0; i < fieldWarpData.Count; i++)
                                 {
                                     if (fieldWarpData[i].IsObject)
                                     {
@@ -232,9 +236,9 @@ public class WarpperFunction
                             {
                                 sub_field_type = field.FieldType.GetElementType();
                                 var instance = getter(obj) as Array;
-                                int start_idx = instance.Length;
+                                var start_idx = instance.Length;
                                 ArrayResize(ref instance, fieldWarpData.Count + instance.Length);
-                                for (int i = 0; i < fieldWarpData.Count; i++)
+                                for (var i = 0; i < fieldWarpData.Count; i++)
                                 {
                                     if (fieldWarpData[i].IsObject)
                                     {
@@ -256,13 +260,13 @@ public class WarpperFunction
                             else
                             {
                                 LogErrorWithModInfo("CommonWarpper ADD Must be list or array " +
-                                                              field_type.Name);
+                                                    field_type.Name);
                             }
                         }
                         else
                         {
                             LogErrorWithModInfo("CommonWarpper ADD Wrong WarpData Format " +
-                                                          field_type.Name);
+                                                field_type.Name);
                         }
                     }
                     else if ((int) keyData == (int) WarpType.MODIFY)
@@ -284,7 +288,7 @@ public class WarpperFunction
                                 field.FieldType.GetGenericTypeDefinition() == typeof(List<>))
                             {
                                 var instance = getter(obj) as IList;
-                                for (int i = 0; i < fieldWarpData.Count; i++)
+                                for (var i = 0; i < fieldWarpData.Count; i++)
                                 {
                                     if (fieldWarpData[i].IsObject)
                                     {
@@ -300,7 +304,7 @@ public class WarpperFunction
                             else if (field.FieldType.IsArray)
                             {
                                 var instance = getter(obj) as Array;
-                                for (int i = 0; i < fieldWarpData.Count; i++)
+                                for (var i = 0; i < fieldWarpData.Count; i++)
                                 {
                                     if (fieldWarpData[i].IsObject)
                                     {
@@ -341,13 +345,13 @@ public class WarpperFunction
                             else
                             {
                                 LogErrorWithModInfo("CommonWarpper MODIFY Must be list or array " +
-                                                              field_type.Name);
+                                                    field_type.Name);
                             }
                         }
                         else
                         {
                             LogErrorWithModInfo("CommonWarpper MODIFY Wrong WarpData Format " +
-                                                          field_type.Name);
+                                                field_type.Name);
                         }
                     }
                     else
@@ -374,7 +378,7 @@ public class WarpperFunction
                         var field_name = key;
                         var (field, getter, setter) = obj_type.FieldFromCache(field_name);
 
-                        for (int i = 0; i < keyData.Count; i++)
+                        for (var i = 0; i < keyData.Count; i++)
                         {
                             if (keyData[i].IsObject)
                             {
@@ -483,7 +487,7 @@ public class WarpperFunction
             {
                 var instance = getter(obj) as Array;
                 ArrayResize(ref instance, data.Count);
-                for (int i = 0; i < data.Count; i++)
+                for (var i = 0; i < data.Count; i++)
                     if (dict.TryGetValue(data[i], out var ele))
                         instance.SetValue(ele, i);
                 setter(obj, instance);
@@ -524,9 +528,9 @@ public class WarpperFunction
             else if (field.FieldType.IsArray)
             {
                 var instance = getter(obj) as Array;
-                int start_idx = instance.Length;
+                var start_idx = instance.Length;
                 ArrayResize(ref instance, data.Count + instance.Length);
-                for (int i = 0; i < data.Count; i++)
+                for (var i = 0; i < data.Count; i++)
                     if (dict.TryGetValue(data[i], out var ele))
                         instance.SetValue(ele, i + start_idx);
                 setter(obj, instance);
@@ -541,8 +545,8 @@ public class WarpperFunction
 
     public static void ArrayResize(ref Array array, int newSize)
     {
-        Type elementType = array.GetType().GetElementType();
-        Array newArray = Array.CreateInstance(elementType, newSize);
+        var elementType = array.GetType().GetElementType();
+        var newArray = Array.CreateInstance(elementType, newSize);
         Array.Copy(array, newArray, Math.Min(array.Length, newArray.Length));
         array = newArray;
     }

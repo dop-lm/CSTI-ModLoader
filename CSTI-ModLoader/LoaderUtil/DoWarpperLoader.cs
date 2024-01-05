@@ -4,6 +4,7 @@ using System.Linq;
 using BepInEx;
 using HarmonyLib;
 using LitJson;
+using ModLoader.ExportUtil;
 using UnityEngine;
 
 namespace ModLoader.LoaderUtil;
@@ -38,9 +39,9 @@ public static class DoWarpperLoader
         {
             try
             {
-                if (item.CardData.IsNullOrWhiteSpace())
+                if (item.CardData == null)
                     continue;
-                var json = JsonMapper.ToObject(item.CardData);
+                var json = item.CardData;
 
                 if (json.ContainsKey("MatchTagWarpData") && json["MatchTagWarpData"].IsArray &&
                     json["MatchTagWarpData"].Count > 0)
@@ -50,7 +51,7 @@ public static class DoWarpperLoader
                         continue;
                     var MatchList = dict.Keys.ToList();
 
-                    for (int i = 1; i < json["MatchTagWarpData"].Count; i++)
+                    for (var i = 1; i < json["MatchTagWarpData"].Count; i++)
                     {
                         if (AllCardTagGuidCardDataDict.TryGetValue(json["MatchTagWarpData"][i].ToString(),
                                 out var next_dict))
@@ -89,7 +90,7 @@ public static class DoWarpperLoader
     {
         // var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
         //foreach (var item in WaitForWarpperEditorGameSourceGUIDList)
-        for (int i = 0; i < WaitForWarpperEditorGameSourceGUIDList.Count; i++)
+        for (var i = 0; i < WaitForWarpperEditorGameSourceGUIDList.Count; i++)
         {
             var item = WaitForWarpperEditorGameSourceGUIDList[i];
             try
@@ -104,9 +105,9 @@ public static class DoWarpperLoader
 
                 ProcessingScriptableObjectPack = item;
 
-                if (!item.CardData.IsNullOrWhiteSpace())
+                if (item.CardData!=null)
                 {
-                    var json = JsonMapper.ToObject(item.CardData);
+                    var json = item.CardData;
                     if (json.ContainsKey("MatchTagWarpData") && json["MatchTagWarpData"].IsArray &&
                         json["MatchTagWarpData"].Count > 0)
                     {
@@ -116,7 +117,7 @@ public static class DoWarpperLoader
 
                     if (json.ContainsKey("ModLoaderSpecialOverwrite"))
                         if (json["ModLoaderSpecialOverwrite"].IsBoolean && (bool) json["ModLoaderSpecialOverwrite"])
-                            JsonUtility.FromJsonOverwrite(item.CardData, item.obj);
+                            JsonUtility.FromJsonOverwrite(item.CardData.ToJson(), item.obj);
                     WarpperFunction.JsonCommonWarpper(item.obj, json);
                 }
 
@@ -152,7 +153,8 @@ public static class DoWarpperLoader
             {
                 ProcessingScriptableObjectPack = item.Value;
 
-                var json = JsonMapper.ToObject(item.Value.CardData);
+                var json = item.Value.CardData;
+                if(json==null)continue;
                 WarpperFunction.JsonCommonWarpper(item.Value.obj, json);
                 if (item.Value.obj is CardData cardData)
                 {
@@ -170,14 +172,14 @@ public static class DoWarpperLoader
                     if (json.ContainsKey("ItemCardDataCardTabGpGroup") &&
                         json["ItemCardDataCardTabGpGroup"].IsArray &&
                         AllScriptableObjectWithoutGuidTypeDict.TryGetValue(typeof(CardTabGroup), out var dict))
-                        for (int i = 0; i < json["ItemCardDataCardTabGpGroup"].Count; i++)
+                        for (var i = 0; i < json["ItemCardDataCardTabGpGroup"].Count; i++)
                             if (json["ItemCardDataCardTabGpGroup"][i].IsString &&
                                 dict.TryGetValue(json["ItemCardDataCardTabGpGroup"][i].ToString(),
                                     out var tab_group))
-                                (tab_group as CardTabGroup).IncludedCards.Add(cardData);
+                                (tab_group as CardTabGroup)!.IncludedCards.Add(cardData);
 
                     if (json.ContainsKey("CardDataCardFilterGroup") && json["CardDataCardFilterGroup"].IsArray)
-                        for (int i = 0; i < json["CardDataCardFilterGroup"].Count; i++)
+                        for (var i = 0; i < json["CardDataCardFilterGroup"].Count; i++)
                             if (json["CardDataCardFilterGroup"][i].IsString && !json["CardDataCardFilterGroup"][i]
                                     .ToString().IsNullOrWhiteSpace())
                                 WaitForAddCardFilterGroupCard.Add(new Tuple<string, CardData>(

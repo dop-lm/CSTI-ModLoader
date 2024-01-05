@@ -169,15 +169,15 @@ namespace DynamicModLoader
             {
                 if (raw_string.Substring(8, 4) == "WAVE")
                 {
-                    int index = 4; //ChunkId
+                    var index = 4; //ChunkId
                     var ChunkSize = BitConverter.ToUInt32(raw_data, 4);
                     index += 4;
                     index += 4; // WAVE
 
-                    UInt16 NumChannels = 0;
-                    UInt32 SampleRate = 0;
-                    UInt16 BitsPerSample = 0;
-                    UInt16 BolckAlign = 0;
+                    ushort NumChannels = 0;
+                    uint SampleRate = 0;
+                    ushort BitsPerSample = 0;
+                    ushort BolckAlign = 0;
 
                     while (index < raw_data.Length)
                     {
@@ -202,24 +202,24 @@ namespace DynamicModLoader
 
                             //Debug.LogFormat("{0} {1} {2} {3} {4} {5}", NumChannels, BolckAlign, BitsPerSample, data_len, data.Length, SubchunkSize);
 
-                            for (int i = 0; i < data.Length; i += NumChannels)
+                            for (var i = 0; i < data.Length; i += NumChannels)
                             {
-                                for (int j = 0; j < NumChannels; j++)
+                                for (var j = 0; j < NumChannels; j++)
                                 {
                                     if (BitsPerSample == 8)
                                         data[i + j] =
                                             BitConverter.ToChar(raw_data, index + BolckAlign * (i / NumChannels) + j) /
-                                            ((float) Char.MaxValue);
+                                            ((float) char.MaxValue);
                                     else if (BitsPerSample == 16)
                                         data[i + j] =
                                             (BitConverter.ToInt16(raw_data,
                                                 index + BolckAlign * (i / NumChannels) + 2 * j)) /
-                                            ((float) Int16.MaxValue);
+                                            ((float) short.MaxValue);
                                     else if (BitsPerSample == 32)
                                         data[i + j] =
                                             BitConverter.ToInt32(raw_data,
                                                 index + BolckAlign * (i / NumChannels) + 4 * j) /
-                                            ((float) Int32.MaxValue);
+                                            ((float) int.MaxValue);
                                 }
                             }
 
@@ -345,13 +345,13 @@ namespace DynamicModLoader
                     if (!File.Exists(CombinePaths(dir, "ModInfo.json")))
                         continue;
 
-                    ModInfo Info = new ModInfo();
-                    string ModName = Path.GetFileName(dir);
+                    var Info = new ModInfo();
+                    var ModName = Path.GetFileName(dir);
 
                     try
                     {
                         // Load Mod Info
-                        using (StreamReader sr = new StreamReader(CombinePaths(dir, "ModInfo.json")))
+                        using (var sr = new StreamReader(CombinePaths(dir, "ModInfo.json")))
                             JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
 
                         // Check Name
@@ -381,7 +381,7 @@ namespace DynamicModLoader
                             {
                                 if (!file.EndsWith(".ab"))
                                     continue;
-                                AssetBundle ab = AssetBundle.LoadFromFile(file);
+                                var ab = AssetBundle.LoadFromFile(file);
                                 foreach (var obj in ab.LoadAllAssets())
                                 {
                                     if (obj.GetType() == typeof(Sprite))
@@ -419,9 +419,9 @@ namespace DynamicModLoader
                                 if (!file.EndsWith(".jpg") && !file.EndsWith(".jpeg") && !file.EndsWith(".png"))
                                     continue;
                                 var sprite_name = Path.GetFileNameWithoutExtension(file);
-                                Texture2D t2d = new Texture2D(2, 2);
+                                var t2d = new Texture2D(2, 2);
                                 ImageConversion.LoadImage(t2d, File.ReadAllBytes(file));
-                                Sprite sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height), Vector2.zero);
+                                var sprite = Sprite.Create(t2d, new Rect(0, 0, t2d.width, t2d.height), Vector2.zero);
                                 sprite.name = sprite_name;
                                 if (!SpriteDict.ContainsKey(sprite_name))
                                     SpriteDict.Add(sprite_name, sprite);
@@ -491,8 +491,8 @@ namespace DynamicModLoader
                                     var obj_name = Path.GetFileNameWithoutExtension(file);
                                     if (AllScriptableObjectWithoutGuidTypeDict.TryGetValue(type, out var dict))
                                     {
-                                        string CardData = "";
-                                        using (StreamReader sr = new StreamReader(file))
+                                        var CardData = "";
+                                        using (var sr = new StreamReader(file))
                                             CardData = sr.ReadToEnd();
                                         if (dict.ContainsKey(obj_name))
                                         {
@@ -541,7 +541,7 @@ namespace DynamicModLoader
                             {
                                 if (!file.EndsWith(".csv"))
                                     continue;
-                                using (StreamReader sr = new StreamReader(file))
+                                using (var sr = new StreamReader(file))
                                     WaitForLoadCSVList.Add(new Tuple<string, string>(Path.GetFileName(file),
                                         sr.ReadToEnd()));
                             }
@@ -569,13 +569,13 @@ namespace DynamicModLoader
                                 foreach (var file in Directory.EnumerateFiles(CombinePaths(dir, type.Name), "*.json",
                                              SearchOption.AllDirectories))
                                 {
-                                    string CardName = Path.GetFileNameWithoutExtension(file);
-                                    string CardPath = file;
-                                    string CardData = "";
+                                    var CardName = Path.GetFileNameWithoutExtension(file);
+                                    var CardPath = file;
+                                    var CardData = "";
                                     try
                                     {
-                                        JsonData json = new JsonData();
-                                        using (StreamReader sr = new StreamReader(CardPath))
+                                        var json = new JsonData();
+                                        using (var sr = new StreamReader(CardPath))
                                         {
                                             CardData = sr.ReadToEnd();
                                             json = JsonMapper.ToObject(CardData);
@@ -653,10 +653,10 @@ namespace DynamicModLoader
                                     {
                                         if (!file.EndsWith(".json"))
                                             continue;
-                                        string CardPath = file;
-                                        string CardData = "";
-                                        string Guid = Path.GetFileNameWithoutExtension(file);
-                                        using (StreamReader sr = new StreamReader(CardPath))
+                                        var CardPath = file;
+                                        var CardData = "";
+                                        var Guid = Path.GetFileNameWithoutExtension(file);
+                                        using (var sr = new StreamReader(CardPath))
                                             CardData = sr.ReadToEnd();
                                         if (AllGUIDDict.TryGetValue(Guid, out var obj))
                                             WaitForWarpperEditorGameSourceGUIDList.Add(
@@ -685,7 +685,7 @@ namespace DynamicModLoader
                 try
                 {
                     ProcessingScriptableObjectPack = item;
-                    JsonData json = new JsonData();
+                    var json = new JsonData();
                     json = JsonMapper.ToObject(item.CardData);
                     WarpperFunction.JsonCommonWarpper(item.obj, json);
                     if (item.obj is CardTabGroup && item.obj.name.StartsWith("Tab_"))
@@ -719,7 +719,7 @@ namespace DynamicModLoader
                 {
                     ProcessingScriptableObjectPack = item.Value;
 
-                    JsonData json = new JsonData();
+                    var json = new JsonData();
                     json = JsonMapper.ToObject(item.Value.CardData);
                     WarpperFunction.JsonCommonWarpper(item.Value.obj, json);
                     if (item.Value.obj is CardData)
@@ -738,7 +738,7 @@ namespace DynamicModLoader
                         if (json.ContainsKey("ItemCardDataCardTabGpGroup") &&
                             json["ItemCardDataCardTabGpGroup"].IsArray &&
                             AllScriptableObjectWithoutGuidTypeDict.TryGetValue(typeof(CardTabGroup), out var dict))
-                            for (int i = 0; i < json["ItemCardDataCardTabGpGroup"].Count; i++)
+                            for (var i = 0; i < json["ItemCardDataCardTabGpGroup"].Count; i++)
                                 if (json["ItemCardDataCardTabGpGroup"][i].IsString &&
                                     dict.TryGetValue(json["ItemCardDataCardTabGpGroup"][i].ToString(),
                                         out var tab_group))
@@ -803,11 +803,11 @@ namespace DynamicModLoader
                         {
                             var CurrentTexts = AccessTools.StaticFieldRefAccess<Dictionary<string, string>>(
                                 typeof(LocalizationManager), "CurrentTexts");
-                            Dictionary<string, List<string>> dictionary =
+                            var dictionary =
                                 CSVParser.LoadFromString(pair.Item2, Delimiter.Comma);
-                            System.Text.RegularExpressions.Regex regex =
+                            var regex =
                                 new System.Text.RegularExpressions.Regex("\\\\n");
-                            foreach (KeyValuePair<string, List<string>> keyValuePair in dictionary)
+                            foreach (var keyValuePair in dictionary)
                             {
                                 if (!CurrentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
                                 {
@@ -830,12 +830,12 @@ namespace DynamicModLoader
             {
                 try
                 {
-                    foreach (CardTabGroup group in instance.BlueprintModelsPopup.BlueprintTabs)
+                    foreach (var group in instance.BlueprintModelsPopup.BlueprintTabs)
                     {
                         if (group.name == tuple.Item1)
                         {
                             group.ShopSortingList.Add(tuple.Item3);
-                            foreach (CardTabGroup sub_group in group.SubGroups)
+                            foreach (var sub_group in group.SubGroups)
                             {
                                 if (sub_group.name == tuple.Item2)
                                 {
@@ -865,7 +865,7 @@ namespace DynamicModLoader
                     var StatList =
                         instance.AllStatsList.GetType().GetField("Tabs", bindingFlags)
                             .GetValue(instance.AllStatsList) as StatListTab[];
-                    foreach (StatListTab list in StatList)
+                    foreach (var list in StatList)
                     {
                         if (list.name == tuple.Item1)
                         {
@@ -953,13 +953,13 @@ namespace DynamicModLoader
 
                     if (obj.SubGroups.Count == 0)
                     {
-                        JsonData json = new JsonData();
+                        var json = new JsonData();
                         json = JsonMapper.ToObject(item.CardData);
                         if (json.ContainsKey("BlueprintCardDataCardTabGroup") &&
                             json["BlueprintCardDataCardTabGroup"].IsString && !json["BlueprintCardDataCardTabGroup"]
                                 .ToString().IsNullOrWhiteSpace())
                         {
-                            foreach (CardTabGroup group in instance.BlueprintModelsPopup.BlueprintTabs)
+                            foreach (var group in instance.BlueprintModelsPopup.BlueprintTabs)
                             {
                                 if (group.name == json["BlueprintCardDataCardTabGroup"].ToString())
                                 {
@@ -987,7 +987,7 @@ namespace DynamicModLoader
                 {
                     ProcessingScriptableObjectPack = item;
 
-                    JsonData json = new JsonData();
+                    var json = new JsonData();
                     if (!item.CardData.IsNullOrWhiteSpace())
                     {
                         json = JsonMapper.ToObject(item.CardData);
@@ -1050,7 +1050,7 @@ namespace DynamicModLoader
             {
                 try
                 {
-                    JsonData json = new JsonData();
+                    var json = new JsonData();
                     if (item.CardData.IsNullOrWhiteSpace())
                         continue;
                     json = JsonMapper.ToObject(item.CardData);
@@ -1063,7 +1063,7 @@ namespace DynamicModLoader
                             continue;
                         var MatchList = dict.Keys.ToList();
 
-                        for (int i = 1; i < json["MatchTagWarpData"].Count; i++)
+                        for (var i = 1; i < json["MatchTagWarpData"].Count; i++)
                         {
                             if (AllCardTagGuidCardDataDict.TryGetValue(json["MatchTagWarpData"][i].ToString(),
                                     out var next_dict))
@@ -1098,7 +1098,7 @@ namespace DynamicModLoader
 
         static IEnumerator WaiterForContentDisplayer()
         {
-            bool done = false;
+            var done = false;
             while (!done)
             {
                 yield return new WaitForSeconds(1.0f);
@@ -1218,7 +1218,7 @@ namespace DynamicModLoader
                     if (!(item.obj is PlayerCharacter))
                         continue;
 
-                    JsonData json = new JsonData();
+                    var json = new JsonData();
                     json = JsonMapper.ToObject(item.CardData);
                     if (json.ContainsKey("PlayerCharacterJournalName") && json["PlayerCharacterJournalName"].IsString &&
                         !json["PlayerCharacterJournalName"].ToString().IsNullOrWhiteSpace())
@@ -1246,7 +1246,7 @@ namespace DynamicModLoader
                     var transform = item.Value.transform.Find("Shadow/GuideFrame/GuideContentPage/Content/Horizontal");
                     if (transform != null)
                     {
-                        for (int i = 0; i < transform.childCount; i++)
+                        for (var i = 0; i < transform.childCount; i++)
                         {
                             Destroy(transform.GetChild(i).gameObject);
                         }

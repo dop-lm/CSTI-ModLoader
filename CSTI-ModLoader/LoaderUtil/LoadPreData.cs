@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using BepInEx;
 using LitJson;
+using ModLoader.ExportUtil;
 using ModLoader.FFI;
 using UnityEngine;
 using static ModLoader.ResourceLoadHelper;
@@ -21,8 +22,8 @@ public static class LoadPreData
                 var (uniqueObjs, modName) = task.Result;
                 foreach (var (dat, pat, type) in uniqueObjs)
                 {
-                    string CardName = Path.GetFileNameWithoutExtension(pat);
-                    string CardPath = pat;
+                    var CardName = Path.GetFileNameWithoutExtension(pat);
+                    var CardPath = pat;
                     try
                     {
                         var CardData = Encoding.UTF8.GetString(dat);
@@ -31,7 +32,7 @@ public static class LoadPreData
                             CardData = JsonnetRuntime.JsonnetEval(Path.GetFileNameWithoutExtension(pat), CardData);
                         }
 
-                        JsonData json = JsonMapper.ToObject(CardData);
+                        var json = JsonMapper.ToObject(CardData);
 
                         if (!(json.ContainsKey("UniqueID") && json["UniqueID"].IsString &&
                               !json["UniqueID"].ToString().IsNullOrWhiteSpace()))
@@ -56,7 +57,7 @@ public static class LoadPreData
                         if (!WaitForWarpperEditorGuidDict.ContainsKey(card_guid))
                             WaitForWarpperEditorGuidDict.Add(card_guid,
                                 new ScriptableObjectPack(card, "", CardPath, modName,
-                                    CardData));
+                                    new JsonKVProvider(json)));
                         else
                             Debug.LogWarningFormat(
                                 "{0} WaitForWarpperEditorGuidDict Same Key was Add {1}", modName, card_guid);
@@ -92,13 +93,13 @@ public static class LoadPreData
                 if (!File.Exists(CombinePaths(dir, "ModInfo.json")))
                     continue;
 
-                ModInfo Info = new ModInfo();
-                string ModName = Path.GetFileName(dir);
+                var Info = new ModInfo();
+                var ModName = Path.GetFileName(dir);
 
                 try
                 {
                     // Load Mod Info
-                    using (StreamReader sr = new StreamReader(CombinePaths(dir, "ModInfo.json")))
+                    using (var sr = new StreamReader(CombinePaths(dir, "ModInfo.json")))
                         JsonUtility.FromJsonOverwrite(sr.ReadToEnd(), Info);
 
                     // Check Name

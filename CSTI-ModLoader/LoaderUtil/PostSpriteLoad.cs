@@ -70,7 +70,7 @@ public static class PostSpriteLoad
         }
         else
         {
-            PostSetQueue[id] = new Queue<PostSetter>(new[] { new PostSetter(setter, o, id) });
+            PostSetQueue[id] = new Queue<PostSetter>(new[] {new PostSetter(setter, o, id)});
         }
     }
 
@@ -101,6 +101,12 @@ public static class PostSpriteLoad
 
         while (SpriteLoadQueue.Count > 0 || !NoMoreSpriteLoadQueue)
         {
+            if (SpriteLoadQueue.Count == 0)
+            {
+                yield return null;
+                continue;
+            }
+
             var task = SpriteLoadQueue.Dequeue();
             while (!task.IsCompleted)
             {

@@ -49,7 +49,7 @@ public class ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableE
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.5.17";
+    public const string ModVersion = "2.3.5.22";
 
     public static Dictionary<string, string[]> AudiosPath = new();
     public static Dictionary<string, string[]> PicsPath = new();
@@ -70,9 +70,9 @@ public class ModLoader : BaseUnityPlugin
 
     public static ManualLogSource CommonLogger { get; private set; } = new("ModLoader");
 
-    public static readonly Dictionary<string, JsonData> UniqueIdObjectExtraData = new();
-    public static readonly Dictionary<int, JsonData> ScriptableObjectExtraData = new();
-    public static readonly Dictionary<object, JsonData> ClassObjectExtraData = new();
+    public static readonly Dictionary<string, KVProvider> UniqueIdObjectExtraData = new();
+    public static readonly Dictionary<int, KVProvider> ScriptableObjectExtraData = new();
+    public static readonly Dictionary<object, KVProvider> ClassObjectExtraData = new();
 
     public static readonly AccessTools.FieldRef<Dictionary<string, string>> CurrentTextsFieldRef =
         AccessTools.StaticFieldRefAccess<Dictionary<string, string>>(AccessTools.Field(typeof(LocalizationManager),
@@ -117,13 +117,13 @@ public class ModLoader : BaseUnityPlugin
         string CardDirOrGuid,
         string CardPath,
         string ModName,
-        string CardData = "")
+        KVProvider? CardData)
     {
         public ScriptableObject obj = obj;
         public readonly string CardDirOrGuid = CardDirOrGuid;
         public string CardPath = CardPath;
         public readonly string ModName = ModName;
-        public readonly string CardData = CardData;
+        public readonly KVProvider? CardData = CardData;
     }
 
     public static ScriptableObjectPack ProcessingScriptableObjectPack;
@@ -700,9 +700,10 @@ public class ModLoader : BaseUnityPlugin
 
                                 obj.name = obj_name;
                                 JsonUtility.FromJsonOverwrite(CardData, obj);
+                                var jsonData = JsonMapper.ToObject(CardData);
                                 dict.Add(obj_name, obj);
                                 WaitForWarpperEditorNoGuidList.Add(new ScriptableObjectPack(obj,
-                                    "", "", ModName, CardData));
+                                    "", "", ModName, new JsonKVProvider(jsonData)));
                                 if (!AllScriptableObjectDict.ContainsKey(obj_name))
                                     AllScriptableObjectDict.Add(obj_name, obj);
                             }
@@ -787,7 +788,7 @@ public class ModLoader : BaseUnityPlugin
                             if (!WaitForWarpperEditorGuidDict.ContainsKey(card_guid))
                                 WaitForWarpperEditorGuidDict.Add(card_guid,
                                     new ScriptableObjectPack(card, "", "", ModName,
-                                        CardData));
+                                        new JsonKVProvider(json)));
                             else
                                 Debug.LogWarningFormat(
                                     "{0} WaitForWarpperEditorGuidDict Same Key was Add {1}", ModName,
@@ -830,10 +831,11 @@ public class ModLoader : BaseUnityPlugin
                             CardData = sr.ReadToEnd();
                         }
 
+                        var jsonData = JsonMapper.ToObject(CardData);
                         WaitForWarpperEditorGameSourceGUIDList.Add(
                             AllGUIDDict.TryGetValue(Guid, out var obj)
-                                ? new ScriptableObjectPack(obj, "", "", ModName, CardData)
-                                : new ScriptableObjectPack(null, Guid, "", ModName, CardData));
+                                ? new ScriptableObjectPack(obj, "", "", ModName, new JsonKVProvider(jsonData))
+                                : new ScriptableObjectPack(null, Guid, "", ModName, new JsonKVProvider(jsonData)));
                     }
                 }
                 catch (Exception ex)
@@ -1036,10 +1038,11 @@ public class ModLoader : BaseUnityPlugin
 
                                     obj.name = obj_name;
                                     JsonUtility.FromJsonOverwrite(CardData, obj);
+                                    var jsonData = JsonMapper.ToObject(CardData);
                                     dict.Add(obj_name, obj);
                                     WaitForWarpperEditorNoGuidList.Add(
                                         new ScriptableObjectPack(obj, "", "", ModName,
-                                            CardData));
+                                            new JsonKVProvider(jsonData)));
                                     if (!AllScriptableObjectDict.ContainsKey(obj_name))
                                         AllScriptableObjectDict.Add(obj_name, obj);
                                 }
@@ -1187,12 +1190,12 @@ public class ModLoader : BaseUnityPlugin
                                     CardData = sr.ReadToEnd();
                                 }
 
-                                if (AllGUIDDict.TryGetValue(Guid, out var obj))
-                                    WaitForWarpperEditorGameSourceGUIDList.Add(
-                                        new ScriptableObjectPack(obj, "", "", ModName, CardData));
-                                else
-                                    WaitForWarpperEditorGameSourceGUIDList.Add(
-                                        new ScriptableObjectPack(null, Guid, "", ModName, CardData));
+                                var jsonData = JsonMapper.ToObject(CardData);
+                                WaitForWarpperEditorGameSourceGUIDList.Add(
+                                    AllGUIDDict.TryGetValue(Guid, out var obj)
+                                        ? new ScriptableObjectPack(obj, "", "", ModName, new JsonKVProvider(jsonData))
+                                        : new ScriptableObjectPack(null, Guid, "", ModName,
+                                            new JsonKVProvider(jsonData)));
                             }
                     }
                 }
@@ -1208,13 +1211,16 @@ public class ModLoader : BaseUnityPlugin
         }
     }
 
+
     private static void LoadEditorScriptableObject()
     {
         foreach (var item in WaitForWarpperEditorNoGuidList)
+        {
             try
             {
                 ProcessingScriptableObjectPack = item;
-                var json = JsonMapper.ToObject(item.CardData);
+                var json = item.CardData;
+                if (json == null) continue;
                 WarpperFunction.JsonCommonWarpper(item.obj, json);
                 if (item.obj is CardTabGroup && item.obj.name.StartsWith("Tab_"))
                     WaitForAddCardTabGroup.Add(new ScriptableObjectPack(item.obj, "", "", "", item.CardData));
@@ -1235,6 +1241,7 @@ public class ModLoader : BaseUnityPlugin
             {
                 Debug.LogWarning("LoadEditorScriptableObject " + ex.Message);
             }
+        }
     }
 
     public static readonly SimpleOnce _onceWarp = new();
@@ -1397,7 +1404,7 @@ public class ModLoader : BaseUnityPlugin
 
                 if (itemObj.SubGroups.Count == 0)
                 {
-                    var json = JsonMapper.ToObject(item.CardData);
+                    var json = item.CardData;
                     if (json.ContainsKey("BlueprintCardDataCardTabGroup") &&
                         json["BlueprintCardDataCardTabGroup"].IsString && !json["BlueprintCardDataCardTabGroup"]
                             .ToString().IsNullOrWhiteSpace())
@@ -1584,7 +1591,7 @@ public class ModLoader : BaseUnityPlugin
                 if (item.obj is not PlayerCharacter character)
                     continue;
 
-                var json = JsonMapper.ToObject(item.CardData);
+                var json = item.CardData;
                 if (json.ContainsKey("PlayerCharacterJournalName") && json["PlayerCharacterJournalName"].IsString &&
                     !json["PlayerCharacterJournalName"].ToString().IsNullOrWhiteSpace())
                     if (CustomContentDisplayerDict.TryGetValue(json["PlayerCharacterJournalName"].ToString(),

@@ -21,7 +21,7 @@ namespace DynamicModLoader
             ADD_REFERENCE
         }
 
-        public static void JsonCommonRefWarpper(System.Object obj, string data, string field_name, Type field_type, WarpType warp_type = WarpType.REFERENCE)
+        public static void JsonCommonRefWarpper(object obj, string data, string field_name, Type field_type, WarpType warp_type = WarpType.REFERENCE)
         {
             if (field_type.IsSubclassOf(typeof(UniqueIDScriptable)))
             {
@@ -57,7 +57,7 @@ namespace DynamicModLoader
             }
         }
 
-        public static void JsonCommonRefWarpper(System.Object obj, List<string> data, string field_name, Type field_type, WarpType warp_type = WarpType.REFERENCE)
+        public static void JsonCommonRefWarpper(object obj, List<string> data, string field_name, Type field_type, WarpType warp_type = WarpType.REFERENCE)
         {
             if (field_type.IsSubclassOf(typeof(UniqueIDScriptable)))
             {
@@ -109,7 +109,7 @@ namespace DynamicModLoader
             }
         }
 
-        public static void JsonCommonWarpper(System.Object obj, JsonData json)
+        public static void JsonCommonWarpper(object obj, JsonData json)
         {
             if (!json.IsObject)
                 return;
@@ -150,8 +150,8 @@ namespace DynamicModLoader
                                     DynamicModLoader.LogErrorWithModInfo("CommonWarpper REFERENCE Must be list or array " + field_type.Name);
                                 }
 
-                                List<string> list_data = new List<string>();
-                                for (int i = 0; i < json[field_name + "WarpData"].Count; i++)
+                                var list_data = new List<string>();
+                                for (var i = 0; i < json[field_name + "WarpData"].Count; i++)
                                 {
                                     if (json[field_name + "WarpData"][i].IsString)
                                         list_data.Add(json[field_name + "WarpData"][i].ToString());
@@ -182,12 +182,12 @@ namespace DynamicModLoader
                                 {
                                     sub_field_type = field.FieldType.GetGenericArguments().Single();
                                     var instance = field.GetValue(obj) as IList;
-                                    for (int i = 0; i < json[field_name + "WarpData"].Count; i++)
+                                    for (var i = 0; i < json[field_name + "WarpData"].Count; i++)
                                     {
                                         if (json[field_name + "WarpData"][i].IsObject)
                                         {
                                             var new_obj = Activator.CreateInstance(sub_field_type);
-                                            JsonWriter jw = new JsonWriter();
+                                            var jw = new JsonWriter();
                                             json[field_name + "WarpData"][i].ToJson(jw);
                                             JsonUtility.FromJsonOverwrite(jw.TextWriter.ToString(), new_obj);
                                             JsonCommonWarpper(new_obj, json[field_name + "WarpData"][i]);
@@ -203,14 +203,14 @@ namespace DynamicModLoader
 
                                     sub_field_type = field.FieldType.GetElementType();
                                     var instance = field.GetValue(obj) as Array;
-                                    int start_idx = instance.Length;
+                                    var start_idx = instance.Length;
                                     ArrayResize(ref instance, json[field_name + "WarpData"].Count + instance.Length);
-                                    for (int i = 0; i < json[field_name + "WarpData"].Count; i++)
+                                    for (var i = 0; i < json[field_name + "WarpData"].Count; i++)
                                     {
                                         if (json[field_name + "WarpData"][i].IsObject)
                                         {
                                             var new_obj = Activator.CreateInstance(sub_field_type);
-                                            JsonWriter jw = new JsonWriter();
+                                            var jw = new JsonWriter();
                                             json[field_name + "WarpData"][i].ToJson(jw);
                                             JsonUtility.FromJsonOverwrite(jw.TextWriter.ToString(), new_obj);
                                             JsonCommonWarpper(new_obj, json[field_name + "WarpData"][i]);
@@ -248,7 +248,7 @@ namespace DynamicModLoader
                                 if (field.FieldType.IsGenericType && (field.FieldType.GetGenericTypeDefinition() == typeof(List<>)))
                                 {
                                     var instance = field.GetValue(obj) as IList;
-                                    for (int i = 0; i < json[field_name + "WarpData"].Count; i++)
+                                    for (var i = 0; i < json[field_name + "WarpData"].Count; i++)
                                     {
                                         if (json[field_name + "WarpData"][i].IsObject)
                                         {
@@ -263,7 +263,7 @@ namespace DynamicModLoader
                                 else if (field.FieldType.IsArray)
                                 {
                                     var instance = field.GetValue(obj) as Array;
-                                    for (int i = 0; i < json[field_name + "WarpData"].Count; i++)
+                                    for (var i = 0; i < json[field_name + "WarpData"].Count; i++)
                                     {
                                         if (json[field_name + "WarpData"][i].IsObject)
                                         {
@@ -310,7 +310,7 @@ namespace DynamicModLoader
                             var field_name = key;
                             var field = obj_type.GetField(field_name, bindingFlags);
 
-                            for (int i = 0; i < json[key].Count; i++)
+                            for (var i = 0; i < json[key].Count; i++)
                             {
                                 if (json[key][i].IsObject)
                                 {
@@ -352,7 +352,7 @@ namespace DynamicModLoader
             }
         }
 
-        public static void ObjectReferenceWarpper<ValueType>(System.Object obj, string data, string field_name, Dictionary<string, ValueType> dict)
+        public static void ObjectReferenceWarpper<ValueType>(object obj, string data, string field_name, Dictionary<string, ValueType> dict)
         {
             //if (!obj.GetType().IsClass)
             //{
@@ -374,7 +374,7 @@ namespace DynamicModLoader
             }
         }
 
-        public static void ObjectReferenceWarpper<ValueType>(System.Object obj, List<string> data, string field_name, Dictionary<string, ValueType> dict)
+        public static void ObjectReferenceWarpper<ValueType>(object obj, List<string> data, string field_name, Dictionary<string, ValueType> dict)
         {
             //if (!obj.GetType().IsClass)
             //{
@@ -396,7 +396,7 @@ namespace DynamicModLoader
                 {
                     var instance = field.GetValue(obj) as Array;
                     ArrayResize(ref instance, data.Count);
-                    for (int i = 0; i < data.Count; i++)
+                    for (var i = 0; i < data.Count; i++)
                         if (dict.TryGetValue(data[i], out var ele))
                             instance.SetValue(ele, i);
                     field.SetValue(obj, instance);
@@ -408,12 +408,12 @@ namespace DynamicModLoader
             }
         }
 
-        public static void ObjectAddReferenceWarpper<ValueType>(System.Object obj, string data, string field_name, Dictionary<string, ValueType> dict)
+        public static void ObjectAddReferenceWarpper<ValueType>(object obj, string data, string field_name, Dictionary<string, ValueType> dict)
         {
             DynamicModLoader.LogErrorWithModInfo(string.Format("ObjectAddReferenceWarpper {0}.{1} {2}", obj.GetType().Name, field_name, "AddReferenceWarpper Only Vaild in List or Array Filed"));
         }
 
-        public static void ObjectAddReferenceWarpper<ValueType>(System.Object obj, List<string> data, string field_name, Dictionary<string, ValueType> dict)
+        public static void ObjectAddReferenceWarpper<ValueType>(object obj, List<string> data, string field_name, Dictionary<string, ValueType> dict)
         {
             //if (!obj.GetType().IsClass)
             //{
@@ -434,9 +434,9 @@ namespace DynamicModLoader
                 else if (field.FieldType.IsArray)
                 {
                     var instance = field.GetValue(obj) as Array;
-                    int start_idx = instance.Length;
+                    var start_idx = instance.Length;
                     ArrayResize(ref instance, data.Count + instance.Length);
-                    for (int i = 0; i < data.Count; i++)
+                    for (var i = 0; i < data.Count; i++)
                         if (dict.TryGetValue(data[i], out var ele))
                             instance.SetValue(ele, i + start_idx);
                     field.SetValue(obj, instance);
@@ -450,8 +450,8 @@ namespace DynamicModLoader
 
         public static void ArrayResize(ref Array array, int newSize)
         {
-            Type elementType = array.GetType().GetElementType();
-            Array newArray = Array.CreateInstance(elementType, newSize);
+            var elementType = array.GetType().GetElementType();
+            var newArray = Array.CreateInstance(elementType, newSize);
             Array.Copy(array, newArray, Math.Min(array.Length, newArray.Length));
             array = newArray;
         }

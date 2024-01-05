@@ -1,9 +1,6 @@
 ﻿<Weavers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FodyWeavers.xsd">
   <ILMerge>
-    <ExcludeAssemblies>(CSTI\-ChatTreeLoader|DotNetZip|LitJSON|CSTI_LuaActionSupport|K4os).*</ExcludeAssemblies>
-    <IncludeAssemblies>(NAudio|Pfim|JeremyAnsel|NVorbis).*</IncludeAssemblies>
-    <NamespacePrefix>
-      $_
-    </NamespacePrefix>
+    <ExcludeAssemblies>(CSTI\-ChatTreeLoader|DotNetZip|LitJSON|CSTI_LuaActionSupport).*</ExcludeAssemblies>
+    <IncludeAssemblies>(NAudio|Pfim|JeremyAnsel|NVorbis|CompilerServices|System|LZ4).*</IncludeAssemblies>
   </ILMerge>
 </Weavers>

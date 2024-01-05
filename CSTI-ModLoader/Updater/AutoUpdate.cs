@@ -64,7 +64,6 @@ public static class AutoUpdate
     public const string libJsonnet4CSTIModLoader_mac = "libJsonnet4CSTIModLoader.dylib";
     public const string libJsonnet4CSTIModLoader_linux = "libJsonnet4CSTIModLoader.so";
     public const string liblua54_mac = "liblua54.dylib";
-    public const string K4os_Compression_LZ4 = "K4os.Compression.LZ4.dll";
     public const string liblua54_linux = "liblua54.so";
     public const string lua54_w64 = "lua54.dll";
     public const string lua54_w32 = "x86/lua54.dll";
@@ -156,7 +155,7 @@ public static class AutoUpdate
             urls =
             [
                 ModLoader, CSTI_ChatTreeLoader, CSTI_LuaActionSupport, DotNetZip, Jsonnet4CSTIModLoader, LitJSON,
-                lua54_w64, K4os_Compression_LZ4, 更新历史
+                lua54_w64, 更新历史
             ];
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -164,7 +163,7 @@ public static class AutoUpdate
             urls =
             [
                 ModLoader, CSTI_ChatTreeLoader, CSTI_LuaActionSupport, DotNetZip, libJsonnet4CSTIModLoader_linux,
-                LitJSON, liblua54_linux, K4os_Compression_LZ4, 更新历史
+                LitJSON, liblua54_linux, 更新历史
             ];
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -172,7 +171,7 @@ public static class AutoUpdate
             urls =
             [
                 ModLoader, CSTI_ChatTreeLoader, CSTI_LuaActionSupport, DotNetZip, libJsonnet4CSTIModLoader_mac, LitJSON,
-                liblua54_mac, K4os_Compression_LZ4, 更新历史
+                liblua54_mac, 更新历史
             ];
         }
 

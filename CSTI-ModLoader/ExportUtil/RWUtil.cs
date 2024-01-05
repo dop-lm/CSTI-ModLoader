@@ -19,7 +19,7 @@ public static class RWUtil
     {
         var count = reader.ReadInt32();
         var list = new List<string>(count);
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             list.Add(reader.ReadString());
         }
@@ -41,7 +41,7 @@ public static class RWUtil
     {
         var count = reader.ReadInt32();
         var vector2s = new List<Vector2>(count);
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var x = reader.ReadSingle();
             var y = reader.ReadSingle();
@@ -66,7 +66,7 @@ public static class RWUtil
     {
         var count = reader.ReadInt32();
         var vector3s = new List<Vector3>(count);
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var x = reader.ReadSingle();
             var y = reader.ReadSingle();
@@ -90,7 +90,7 @@ public static class RWUtil
     {
         var count = reader.ReadInt32();
         var liVector2s = new List<Vector2[]>(count);
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             liVector2s.Add(reader.ReadVector2s());
         }
@@ -111,7 +111,7 @@ public static class RWUtil
     {
         var count = reader.ReadInt32();
         var liVector3s = new List<Vector3[]>(count);
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             liVector3s.Add(reader.ReadVector3s());
         }
@@ -132,7 +132,7 @@ public static class RWUtil
     {
         var count = reader.ReadInt32();
         var liInt = new List<int>(count);
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             liInt.Add(reader.ReadInt32());
         }
@@ -153,7 +153,7 @@ public static class RWUtil
     {
         var count = reader.ReadInt32();
         var liLiVector2s = new List<List<Vector2[]>>(count);
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             liLiVector2s.Add(reader.ReadLiVector2s());
         }
@@ -174,7 +174,7 @@ public static class RWUtil
     {
         var count = reader.ReadInt32();
         var list = new List<ushort>(count);
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             list.Add(reader.ReadUInt16());
         }
@@ -195,7 +195,7 @@ public static class RWUtil
     {
         var count = reader.ReadInt32();
         var us = new List<ushort[]>(count);
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             us.Add(reader.ReadUShorts());
         }
@@ -219,7 +219,7 @@ public static class RWUtil
     {
         var count = reader.ReadInt32();
         var list = new List<Rect>(count);
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var width = reader.ReadSingle();
             var height = reader.ReadSingle();

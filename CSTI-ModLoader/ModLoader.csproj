@@ -5,7 +5,7 @@
     <Target Name="CopyOutputFiles" AfterTargets="Build">
         <ItemGroup>
             <OutputFiles Include="$(OutputPath)CSTI_LuaActionSupport.dll;$(OutputPath)CSTI-ChatTreeLoader.dll;$(OutputPath)DotNetZip.dll;
-$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt;$(OutputPath)K4os.Compression.LZ4.dll" />
+$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         </ItemGroup>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath1)" />
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath2)" />
@@ -22,6 +22,7 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt;$(OutputPat
         <FileAlignment>512</FileAlignment>
         <Deterministic>true</Deterministic>
         <LangVersion>default</LangVersion>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <DebugSymbols>true</DebugSymbols>
@@ -48,8 +49,11 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt;$(OutputPat
         <Compile Include="EmbeddedResources.cs" />
         <Compile Include="ExportUtil\ExportAll.cs" />
         <Compile Include="ExportUtil\ExportUI.cs" />
+        <Compile Include="ExportUtil\KVProvider.cs" />
         <Compile Include="ExportUtil\LoadArchMod.cs" />
+        <Compile Include="ExportUtil\MapperObject.cs" />
         <Compile Include="ExportUtil\RWUtil.cs" />
+        <Compile Include="ExportUtil\StringMapper.cs" />
         <Compile Include="FFI\JsonnetRuntime.cs" />
         <Compile Include="GlobalUsings.cs" />
         <Compile Include="LoaderUtil\DoWarpperLoader.cs" />
@@ -58,6 +62,7 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt;$(OutputPat
         <Compile Include="LoaderUtil\ResourceDataLoader.cs" />
         <Compile Include="ResourceLoadHelper.cs" />
         <Compile Include="StringHelper.cs" />
+        <Compile Include="TestTool\LoaderTimeTest.cs" />
         <Compile Include="UI\MainUI.cs" />
         <Compile Include="Updater\AutoUpdate.cs" />
         <Compile Include="WarpHelper.cs" />
@@ -107,11 +112,11 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt;$(OutputPat
         <Reference Include="JeremyAnsel.Media.Dds, Version=2.0.4.0, Culture=neutral, processorArchitecture=MSIL">
           <HintPath>..\packages\JeremyAnsel.Media.Dds.2.0.4\lib\net48\JeremyAnsel.Media.Dds.dll</HintPath>
         </Reference>
-        <Reference Include="K4os.Compression.LZ4, Version=1.3.6.0, Culture=neutral, PublicKeyToken=2186fa9121ef231d, processorArchitecture=MSIL">
-          <HintPath>..\packages\K4os.Compression.LZ4.1.3.6\lib\net462\K4os.Compression.LZ4.dll</HintPath>
-        </Reference>
         <Reference Include="LitJSON, Version=0.18.0.0, Culture=neutral, processorArchitecture=MSIL">
             <HintPath>..\packages\LitJson.0.18.0\lib\net45\LitJSON.dll</HintPath>
+        </Reference>
+        <Reference Include="LZ4, Version=1.0.15.93, Culture=neutral, PublicKeyToken=62e1b5ec1eec9bdd, processorArchitecture=MSIL">
+          <HintPath>..\packages\lz4net.1.0.15.93\lib\net4-client\LZ4.dll</HintPath>
         </Reference>
         <Reference Include="Microsoft.Win32.Primitives, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\Microsoft.Win32.Primitives.4.3.0\lib\net46\Microsoft.Win32.Primitives.dll</HintPath>

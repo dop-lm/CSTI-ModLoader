@@ -1,16 +1,14 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using BepInEx;
 using JetBrains.Annotations;
-using K4os.Compression.LZ4;
 using LitJson;
-using TMPro.SpriteAssetUtilities;
+using LZ4;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
-using UnityEngine.U2D;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
@@ -65,11 +63,11 @@ public static class ExportAll
 
     public class ExportArch(string modPath)
     {
-        public int ModArchVersion = 2;
+        public int ModArchVersion = 3;
 
-        public string ModPath = modPath;
+        public readonly string ModPath = modPath;
 
-        public string ModName = JsonMapper.ToObject(File.ReadAllText(Path.Combine(modPath, "ModInfo.json")))["Name"]
+        public readonly string ModName = JsonMapper.ToObject(File.ReadAllText(Path.Combine(modPath, "ModInfo.json")))["Name"]
             .ToString();
 
         public const long MaxBlockSizeForRes = 64 * 1024 * 1024;
@@ -121,27 +119,110 @@ public static class ExportAll
             var bytes = AllData[ExportArchDataType.Local].ToArray();
             AllData[ExportArchDataType.Local].Close();
             AllData[ExportArchDataType.Local] = new MemoryStream();
-            var maximumOutputSize = LZ4Codec.MaximumOutputSize(bytes.Length);
+            var maximumOutputSize = LZ4Codec.MaximumOutputLength(bytes.Length);
             var buffer = new byte[maximumOutputSize];
-            var encodeLen = LZ4Codec.Encode(bytes, buffer.AsSpan(), LZ4Level.L03_HC);
+            var encodeLen = LZ4Codec.Encode(bytes, 0, bytes.Length, buffer, 0, buffer.Length);
             AllLz4Data[ExportArchDataType.Local].Add((buffer, encodeLen, bytes.Length));
 
             new BinaryWriter(AllData[ExportArchDataType.Jsons], Encoding.UTF8, true).Write(0);
             bytes = AllData[ExportArchDataType.Jsons].ToArray();
             AllData[ExportArchDataType.Jsons].Close();
             AllData[ExportArchDataType.Jsons] = new MemoryStream();
-            maximumOutputSize = LZ4Codec.MaximumOutputSize(bytes.Length);
+            maximumOutputSize = LZ4Codec.MaximumOutputLength(bytes.Length);
             buffer = new byte[maximumOutputSize];
-            encodeLen = LZ4Codec.Encode(bytes, buffer.AsSpan(), LZ4Level.L03_HC);
+            encodeLen = LZ4Codec.Encode(bytes, 0, bytes.Length, buffer, 0, buffer.Length);
             AllLz4Data[ExportArchDataType.Jsons].Add((buffer, encodeLen, bytes.Length));
 
             new BinaryWriter(AllData[ExportArchDataType.Lua], Encoding.UTF8, true).Write(0);
             bytes = AllData[ExportArchDataType.Lua].ToArray();
             AllData[ExportArchDataType.Lua].Close();
             AllData[ExportArchDataType.Lua] = new MemoryStream();
-            maximumOutputSize = LZ4Codec.MaximumOutputSize(bytes.Length);
+            maximumOutputSize = LZ4Codec.MaximumOutputLength(bytes.Length);
             buffer = new byte[maximumOutputSize];
-            encodeLen = LZ4Codec.Encode(bytes, buffer.AsSpan(), LZ4Level.L03_HC);
+            encodeLen = LZ4Codec.Encode(bytes, 0, bytes.Length, buffer, 0, buffer.Length);
+            AllLz4Data[ExportArchDataType.Lua].Add((buffer, encodeLen, bytes.Length));
+        }
+
+        public void CollectObjV3()
+        {
+            var mapper = StringMapper.Empty;
+            var cacheJson = new Queue<(List<string> splitPath, MapperObject o)>();
+            foreach (var file in Directory.EnumerateFiles(ModPath, "*", SearchOption.AllDirectories))
+            {
+                var fileExtension = Path.GetExtension(file);
+                if (!fileExtension.EndsWith("json", StringComparison.OrdinalIgnoreCase) &&
+                    !fileExtension.EndsWith("csv", StringComparison.OrdinalIgnoreCase) &&
+                    !fileExtension.EndsWith("lua", StringComparison.OrdinalIgnoreCase) &&
+                    !fileExtension.EndsWith("jsonnet", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (fileExtension.EndsWith("csv", StringComparison.OrdinalIgnoreCase))
+                {
+                    var localBuffer = AllData[ExportArchDataType.Local];
+                    var localWriter = new BinaryWriter(localBuffer, Encoding.UTF8, true);
+                    localWriter.Write(Path.GetFileName(file));
+                    var localFile = File.ReadAllText(file);
+                    localWriter.Write(localFile);
+                }
+                else if (fileExtension.EndsWith("lua", StringComparison.OrdinalIgnoreCase))
+                {
+                    var luaBuffer = AllData[ExportArchDataType.Lua];
+                    var luaWriter = new BinaryWriter(luaBuffer, Encoding.UTF8, true);
+                    var splitPath = SplitPath(file, ModName);
+                    luaWriter.Write(1);
+                    luaWriter.Write(splitPath);
+                    var luaFile = File.ReadAllText(file);
+                    luaWriter.Write(luaFile);
+                }
+                else
+                {
+                    var splitPath = SplitPath(file, ModName);
+                    var jsonFile = File.ReadAllText(file);
+                    var jsonData = JsonMapper.ToObject(jsonFile);
+                    var mapperObject = new MapperObject(mapper);
+                    mapperObject.Init(jsonData);
+                    cacheJson.Enqueue((splitPath, mapperObject));
+                }
+            }
+
+            new BinaryWriter(AllData[ExportArchDataType.Local], Encoding.UTF8, true).Write(LoadArchMod.EndFlg);
+            var bytes = AllData[ExportArchDataType.Local].ToArray();
+            AllData[ExportArchDataType.Local].Close();
+            AllData[ExportArchDataType.Local] = new MemoryStream();
+            var maximumOutputSize = LZ4Codec.MaximumOutputLength(bytes.Length);
+            var buffer = new byte[maximumOutputSize];
+            var encodeLen = LZ4Codec.Encode(bytes, 0, bytes.Length, buffer, 0, buffer.Length);
+            AllLz4Data[ExportArchDataType.Local].Add((buffer, encodeLen, bytes.Length));
+
+            var binaryWriter = new BinaryWriter(AllData[ExportArchDataType.Jsons], Encoding.UTF8, true);
+            binaryWriter.Write(2);
+            mapper.Write(binaryWriter);
+            while (cacheJson.Count > 0)
+            {
+                var (splitPath, o) = cacheJson.Dequeue();
+                binaryWriter.Write(1);
+                binaryWriter.Write(splitPath);
+                o.Write(binaryWriter);
+            }
+
+            binaryWriter.Write(0);
+            bytes = AllData[ExportArchDataType.Jsons].ToArray();
+            AllData[ExportArchDataType.Jsons].Close();
+            AllData[ExportArchDataType.Jsons] = new MemoryStream();
+            maximumOutputSize = LZ4Codec.MaximumOutputLength(bytes.Length);
+            buffer = new byte[maximumOutputSize];
+            encodeLen = LZ4Codec.Encode(bytes, 0, bytes.Length, buffer, 0, buffer.Length);
+            AllLz4Data[ExportArchDataType.Jsons].Add((buffer, encodeLen, bytes.Length));
+
+            new BinaryWriter(AllData[ExportArchDataType.Lua], Encoding.UTF8, true).Write(0);
+            bytes = AllData[ExportArchDataType.Lua].ToArray();
+            AllData[ExportArchDataType.Lua].Close();
+            AllData[ExportArchDataType.Lua] = new MemoryStream();
+            maximumOutputSize = LZ4Codec.MaximumOutputLength(bytes.Length);
+            buffer = new byte[maximumOutputSize];
+            encodeLen = LZ4Codec.Encode(bytes, 0, bytes.Length, buffer, 0, buffer.Length);
             AllLz4Data[ExportArchDataType.Lua].Add((buffer, encodeLen, bytes.Length));
         }
 
@@ -228,6 +309,7 @@ public static class ExportAll
                         writer.Write(cacheTexture.Keys.ToList());
                         writer.Write((int) texture2D.format);
                         writer.Write(texture2D.width);
+                        writer.Write(texture2D.height);
                         writer.Write(rawTextureData.Length);
                         writer.Write(rawTextureData);
                         cacheTexture.Clear();
@@ -241,13 +323,13 @@ public static class ExportAll
                     {
                         writer.Write(0);
                         var maximumOutputSize =
-                            LZ4Codec.MaximumOutputSize((int) AllData[ExportArchDataType.Img].Length);
+                            LZ4Codec.MaximumOutputLength((int) AllData[ExportArchDataType.Img].Length);
                         var buffer = new byte[maximumOutputSize];
                         var memoryStream = AllData[ExportArchDataType.Img];
                         var bytes = memoryStream.ToArray();
                         AllData[ExportArchDataType.Img].Close();
                         AllData[ExportArchDataType.Img] = new MemoryStream();
-                        var encodeLen = LZ4Codec.Encode(bytes, buffer, LZ4Level.L03_HC);
+                        var encodeLen = LZ4Codec.Encode(bytes, 0, bytes.Length, buffer, 0, buffer.Length);
                         AllLz4Data[ExportArchDataType.Img].Add((buffer, encodeLen, bytes.Length));
                         writer = new BinaryWriter(AllData[ExportArchDataType.Img]);
                     }
@@ -273,6 +355,7 @@ public static class ExportAll
                         writer.Write(cacheTexture.Keys.ToList());
                         writer.Write((int) texture2D.format);
                         writer.Write(texture2D.width);
+                        writer.Write(texture2D.height);
                         writer.Write(rawTextureData.Length);
                         writer.Write(rawTextureData);
                         cacheTexture.Clear();
@@ -283,13 +366,13 @@ public static class ExportAll
 
                     writer.Write(0);
                     var maximumOutputSize =
-                        LZ4Codec.MaximumOutputSize((int) AllData[ExportArchDataType.Img].Length);
+                        LZ4Codec.MaximumOutputLength((int) AllData[ExportArchDataType.Img].Length);
                     var buffer = new byte[maximumOutputSize];
                     var memoryStream = AllData[ExportArchDataType.Img];
                     var bytes = memoryStream.ToArray();
                     AllData[ExportArchDataType.Img].Close();
                     AllData[ExportArchDataType.Img] = new MemoryStream();
-                    var encodeLen = LZ4Codec.Encode(bytes, buffer, LZ4Level.L03_HC);
+                    var encodeLen = LZ4Codec.Encode(bytes, 0, bytes.Length, buffer, 0, buffer.Length);
                     AllLz4Data[ExportArchDataType.Img].Add((buffer, encodeLen, bytes.Length));
                     writer = new BinaryWriter(AllData[ExportArchDataType.Img], Encoding.UTF8, true);
                 }
@@ -329,12 +412,12 @@ public static class ExportAll
                     binaryWriter.Write(rawTextureData.Length);
                     binaryWriter.Write(rawTextureData);
                     binaryWriter.Flush();
-                    var maximumOutputSize = LZ4Codec.MaximumOutputSize((int) AllData[ExportArchDataType.Img].Length);
+                    var maximumOutputSize = LZ4Codec.MaximumOutputLength((int) AllData[ExportArchDataType.Img].Length);
                     if (maximumOutputSize <= MaxBlockSizeForRes) continue;
                     var nativeArray = new byte[maximumOutputSize];
                     new BinaryWriter(AllData[ExportArchDataType.Img], Encoding.UTF8, true).Write(LoadArchMod.EndFlg);
                     var array = AllData[ExportArchDataType.Img].ToArray();
-                    var encodeLen = LZ4Codec.Encode(array, nativeArray.AsSpan(), LZ4Level.L03_HC);
+                    var encodeLen = LZ4Codec.Encode(array, 0, array.Length, nativeArray, 0, nativeArray.Length);
                     AllLz4Data[ExportArchDataType.Img].Add((nativeArray, encodeLen, array.Length));
                     AllData[ExportArchDataType.Img].Close();
                     AllData[ExportArchDataType.Img] = new MemoryStream();
@@ -345,11 +428,11 @@ public static class ExportAll
                 }
             }
 
-            var outputSize = LZ4Codec.MaximumOutputSize((int) AllData[ExportArchDataType.Img].Length);
+            var outputSize = LZ4Codec.MaximumOutputLength((int) AllData[ExportArchDataType.Img].Length);
             var buffer = new byte[outputSize];
             new BinaryWriter(AllData[ExportArchDataType.Img], Encoding.UTF8, true).Write(LoadArchMod.EndFlg);
             var dataBuf = AllData[ExportArchDataType.Img].ToArray();
-            var encodeL = LZ4Codec.Encode(dataBuf, buffer.AsSpan(), LZ4Level.L03_HC);
+            var encodeL = LZ4Codec.Encode(dataBuf, 0, dataBuf.Length, buffer, 0, buffer.Length);
             AllLz4Data[ExportArchDataType.Img].Add((buffer, encodeL, dataBuf.Length));
         }
 
@@ -379,12 +462,13 @@ public static class ExportAll
                     binaryWriter.Write(bytes.Length);
                     binaryWriter.Write(bytes);
                     binaryWriter.Flush();
-                    var maximumOutputSize = LZ4Codec.MaximumOutputSize((int) AllData[ExportArchDataType.Audio].Length);
+                    var maximumOutputSize =
+                        LZ4Codec.MaximumOutputLength((int) AllData[ExportArchDataType.Audio].Length);
                     if (maximumOutputSize <= MaxBlockSizeForRes) continue;
                     var nativeArray = new byte[maximumOutputSize];
                     new BinaryWriter(AllData[ExportArchDataType.Audio], Encoding.UTF8, true).Write(LoadArchMod.EndFlg);
                     var array = AllData[ExportArchDataType.Audio].ToArray();
-                    var encodeLen = LZ4Codec.Encode(array, nativeArray.AsSpan(), LZ4Level.L03_HC);
+                    var encodeLen = LZ4Codec.Encode(array, 0, array.Length, nativeArray, 0, nativeArray.Length);
                     AllLz4Data[ExportArchDataType.Audio].Add((nativeArray, encodeLen, array.Length));
                     AllData[ExportArchDataType.Audio].Close();
                     AllData[ExportArchDataType.Audio] = new MemoryStream();
@@ -395,11 +479,11 @@ public static class ExportAll
                 }
             }
 
-            var outputSize = LZ4Codec.MaximumOutputSize((int) AllData[ExportArchDataType.Audio].Length);
+            var outputSize = LZ4Codec.MaximumOutputLength((int) AllData[ExportArchDataType.Audio].Length);
             var buffer = new byte[outputSize];
             new BinaryWriter(AllData[ExportArchDataType.Audio], Encoding.UTF8, true).Write(LoadArchMod.EndFlg);
             var dataBuf = AllData[ExportArchDataType.Audio].ToArray();
-            var encodeL = LZ4Codec.Encode(dataBuf, buffer.AsSpan(), LZ4Level.L03_HC);
+            var encodeL = LZ4Codec.Encode(dataBuf, 0, dataBuf.Length, buffer, 0, buffer.Length);
             AllLz4Data[ExportArchDataType.Audio].Add((buffer, encodeL, dataBuf.Length));
         }
 
@@ -407,6 +491,7 @@ public static class ExportAll
         {
             return ModArchVersion switch
             {
+                3 => ".modArch_V3",
                 2 => ".modArch_V2",
                 _ => ".modArch"
             };
@@ -423,7 +508,16 @@ public static class ExportAll
 
         public MemoryStream CollectAll()
         {
-            CollectObj();
+            switch (ModArchVersion)
+            {
+                case 1:
+                case 2:
+                    CollectObj();
+                    break;
+                case 3:
+                    CollectObjV3();
+                    break;
+            }
             CollectAudio();
             switch (ModArchVersion)
             {
@@ -431,6 +525,7 @@ public static class ExportAll
                     CollectImg();
                     break;
                 case 2:
+                case 3:
                     CollectImgV2();
                     break;
             }
@@ -525,8 +620,7 @@ public static class ExportAll
         };
     }
 
-    [CanBeNull]
-    public static ExportArch InitExportArch(string modPath)
+    public static ExportArch? InitExportArch(string modPath)
     {
         return File.Exists(Path.Combine(modPath, "ModInfo.json")) ? new ExportArch(modPath) : null;
     }
