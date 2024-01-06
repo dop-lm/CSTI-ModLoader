@@ -13,14 +13,24 @@ namespace ModLoader.Updater;
 
 public static class AutoUpdate
 {
-    public class MyRef<T>(T @ref)
+    public class MyRef<T>
     {
-        public T Ref = @ref;
+        public T Ref;
+
+        public MyRef(T @ref)
+        {
+            Ref = @ref;
+        }
     }
 
-    public class MyVersion(List<int> versions)
+    public class MyVersion
     {
-        public List<int> Versions = versions;
+        public List<int> Versions;
+
+        public MyVersion(List<int> versions)
+        {
+            Versions = versions;
+        }
 
         public static MyVersion Parse(string s)
         {
@@ -148,31 +158,35 @@ public static class AutoUpdate
             yield break;
         }
 
-        var results = new MyRef<List<MemoryStream>>([]);
+        var results = new MyRef<List<MemoryStream>>(new List<MemoryStream>());
         List<string> urls = null;
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             urls =
-            [
-                ModLoader, CSTI_ChatTreeLoader, CSTI_LuaActionSupport, DotNetZip, Jsonnet4CSTIModLoader, LitJSON,
-                lua54_w64, 更新历史
-            ];
+                new List<string>
+                {
+                    ModLoader, CSTI_ChatTreeLoader, CSTI_LuaActionSupport, DotNetZip, Jsonnet4CSTIModLoader, LitJSON,
+                    lua54_w64, 更新历史
+                };
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             urls =
-            [
-                ModLoader, CSTI_ChatTreeLoader, CSTI_LuaActionSupport, DotNetZip, libJsonnet4CSTIModLoader_linux,
-                LitJSON, liblua54_linux, 更新历史
-            ];
+                new List<string>
+                {
+                    ModLoader, CSTI_ChatTreeLoader, CSTI_LuaActionSupport, DotNetZip, libJsonnet4CSTIModLoader_linux,
+                    LitJSON, liblua54_linux, 更新历史
+                };
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             urls =
-            [
-                ModLoader, CSTI_ChatTreeLoader, CSTI_LuaActionSupport, DotNetZip, libJsonnet4CSTIModLoader_mac, LitJSON,
-                liblua54_mac, 更新历史
-            ];
+                new List<string>
+                {
+                    ModLoader, CSTI_ChatTreeLoader, CSTI_LuaActionSupport, DotNetZip, libJsonnet4CSTIModLoader_mac,
+                    LitJSON,
+                    liblua54_mac, 更新历史
+                };
         }
 
         if (urls == null)

@@ -37,23 +37,31 @@ public class ModInfo
     public string ModEditorVersion;
 }
 
-public class ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableEntry, bool loaded)
+public class ModPack
 {
-    public readonly ModInfo ModInfo = modInfo;
-    public readonly string FileName = fileName;
-    public readonly ConfigEntry<bool> EnableEntry = enableEntry;
-    public bool Loaded = loaded;
+    public readonly ModInfo ModInfo;
+    public readonly string FileName;
+    public readonly ConfigEntry<bool> EnableEntry;
+    public bool Loaded;
+
+    public ModPack(ModInfo modInfo, string fileName, ConfigEntry<bool> enableEntry, bool loaded)
+    {
+        ModInfo = modInfo;
+        FileName = fileName;
+        EnableEntry = enableEntry;
+        Loaded = loaded;
+    }
 }
 
 [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", ModVersion)]
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.5.22";
+    public const string ModVersion = "2.3.5.25";
 
     public static Dictionary<string, string[]> AudiosPath = new();
     public static Dictionary<string, string[]> PicsPath = new();
-    public static Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
+    public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
     static ModLoader()
     {
@@ -112,47 +120,55 @@ public class ModLoader : BaseUnityPlugin
 
     public static readonly Dictionary<string, GameObject> CustomGameObjectListDict = new();
 
-    public struct ScriptableObjectPack(
-        ScriptableObject obj,
-        string CardDirOrGuid,
-        string CardPath,
-        string ModName,
-        KVProvider? CardData)
+    public struct ScriptableObjectPack
     {
-        public ScriptableObject obj = obj;
-        public readonly string CardDirOrGuid = CardDirOrGuid;
-        public string CardPath = CardPath;
-        public readonly string ModName = ModName;
-        public readonly KVProvider? CardData = CardData;
+        public ScriptableObject obj;
+        public readonly string CardDirOrGuid;
+        public string CardPath;
+        public readonly string ModName;
+        public readonly KVProvider? CardData;
+
+        public ScriptableObjectPack(ScriptableObject obj,
+            string CardDirOrGuid,
+            string CardPath,
+            string ModName,
+            KVProvider? CardData)
+        {
+            this.obj = obj;
+            this.CardDirOrGuid = CardDirOrGuid;
+            this.CardPath = CardPath;
+            this.ModName = ModName;
+            this.CardData = CardData;
+        }
     }
 
     public static ScriptableObjectPack ProcessingScriptableObjectPack;
 
     public static readonly Dictionary<string, ScriptableObjectPack> WaitForWarpperEditorGuidDict = new();
 
-    public static readonly List<ScriptableObjectPack> WaitForWarpperEditorNoGuidList = [];
+    public static readonly List<ScriptableObjectPack> WaitForWarpperEditorNoGuidList = new();
 
-    public static readonly List<ScriptableObjectPack> WaitForWarpperEditorGameSourceGUIDList = [];
+    public static readonly List<ScriptableObjectPack> WaitForWarpperEditorGameSourceGUIDList = new();
 
-    public static readonly List<ScriptableObjectPack> WaitForMatchAndWarpperEditorGameSourceList = [];
+    public static readonly List<ScriptableObjectPack> WaitForMatchAndWarpperEditorGameSourceList = new();
 
-    public static readonly List<(string LocalName, string LocalContent)> WaitForLoadCSVList = [];
+    public static readonly List<(string LocalName, string LocalContent)> WaitForLoadCSVList = new();
 
-    public static readonly List<Tuple<string, string, CardData>> WaitForAddBlueprintCard = [];
+    public static readonly List<Tuple<string, string, CardData>> WaitForAddBlueprintCard = new();
 
     public static readonly List<Tuple<string, CardData>>
-        WaitForAddCardFilterGroupCard = [];
+        WaitForAddCardFilterGroupCard = new();
 
-    public static readonly List<Tuple<string, GameStat>> WaitForAddVisibleGameStat = [];
-    private static readonly List<GuideEntry> WaitForAddGuideEntry = [];
+    public static readonly List<Tuple<string, GameStat>> WaitForAddVisibleGameStat = new();
+    private static readonly List<GuideEntry> WaitForAddGuideEntry = new();
 
     public static readonly List<Tuple<string, CharacterPerk>>
-        WaitForAddPerkGroup = [];
+        WaitForAddPerkGroup = new();
 
-    private static readonly List<ScriptableObjectPack> WaitForAddCardTabGroup = [];
-    public static readonly List<ScriptableObjectPack> WaitForAddJournalPlayerCharacter = [];
-    private static readonly List<ScriptableObjectPack> WaitForAddDefaultContentPage = [];
-    private static readonly List<ScriptableObjectPack> WaitForAddMainContentPage = [];
+    private static readonly List<ScriptableObjectPack> WaitForAddCardTabGroup = new();
+    public static readonly List<ScriptableObjectPack> WaitForAddJournalPlayerCharacter = new();
+    private static readonly List<ScriptableObjectPack> WaitForAddDefaultContentPage = new();
+    private static readonly List<ScriptableObjectPack> WaitForAddMainContentPage = new();
     public static bool HasEncounterType;
     public static Image MainUIBackPanel;
     public static RectTransform MainUIBackPanelRT;
@@ -167,7 +183,17 @@ public class ModLoader : BaseUnityPlugin
 
     private static IEnumerator FontLoader()
     {
-        var assetBundleCreateRequest = AssetBundle.LoadFromStreamAsync(EmbeddedResources.CSTIFonts);
+        AssetBundleCreateRequest assetBundleCreateRequest;
+        try
+        {
+            assetBundleCreateRequest = AssetBundle.LoadFromStreamAsync(EmbeddedResources.CSTIFonts);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e);
+            yield break;
+        }
+
         yield return assetBundleCreateRequest;
         FontAssetBundle = assetBundleCreateRequest.assetBundle;
         var assetBundleRequest = FontAssetBundle.LoadAssetAsync<TMP_FontAsset>("SourceHanSerifCN-SemiBold SDF");
@@ -181,7 +207,7 @@ public class ModLoader : BaseUnityPlugin
         {
             if (fontAsset.name == "LiberationSans SDF") continue;
             if (fontAsset.fallbackFontAssetTable == null)
-                fontAsset.fallbackFontAssetTable = [font];
+                fontAsset.fallbackFontAssetTable = new List<TMP_FontAsset> {font};
             else
                 fontAsset.fallbackFontAssetTable.Add(font);
         }
@@ -850,10 +876,11 @@ public class ModLoader : BaseUnityPlugin
         }
     }
 
-    private static readonly List<Task<(List<(byte[] dat, string name)> sprites, string modName)>> spritesWaitList = [];
+    private static readonly List<Task<(List<(byte[] dat, string name)> sprites, string modName)>> spritesWaitList =
+        new();
 
     public static readonly List<Task<(List<(byte[] dat, string pat, Type type)> uniqueObjs, string modName)>>
-        uniqueObjWaitList = [];
+        uniqueObjWaitList = new();
 
     private static void LoadMods(string mods_dir)
     {
@@ -1616,7 +1643,7 @@ public class ModLoader : BaseUnityPlugin
 
                 transform = item.Value.transform.Find("Shadow/GuideFrame");
                 var fx = transform.gameObject.GetComponent(typeof(FXMask)) as FXMask;
-                if (fx) fx.enabled = true;
+                if (fx != null) fx.enabled = true;
             }
             catch (Exception ex)
             {

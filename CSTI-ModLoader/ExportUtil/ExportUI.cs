@@ -6,8 +6,8 @@ namespace ModLoader.ExportUtil;
 
 public static class ExportUI
 {
-    public static string ModPath;
-    public static string ModExportPath;
+    public static string ModPath = "";
+    public static string ModExportPath = "";
 
     public static void ModExportUIWindow()
     {

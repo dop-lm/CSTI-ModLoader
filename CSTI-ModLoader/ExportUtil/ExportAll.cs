@@ -1,11 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using BepInEx;
-using JetBrains.Annotations;
 using LitJson;
 using LZ4;
 using UnityEngine;
@@ -33,14 +31,27 @@ public static class ExportAll
         return true;
     }
 
-    public static (string, T) RandPop<T>(this Dictionary<string, T> dict)
+    public static (string, T) RandPop<T>(this Dictionary<string, T> dict, Func<T, float> wFunc)
     {
         if (dict.Count == 0) return default;
-        var i = Random.Range(0, dict.Count);
-        var s = dict.Keys.ToList()[i];
-        var item = dict[s];
-        dict.Remove(s);
-        return (s, item);
+        var valueTuples = dict.Select(pair => (pair.Key, pair.Value, weight: wFunc(pair.Value))).ToList();
+        var sumW = valueTuples.Sum(tuple => tuple.weight);
+        var f = Random.Range(0, sumW);
+        var curF = 0f;
+        foreach (var (key, value, weight) in valueTuples)
+        {
+            if (f <= curF + weight)
+            {
+                dict.Remove(key);
+                return (key, value);
+            }
+
+            curF += weight;
+        }
+
+        var (k, v, _) = valueTuples.Last();
+        dict.Remove(k);
+        return (k, v);
     }
 
     internal static List<string> SplitPath(string path, string stop)
@@ -61,14 +72,13 @@ public static class ExportAll
         return list;
     }
 
-    public class ExportArch(string modPath)
+    public class ExportArch
     {
         public int ModArchVersion = 3;
 
-        public readonly string ModPath = modPath;
+        public readonly string ModPath;
 
-        public readonly string ModName = JsonMapper.ToObject(File.ReadAllText(Path.Combine(modPath, "ModInfo.json")))["Name"]
-            .ToString();
+        public readonly string ModName;
 
         public const long MaxBlockSizeForRes = 64 * 1024 * 1024;
 
@@ -265,7 +275,7 @@ public static class ExportAll
             var writer = new BinaryWriter(AllData[ExportArchDataType.Img], Encoding.UTF8, true);
             while (allCacheTexture.Count > 0)
             {
-                var (s, pop) = allCacheTexture.RandPop();
+                var (s, pop) = allCacheTexture.RandPop(t => 8192f / (t.height * t.width));
                 var cacheCurTexPackSize = curTexPackSize;
                 while (cacheCurTexPackSize < 8192)
                 {
@@ -518,6 +528,7 @@ public static class ExportAll
                     CollectObjV3();
                     break;
             }
+
             CollectAudio();
             switch (ModArchVersion)
             {
@@ -612,12 +623,19 @@ public static class ExportAll
 
         public Dictionary<ExportArchDataType, List<(byte[] data, int len, int rawLen)>> AllLz4Data = new()
         {
-            [ExportArchDataType.Img] = [],
-            [ExportArchDataType.Jsons] = [],
-            [ExportArchDataType.Local] = [],
-            [ExportArchDataType.Lua] = [],
-            [ExportArchDataType.Audio] = []
+            [ExportArchDataType.Img] = new List<(byte[] data, int len, int rawLen)>(),
+            [ExportArchDataType.Jsons] = new List<(byte[] data, int len, int rawLen)>(),
+            [ExportArchDataType.Local] = new List<(byte[] data, int len, int rawLen)>(),
+            [ExportArchDataType.Lua] = new List<(byte[] data, int len, int rawLen)>(),
+            [ExportArchDataType.Audio] = new List<(byte[] data, int len, int rawLen)>()
         };
+
+        public ExportArch(string modPath)
+        {
+            ModPath = modPath;
+            ModName = JsonMapper.ToObject(File.ReadAllText(Path.Combine(modPath, "ModInfo.json")))["Name"]
+                .ToString();
+        }
     }
 
     public static ExportArch? InitExportArch(string modPath)

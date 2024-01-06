@@ -237,19 +237,15 @@ public static class WarpHelper
             public delegate object Ptr2ObjFunc(void* o);
 
             // ReSharper disable once NotAccessedField.Local
-            [FieldOffset(0)] private Func<object, object> __accessBackend;
+            [FieldOffset(0)] private Func<object, object> __accessBackend = __transform;
 
-#pragma warning disable CS0649
-            [FieldOffset(0)] public Obj2PtrFunc ToPtr;
-            [FieldOffset(0)] public Ptr2ObjFunc ToObj;
-#pragma warning restore CS0649
+#pragma warning disable CS0414 // 字段已被赋值，但它的值从未被使用
+            [FieldOffset(0)] public Obj2PtrFunc ToPtr = null!;
+#pragma warning restore CS0414 // 字段已被赋值，但它的值从未被使用
+            // ReSharper disable once FieldCanBeMadeReadOnly.Local
+            [FieldOffset(0)] public Ptr2ObjFunc ToObj = null!;
 
-            public UnsafeTool()
-            {
-                __accessBackend = __transform;
-            }
-
-            private object __transform(object o)
+            private static object __transform(object o)
             {
                 return o;
             }

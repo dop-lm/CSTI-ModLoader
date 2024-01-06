@@ -5,7 +5,7 @@ using System.Linq;
 using ModLoader.ExportUtil;
 using ModLoader.LoaderUtil;
 using UnityEngine;
-using Object = object;
+using Object = System.Object;
 
 namespace ModLoader;
 
@@ -173,7 +173,7 @@ public class WarpperFunction
                             }
 
 
-                            List<string> list_data = [];
+                            List<string> list_data = new();
                             for (var i = 0; i < fieldWarpData.Count; i++)
                             {
                                 if (fieldWarpData[i].IsString)
@@ -402,7 +402,7 @@ public class WarpperFunction
                                     if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
                                         break;
                                     var array = getter(obj) as Array;
-                                    object ele = null;
+                                    object? ele = null;
                                     try
                                     {
                                         ele = array.GetValue(i);

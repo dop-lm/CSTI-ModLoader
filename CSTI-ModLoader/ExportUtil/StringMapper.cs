@@ -8,8 +8,8 @@ public class StringMapper
 {
     public static StringMapper Empty => new();
 
-    public readonly List<string> ListStr = [];
-    public readonly Dictionary<string, int> StrList = [];
+    public readonly List<string> ListStr = new();
+    public readonly Dictionary<string, int> StrList = new();
 
     public void Write(BinaryWriter writer)
     {

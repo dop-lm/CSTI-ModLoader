@@ -69,9 +69,15 @@ public abstract class KVProvider
     }
 }
 
-public class JsonKVProvider(JsonData jsonData) : KVProvider
+public class JsonKVProvider : KVProvider
 {
-    public readonly JsonData Data = jsonData;
+    public readonly JsonData Data;
+
+    public JsonKVProvider(JsonData jsonData)
+    {
+        Data = jsonData;
+    }
+
     public override bool IsObject => Data.IsObject;
     public override bool IsArray => Data.IsArray;
 
@@ -101,5 +107,10 @@ public class JsonKVProvider(JsonData jsonData) : KVProvider
 
     public override int Int => Data.IsInt ? (int) Data : 0;
     public override bool Bool => Data.IsBoolean && (bool) Data;
-    public override string String => Data.IsString ? (string) Data : "";
+    public override string String => Data.IsString ? (string) Data : Data.ToString();
+
+    public override string ToString()
+    {
+        return String;
+    }
 }

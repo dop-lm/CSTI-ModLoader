@@ -6,7 +6,7 @@ using LitJson;
 
 namespace ModLoader.ExportUtil;
 
-public abstract class MapperItem(StringMapper mapper) : KVProvider
+public abstract class MapperItem : KVProvider
 {
     public abstract void WriteSelf(BinaryWriter writer);
     public abstract void ReadSelf(BinaryReader reader);
@@ -85,7 +85,12 @@ public abstract class MapperItem(StringMapper mapper) : KVProvider
         return null;
     }
 
-    public readonly StringMapper Mapper = mapper;
+    public readonly StringMapper Mapper;
+
+    protected MapperItem(StringMapper mapper)
+    {
+        Mapper = mapper;
+    }
 
     public static MapperItem CreateByJson(StringMapper mapper, JsonData data)
     {
@@ -164,7 +169,7 @@ public abstract class MapperItem(StringMapper mapper) : KVProvider
 
     public override IEnumerable<string> Keys
     {
-        get { return !IsObject ? [] : ((MapperObject) this).Items.Keys.Select(i => Mapper.GetKey(i)); }
+        get { return !IsObject ? new List<string>().AsReadOnly() : ((MapperObject) this).Items.Keys.Select(i => Mapper.GetKey(i)); }
     }
 
     public override int Count
@@ -243,9 +248,13 @@ public abstract class MapperItem(StringMapper mapper) : KVProvider
     }
 }
 
-public class ObjInt(StringMapper mapper) : MapperItem(mapper)
+public class ObjInt : MapperItem
 {
     public int Val;
+
+    public ObjInt(StringMapper mapper) : base(mapper)
+    {
+    }
 
     public override void WriteSelf(BinaryWriter writer)
     {
@@ -271,9 +280,13 @@ public class ObjInt(StringMapper mapper) : MapperItem(mapper)
     }
 }
 
-public class ObjLong(StringMapper mapper) : MapperItem(mapper)
+public class ObjLong : MapperItem
 {
     public long Val;
+
+    public ObjLong(StringMapper mapper) : base(mapper)
+    {
+    }
 
     public override void WriteSelf(BinaryWriter writer)
     {
@@ -299,9 +312,13 @@ public class ObjLong(StringMapper mapper) : MapperItem(mapper)
     }
 }
 
-public class ObjBool(StringMapper mapper) : MapperItem(mapper)
+public class ObjBool : MapperItem
 {
     public bool Val;
+
+    public ObjBool(StringMapper mapper) : base(mapper)
+    {
+    }
 
     public override void WriteSelf(BinaryWriter writer)
     {
@@ -327,9 +344,13 @@ public class ObjBool(StringMapper mapper) : MapperItem(mapper)
     }
 }
 
-public class ObjString(StringMapper mapper) : MapperItem(mapper)
+public class ObjString : MapperItem
 {
     public int Val = -1;
+
+    public ObjString(StringMapper mapper) : base(mapper)
+    {
+    }
 
     public override void WriteSelf(BinaryWriter writer)
     {
@@ -354,7 +375,8 @@ public class ObjString(StringMapper mapper) : MapperItem(mapper)
         stringBuilder.Append('\"');
         if (Mapper.GetKey(Val) is { } s)
         {
-            stringBuilder.Append(s.Replace("\n", "\\n"));
+            stringBuilder.Append(s.Replace("\n", "\\n")
+                .Replace("\"","\\\""));
         }
         else
         {
@@ -365,9 +387,13 @@ public class ObjString(StringMapper mapper) : MapperItem(mapper)
     }
 }
 
-public class ObjDouble(StringMapper mapper) : MapperItem(mapper)
+public class ObjDouble : MapperItem
 {
     public double Val;
+
+    public ObjDouble(StringMapper mapper) : base(mapper)
+    {
+    }
 
     public override void WriteSelf(BinaryWriter writer)
     {
@@ -393,9 +419,13 @@ public class ObjDouble(StringMapper mapper) : MapperItem(mapper)
     }
 }
 
-public class MapperObject(StringMapper mapper) : MapperItem(mapper)
+public class MapperObject : MapperItem
 {
-    public readonly Dictionary<int, MapperItem> Items = [];
+    public readonly Dictionary<int, MapperItem> Items = new();
+
+    public MapperObject(StringMapper mapper) : base(mapper)
+    {
+    }
 
     public override IEnumerable<string> Keys
     {
@@ -458,7 +488,8 @@ public class MapperObject(StringMapper mapper) : MapperItem(mapper)
             var i = list[index];
             var val = Items[i];
             stringBuilder.Append('\"');
-            stringBuilder.Append(Mapper.GetKey(i)!.Replace("\n", "\\n"));
+            stringBuilder.Append(Mapper.GetKey(i).Replace("\n", "\\n")
+                .Replace("\"","\\\""));
             stringBuilder.Append("\":");
             val.ToJson(stringBuilder);
             if (index + 1 < list.Count)
@@ -471,9 +502,13 @@ public class MapperObject(StringMapper mapper) : MapperItem(mapper)
     }
 }
 
-public class MapperList(StringMapper mapper) : MapperItem(mapper)
+public class MapperList : MapperItem
 {
-    public readonly List<MapperItem> Items = [];
+    public readonly List<MapperItem> Items = new();
+
+    public MapperList(StringMapper mapper) : base(mapper)
+    {
+    }
 
     public override KVProvider this[int index]
     {
