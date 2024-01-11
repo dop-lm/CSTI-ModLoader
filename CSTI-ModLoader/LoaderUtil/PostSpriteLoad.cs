@@ -155,7 +155,7 @@ public static class PostSpriteLoad
                 }
 
                 var sprite = Sprite.Create(t2d, spriteSize,
-                    Vector2.zero);
+                    Vector2.one * 0.5f, 100, 0, SpriteMeshType.FullRect);
                 sprite.name = imageEntry.Name;
                 if (!SpriteDict.ContainsKey(imageEntry.Name))
                 {
@@ -193,7 +193,8 @@ public static class PostSpriteLoad
         {
             try
             {
-                graphics.Setup(graphics.CardLogic);
+                if (graphics)
+                    graphics.Setup(graphics.CardLogic);
             }
             catch (Exception e)
             {

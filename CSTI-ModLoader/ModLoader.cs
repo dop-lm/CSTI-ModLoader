@@ -57,7 +57,7 @@ public class ModPack
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.5.25";
+    public const string ModVersion = "2.3.5.28";
 
     public static Dictionary<string, string[]> AudiosPath = new();
     public static Dictionary<string, string[]> PicsPath = new();
