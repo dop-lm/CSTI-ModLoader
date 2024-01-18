@@ -378,6 +378,8 @@ public static class LoadArchMod
             select type).ToList();
         var allScriptableObjectTypes = (from type in AccessTools.AllTypes()
             where type.IsSubclassOf(typeof(ScriptableObject))
+            where !type.IsSubclassOf(typeof(UniqueIDScriptable))
+            where type != typeof(UniqueIDScriptable)
             select type).ToList();
         var blkCount = reader.ReadInt32();
         for (var i = 0; i < blkCount; i++)

@@ -389,7 +389,7 @@ public class WarpperFunction
                                     if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
                                         break;
                                     var list = getter(obj) as IList;
-                                    var ele = list[i];
+                                    var ele = list![i];
                                     if (ele == null)
                                         continue;
                                     JsonCommonWarpper(ele, keyData[i]);

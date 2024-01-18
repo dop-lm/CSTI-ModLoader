@@ -18,9 +18,7 @@ public static class ExportAll
     {
         var rects = new List<Rect>();
         var vector2s = texture2Ds.Select(texture2D => new Vector2(texture2D.width, texture2D.height)).ToArray();
-        var generateAtlas = Texture2D.GenerateAtlas(
-            vector2s, 1, size,
-            rects);
+        var generateAtlas = Texture2D.GenerateAtlas(vector2s, 1, size, rects);
         if (!generateAtlas) return false;
         for (var i = 0; i < rects.Count; i++)
         {

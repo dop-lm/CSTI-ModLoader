@@ -15,6 +15,7 @@ using CSTI_LuaActionSupport;
 using HarmonyLib;
 using Ionic.Zip;
 using LitJson;
+using ModLoader.Compatible;
 using ModLoader.ExportUtil;
 using ModLoader.LoaderUtil;
 using ModLoader.UI;
@@ -57,10 +58,8 @@ public class ModPack
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.5.28";
+    public const string ModVersion = "2.3.6.6";
 
-    public static Dictionary<string, string[]> AudiosPath = new();
-    public static Dictionary<string, string[]> PicsPath = new();
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
     static ModLoader()
@@ -122,13 +121,13 @@ public class ModLoader : BaseUnityPlugin
 
     public struct ScriptableObjectPack
     {
-        public ScriptableObject obj;
+        public ScriptableObject? obj;
         public readonly string CardDirOrGuid;
         public string CardPath;
         public readonly string ModName;
         public readonly KVProvider? CardData;
 
-        public ScriptableObjectPack(ScriptableObject obj,
+        public ScriptableObjectPack(ScriptableObject? obj,
             string CardDirOrGuid,
             string CardPath,
             string ModName,
@@ -177,6 +176,8 @@ public class ModLoader : BaseUnityPlugin
     private void Start()
     {
         StartCoroutine(FontLoader());
+        
+        CompatibleCheck.MainCheck();
     }
 
     public static AssetBundle FontAssetBundle;
@@ -413,7 +414,7 @@ public class ModLoader : BaseUnityPlugin
                                          (ele as UniqueIDScriptable).name);
                 }
 
-                if (!(ele is UniqueIDScriptable))
+                if (ele is not UniqueIDScriptable)
                 {
                     if (!AllScriptableObjectWithoutGuidTypeDict.ContainsKey(ele.GetType()))
                     {
@@ -429,25 +430,25 @@ public class ModLoader : BaseUnityPlugin
                     }
                 }
 
-                if (ele is UniqueIDScriptable)
+                if (ele is UniqueIDScriptable idScriptable)
                 {
-                    if (!AllGUIDTypeDict.ContainsKey(ele.GetType()))
+                    if (!AllGUIDTypeDict.ContainsKey(idScriptable.GetType()))
                     {
-                        AllGUIDTypeDict.Add(ele.GetType(), new Dictionary<string, UniqueIDScriptable>());
-                        if (AllGUIDTypeDict.TryGetValue(ele.GetType(), out var type_dict))
-                            type_dict.Add(ele.name, ele as UniqueIDScriptable);
+                        AllGUIDTypeDict.Add(idScriptable.GetType(), new Dictionary<string, UniqueIDScriptable>());
+                        if (AllGUIDTypeDict.TryGetValue(idScriptable.GetType(), out var type_dict))
+                            type_dict.Add(idScriptable.name, idScriptable);
                     }
                     else
                     {
-                        if (AllGUIDTypeDict.TryGetValue(ele.GetType(), out var type_dict))
-                            type_dict.Add(ele.name, ele as UniqueIDScriptable);
+                        if (AllGUIDTypeDict.TryGetValue(idScriptable.GetType(), out var type_dict))
+                            type_dict.Add(idScriptable.name, idScriptable);
                     }
 
-                    if (!AllGUIDDict.ContainsKey((ele as UniqueIDScriptable).UniqueID))
-                        AllGUIDDict.Add((ele as UniqueIDScriptable).UniqueID, ele as UniqueIDScriptable);
+                    if (!AllGUIDDict.ContainsKey(idScriptable.UniqueID))
+                        AllGUIDDict.Add(idScriptable.UniqueID, idScriptable);
                     else
                         Debug.LogWarning("AllGUIDDict Same Key was Add " +
-                                         (ele as UniqueIDScriptable).UniqueID);
+                                         idScriptable.UniqueID);
                 }
             }
             catch (Exception ex)
@@ -978,7 +979,6 @@ public class ModLoader : BaseUnityPlugin
                     if (Directory.Exists(CombinePaths(dir, "Resource", "Audio")))
                     {
                         var files = Directory.GetFiles(CombinePaths(dir, "Resource", "Audio"));
-                        AudiosPath[Path.GetFileName(dir)] = files;
                         foreach (var file in files)
                             if (file.EndsWith(".wav", true, null))
                             {
@@ -1275,7 +1275,7 @@ public class ModLoader : BaseUnityPlugin
 
     private static void LoadLocalization()
     {
-        var regex = new Regex("\\\\n");
+        var regex = new Regex(@"\\n");
         if (LocalizationManager.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "简体中文")
             foreach (var pair in WaitForLoadCSVList)
                 try
