@@ -153,6 +153,8 @@ public static class LoadPreData
                     Debug.LogWarningFormat("{0} Load UniqueIDScriptable Error {1}", ModName,
                         ex);
                 }
+
+                PostSpriteLoad.NoMoreSpriteLoadQueue = true;
             }
         }
         catch (Exception e)

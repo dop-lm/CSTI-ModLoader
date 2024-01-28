@@ -107,6 +107,7 @@ public static class PostSpriteLoad
                 continue;
             }
 
+            if (SpriteLoadQueue.Count == 0) continue;
             var task = SpriteLoadQueue.Dequeue();
             while (!task.IsCompleted)
             {
