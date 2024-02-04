@@ -12,6 +12,7 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using ChatTreeLoader.Patchers;
 using CSTI_LuaActionSupport;
+using CSTI_LuaActionSupport.DataStruct;
 using HarmonyLib;
 using Ionic.Zip;
 using LitJson;
@@ -58,7 +59,7 @@ public class ModPack
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.6.13";
+    public const string ModVersion = "2.3.6.14";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
@@ -726,8 +727,15 @@ public class ModLoader : BaseUnityPlugin
                                 }
 
                                 obj.name = obj_name;
-                                JsonUtility.FromJsonOverwrite(CardData, obj);
                                 var jsonData = JsonMapper.ToObject(CardData);
+                                if (obj is IModLoaderJsonObj modLoaderJsonObj)
+                                {
+                                    modLoaderJsonObj.CreateByJson(new JsonKVProvider(jsonData));
+                                }
+                                else
+                                {
+                                    JsonUtility.FromJsonOverwrite(CardData, obj);
+                                }
                                 dict.Add(obj_name, obj);
                                 WaitForWarpperEditorNoGuidList.Add(new ScriptableObjectPack(obj,
                                     "", "", ModName, new JsonKVProvider(jsonData)));
@@ -802,8 +810,15 @@ public class ModLoader : BaseUnityPlugin
                             }
 
                             var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
-                            JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                            JsonUtility.FromJsonOverwrite(CardData, card);
+                            // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                            if (card is IModLoaderJsonObj modLoaderJsonObj)
+                            {
+                                modLoaderJsonObj.CreateByJson(new JsonKVProvider(json));
+                            }
+                            else
+                            {
+                                JsonUtility.FromJsonOverwrite(CardData, card);
+                            }
 
                             card.name = $"{ModName}_{CardName}";
 
@@ -1064,8 +1079,15 @@ public class ModLoader : BaseUnityPlugin
                                     }
 
                                     obj.name = obj_name;
-                                    JsonUtility.FromJsonOverwrite(CardData, obj);
                                     var jsonData = JsonMapper.ToObject(CardData);
+                                    if (obj is IModLoaderJsonObj modLoaderJsonObj)
+                                    {
+                                        modLoaderJsonObj.CreateByJson(new JsonKVProvider(jsonData));
+                                    }
+                                    else
+                                    {
+                                        JsonUtility.FromJsonOverwrite(CardData, obj);
+                                    }
                                     dict.Add(obj_name, obj);
                                     WaitForWarpperEditorNoGuidList.Add(
                                         new ScriptableObjectPack(obj, "", "", ModName,

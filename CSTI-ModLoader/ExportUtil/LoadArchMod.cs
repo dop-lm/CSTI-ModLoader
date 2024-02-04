@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using BepInEx;
+using CSTI_LuaActionSupport.DataStruct;
 using HarmonyLib;
 using LitJson;
 using LZ4;
@@ -77,7 +78,7 @@ public static class LoadArchMod
         else
         {
             var modInfo = new ModInfo
-                {Name = modName, ModLoaderVerison = ModVersion, ModEditorVersion = "", Version = "0.0.0"};
+                { Name = modName, ModLoaderVerison = ModVersion, ModEditorVersion = "", Version = "0.0.0" };
             ModPacks[modName] = new ModPack(modInfo, modName, ModLoaderInstance.Config.Bind("是否加载某个模组",
                 $"{Path.GetFileNameWithoutExtension(modPath)}_{modName}".EscapeStr(), true,
                 $"是否加载{modName}"), true);
@@ -157,7 +158,7 @@ public static class LoadArchMod
                     var sprite_name = Path.GetFileNameWithoutExtension(ImgName);
                     var width = binaryReader.ReadInt32();
                     var height = binaryReader.ReadInt32();
-                    var graphicsFormat = (TextureFormat) binaryReader.ReadInt32();
+                    var graphicsFormat = (TextureFormat)binaryReader.ReadInt32();
                     var imgDataLen = binaryReader.ReadInt32();
                     var imgData = binaryReader.ReadBytes(imgDataLen);
                     var t2d = new Texture2D(width, height, graphicsFormat, -1, false);
@@ -178,7 +179,7 @@ public static class LoadArchMod
                     var rects = binaryReader.ReadRects();
                     var texture2D_name = binaryReader.ReadString();
                     var listStr = binaryReader.ReadListStr();
-                    var graphicsFormat = (TextureFormat) binaryReader.ReadInt32();
+                    var graphicsFormat = (TextureFormat)binaryReader.ReadInt32();
                     var texPackSizeWidth = binaryReader.ReadInt32();
                     var texPackSizeHeight = binaryReader.ReadInt32();
                     var imgDataLen = binaryReader.ReadInt32();
@@ -297,10 +298,18 @@ public static class LoadArchMod
                     var obj = ScriptableObject.CreateInstance(find_ScriptableObjectT);
 
                     obj.name = obj_name;
-                    JsonUtility.FromJsonOverwrite(json, obj);
+                    var jsonData = JsonMapper.ToObject(json);
+                    if (obj is IModLoaderJsonObj modLoaderJsonObj)
+                    {
+                        modLoaderJsonObj.CreateByJson(new JsonKVProvider(jsonData));
+                    }
+                    else
+                    {
+                        JsonUtility.FromJsonOverwrite(json, obj);
+                    }
+
                     if (!dict.ContainsKey(obj_name))
                         dict.Add(obj_name, obj);
-                    var jsonData = JsonMapper.ToObject(json);
                     WaitForWarpperEditorNoGuidList.Add(new ScriptableObjectPack(obj,
                         "", "", modName, new JsonKVProvider(jsonData)));
                     if (!AllScriptableObjectDict.ContainsKey(obj_name))
@@ -334,8 +343,15 @@ public static class LoadArchMod
                         }
 
                         var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
-                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                        JsonUtility.FromJsonOverwrite(json, card);
+                        // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                        if (card is IModLoaderJsonObj modLoaderJsonObj)
+                        {
+                            modLoaderJsonObj.CreateByJson(new JsonKVProvider(jsonData));
+                        }
+                        else
+                        {
+                            JsonUtility.FromJsonOverwrite(json, card);
+                        }
 
                         card.name = $"{modName}_{CardName}";
 
@@ -407,7 +423,7 @@ public static class LoadArchMod
                 var mapperItem = MapperItem.Read(binaryReader, mapper);
                 if (mapperItem == null) continue;
                 if (!mapperItem.IsObject) continue;
-                var mapperObject = (MapperObject) mapperItem;
+                var mapperObject = (MapperObject)mapperItem;
                 if (listStr.Count == 0) continue;
                 if (listStr[0] == "ModInfo.json")
                 {
@@ -435,7 +451,14 @@ public static class LoadArchMod
                     obj.name = obj_name;
                     try
                     {
-                        JsonUtility.FromJsonOverwrite(mapperObject.ToJson(), obj);
+                        if (obj is IModLoaderJsonObj modLoaderJsonObj)
+                        {
+                            modLoaderJsonObj.CreateByJson(mapperObject);
+                        }
+                        else
+                        {
+                            JsonUtility.FromJsonOverwrite(mapperObject.ToJson(), obj);
+                        }
                     }
                     catch (Exception e)
                     {
@@ -476,10 +499,17 @@ public static class LoadArchMod
                         }
 
                         var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
-                        JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                        // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                         try
                         {
-                            JsonUtility.FromJsonOverwrite(mapperObject.ToJson(), card);
+                            if (card is IModLoaderJsonObj modLoaderJsonObj)
+                            {
+                                modLoaderJsonObj.CreateByJson(mapperObject);
+                            }
+                            else
+                            {
+                                JsonUtility.FromJsonOverwrite(mapperObject.ToJson(), card);
+                            }
                         }
                         catch (Exception e)
                         {
@@ -567,7 +597,7 @@ public static class LoadArchMod
 
                 var width = binaryReader.ReadInt32();
                 var height = binaryReader.ReadInt32();
-                var graphicsFormat = (TextureFormat) binaryReader.ReadInt32();
+                var graphicsFormat = (TextureFormat)binaryReader.ReadInt32();
                 var imgDataLen = binaryReader.ReadInt32();
                 var imgData = binaryReader.ReadBytes(imgDataLen);
                 var sprite_name = Path.GetFileNameWithoutExtension(ImgName);

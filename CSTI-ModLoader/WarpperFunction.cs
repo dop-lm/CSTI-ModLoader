@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using CSTI_LuaActionSupport.DataStruct;
 using ModLoader.ExportUtil;
 using ModLoader.LoaderUtil;
 using UnityEngine;
@@ -130,7 +131,7 @@ public class WarpperFunction
         {
             ClassObjectExtraData[obj] = json[ExtraData];
         }
-        
+
         foreach (var key in json.Keys)
         {
             try
@@ -140,8 +141,8 @@ public class WarpperFunction
                 {
                     if (!keyData.IsInt || !json.ContainsKey(key.Substring(0, key.Length - 8) + "WarpData"))
                         continue;
-                    if ((int) keyData == (int) WarpType.REFERENCE ||
-                        (int) keyData == (int) WarpType.ADD_REFERENCE)
+                    if ((int)keyData == (int)WarpType.REFERENCE ||
+                        (int)keyData == (int)WarpType.ADD_REFERENCE)
                     {
                         var field_name = key.Substring(0, key.Length - 8);
                         var (field, _, _) = obj_type.FieldFromCache(field_name, getter_use: false,
@@ -152,7 +153,7 @@ public class WarpperFunction
                         if (fieldWarpData.IsString)
                         {
                             JsonCommonRefWarpper(obj, fieldWarpData.ToString(), field_name,
-                                field_type, (WarpType) (int) keyData);
+                                field_type, (WarpType)(int)keyData);
                         }
                         else if (fieldWarpData.IsArray)
                         {
@@ -192,7 +193,7 @@ public class WarpperFunction
                                     "CommonWarpper REFERENCE Size Error" + field_type.Name);
 
                             JsonCommonRefWarpper(obj, list_data, field_name, sub_field_type,
-                                (WarpType) (int) keyData);
+                                (WarpType)(int)keyData);
                         }
                         else
                         {
@@ -200,7 +201,7 @@ public class WarpperFunction
                                                 field_type.Name);
                         }
                     }
-                    else if ((int) keyData == (int) WarpType.ADD)
+                    else if ((int)keyData == (int)WarpType.ADD)
                     {
                         var field_name = key.Substring(0, key.Length - 8);
                         var (field, getter, setter) = obj_type.FieldFromCache(field_name);
@@ -222,8 +223,16 @@ public class WarpperFunction
                                         var new_obj = sub_field_type.IsSubclassOf(typeof(ScriptableObject))
                                             ? ScriptableObject.CreateInstance(sub_field_type)
                                             : sub_field_type.ConstructorFromCache()();
-                                        JsonUtility.FromJsonOverwrite(fieldWarpData[i].ToJson(),
-                                            new_obj);
+                                        if (new_obj is IModLoaderJsonObj modLoaderJsonObj)
+                                        {
+                                            modLoaderJsonObj.CreateByJson(fieldWarpData[i]);
+                                        }
+                                        else
+                                        {
+                                            JsonUtility.FromJsonOverwrite(fieldWarpData[i].ToJson(),
+                                                new_obj);
+                                        }
+
                                         JsonCommonWarpper(new_obj, fieldWarpData[i]);
                                         instance.Add(new_obj);
                                     }
@@ -245,8 +254,16 @@ public class WarpperFunction
                                         var new_obj = sub_field_type.IsSubclassOf(typeof(ScriptableObject))
                                             ? ScriptableObject.CreateInstance(sub_field_type)
                                             : sub_field_type.ConstructorFromCache()();
-                                        JsonUtility.FromJsonOverwrite(fieldWarpData[i].ToJson(),
-                                            new_obj);
+                                        if (new_obj is IModLoaderJsonObj modLoaderJsonObj)
+                                        {
+                                            modLoaderJsonObj.CreateByJson(fieldWarpData[i]);
+                                        }
+                                        else
+                                        {
+                                            JsonUtility.FromJsonOverwrite(fieldWarpData[i].ToJson(),
+                                                new_obj);
+                                        }
+
                                         JsonCommonWarpper(new_obj, fieldWarpData[i]);
                                         instance.SetValue(new_obj, i + start_idx);
                                     }
@@ -269,7 +286,7 @@ public class WarpperFunction
                                                 field_type.Name);
                         }
                     }
-                    else if ((int) keyData == (int) WarpType.MODIFY)
+                    else if ((int)keyData == (int)WarpType.MODIFY)
                     {
                         var field_name = key.Substring(0, key.Length - 8);
                         var (field, getter, setter) = obj_type.FieldFromCache(field_name);

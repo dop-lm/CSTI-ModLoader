@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx;
+using CSTI_LuaActionSupport.DataStruct;
 using HarmonyLib;
 using LitJson;
 using ModLoader.ExportUtil;
@@ -84,8 +85,8 @@ public static class DoWarpperLoader
             }
         }
     }
-        
-        
+
+
     public static void WarpperAllEditorGameSrouces()
     {
         // var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
@@ -105,7 +106,7 @@ public static class DoWarpperLoader
 
                 ProcessingScriptableObjectPack = item;
 
-                if (item.CardData!=null)
+                if (item.CardData != null)
                 {
                     var json = item.CardData;
                     if (json.ContainsKey("MatchTagWarpData") && json["MatchTagWarpData"].IsArray &&
@@ -115,9 +116,18 @@ public static class DoWarpperLoader
                         continue;
                     }
 
-                    if (json.ContainsKey("ModLoaderSpecialOverwrite"))
-                        if (json["ModLoaderSpecialOverwrite"].IsBoolean && (bool) json["ModLoaderSpecialOverwrite"])
+                    if (json.ContainsKey("ModLoaderSpecialOverwrite") && json["ModLoaderSpecialOverwrite"].IsBoolean &&
+                        (bool)json["ModLoaderSpecialOverwrite"])
+                    {
+                        if (item.obj is IModLoaderJsonObj modLoaderJsonObj)
+                        {
+                            modLoaderJsonObj.CreateByJson(item.CardData);
+                        }
+                        else
+                        {
                             JsonUtility.FromJsonOverwrite(item.CardData.ToJson(), item.obj);
+                        }
+                    }
                     WarpperFunction.JsonCommonWarpper(item.obj, json);
                 }
 
@@ -138,7 +148,7 @@ public static class DoWarpperLoader
         }
     }
 
-        
+
     public static void WarpperAllEditorMods()
     {
         if (!_onceWarp.DoOnce())
@@ -154,7 +164,7 @@ public static class DoWarpperLoader
                 ProcessingScriptableObjectPack = item.Value;
 
                 var json = item.Value.CardData;
-                if(json==null)continue;
+                if (json == null) continue;
                 WarpperFunction.JsonCommonWarpper(item.Value.obj, json);
                 if (item.Value.obj is CardData cardData)
                 {

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using BepInEx;
+using CSTI_LuaActionSupport.DataStruct;
 using LitJson;
 using ModLoader.ExportUtil;
 using ModLoader.FFI;
@@ -45,7 +46,14 @@ public static class LoadPreData
 
                         var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
                         // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                        JsonUtility.FromJsonOverwrite(CardData, card);
+                        if (card is IModLoaderJsonObj modLoaderJsonObj)
+                        {
+                            modLoaderJsonObj.CreateByJson(new JsonKVProvider(json));
+                        }
+                        else
+                        {
+                            JsonUtility.FromJsonOverwrite(CardData, card);
+                        }
 
                         card.name = modName + "_" + CardName;
                         //type.GetMethod("Init", bindingFlags, null, new Type[] { }, null).Invoke(card, null);
