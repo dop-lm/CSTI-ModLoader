@@ -48,7 +48,7 @@ public static class LoadPreData
                         // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                         if (card is IModLoaderJsonObj modLoaderJsonObj)
                         {
-                            modLoaderJsonObj.CreateByJson(new JsonKVProvider(json));
+                            modLoaderJsonObj.CreateByJson(CardData);
                         }
                         else
                         {

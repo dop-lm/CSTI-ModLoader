@@ -301,7 +301,7 @@ public static class LoadArchMod
                     var jsonData = JsonMapper.ToObject(json);
                     if (obj is IModLoaderJsonObj modLoaderJsonObj)
                     {
-                        modLoaderJsonObj.CreateByJson(new JsonKVProvider(jsonData));
+                        modLoaderJsonObj.CreateByJson(json);
                     }
                     else
                     {
@@ -346,7 +346,7 @@ public static class LoadArchMod
                         // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                         if (card is IModLoaderJsonObj modLoaderJsonObj)
                         {
-                            modLoaderJsonObj.CreateByJson(new JsonKVProvider(jsonData));
+                            modLoaderJsonObj.CreateByJson(json);
                         }
                         else
                         {
@@ -453,7 +453,7 @@ public static class LoadArchMod
                     {
                         if (obj is IModLoaderJsonObj modLoaderJsonObj)
                         {
-                            modLoaderJsonObj.CreateByJson(mapperObject);
+                            modLoaderJsonObj.CreateByJson(mapperObject.ToJson());
                         }
                         else
                         {
@@ -504,7 +504,7 @@ public static class LoadArchMod
                         {
                             if (card is IModLoaderJsonObj modLoaderJsonObj)
                             {
-                                modLoaderJsonObj.CreateByJson(mapperObject);
+                                modLoaderJsonObj.CreateByJson(mapperObject.ToJson());
                             }
                             else
                             {

@@ -225,7 +225,7 @@ public class WarpperFunction
                                             : sub_field_type.ConstructorFromCache()();
                                         if (new_obj is IModLoaderJsonObj modLoaderJsonObj)
                                         {
-                                            modLoaderJsonObj.CreateByJson(fieldWarpData[i]);
+                                            modLoaderJsonObj.CreateByJson(fieldWarpData[i].ToJson());
                                         }
                                         else
                                         {
@@ -256,7 +256,7 @@ public class WarpperFunction
                                             : sub_field_type.ConstructorFromCache()();
                                         if (new_obj is IModLoaderJsonObj modLoaderJsonObj)
                                         {
-                                            modLoaderJsonObj.CreateByJson(fieldWarpData[i]);
+                                            modLoaderJsonObj.CreateByJson(fieldWarpData[i].ToJson());
                                         }
                                         else
                                         {

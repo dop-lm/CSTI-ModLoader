@@ -59,7 +59,7 @@ public class ModPack
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.6.16";
+    public const string ModVersion = "2.3.6.17";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
@@ -730,7 +730,7 @@ public class ModLoader : BaseUnityPlugin
                                 var jsonData = JsonMapper.ToObject(CardData);
                                 if (obj is IModLoaderJsonObj modLoaderJsonObj)
                                 {
-                                    modLoaderJsonObj.CreateByJson(new JsonKVProvider(jsonData));
+                                    modLoaderJsonObj.CreateByJson(CardData);
                                 }
                                 else
                                 {
@@ -813,7 +813,7 @@ public class ModLoader : BaseUnityPlugin
                             // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                             if (card is IModLoaderJsonObj modLoaderJsonObj)
                             {
-                                modLoaderJsonObj.CreateByJson(new JsonKVProvider(json));
+                                modLoaderJsonObj.CreateByJson(CardData);
                             }
                             else
                             {
@@ -1082,7 +1082,7 @@ public class ModLoader : BaseUnityPlugin
                                     var jsonData = JsonMapper.ToObject(CardData);
                                     if (obj is IModLoaderJsonObj modLoaderJsonObj)
                                     {
-                                        modLoaderJsonObj.CreateByJson(new JsonKVProvider(jsonData));
+                                        modLoaderJsonObj.CreateByJson(CardData);
                                     }
                                     else
                                     {

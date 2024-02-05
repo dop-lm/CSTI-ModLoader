@@ -121,7 +121,7 @@ public static class DoWarpperLoader
                     {
                         if (item.obj is IModLoaderJsonObj modLoaderJsonObj)
                         {
-                            modLoaderJsonObj.CreateByJson(item.CardData);
+                            modLoaderJsonObj.CreateByJson(item.CardData.ToJson());
                         }
                         else
                         {
