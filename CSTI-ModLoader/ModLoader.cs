@@ -59,7 +59,7 @@ public class ModPack
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.6.18";
+    public const string ModVersion = "2.3.6.19";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
