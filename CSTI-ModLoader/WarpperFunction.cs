@@ -121,9 +121,10 @@ public class WarpperFunction
         JsonCommonWarpper(obj, new JsonKVProvider(json));
     }
 
-    public static void JsonCommonWarpper(Object obj, KVProvider json)
+    public static void JsonCommonWarpper(Object? obj, KVProvider json)
     {
         if (!json.IsObject) return;
+        if (obj == null) return;
         var obj_type = obj.GetType();
         if (obj is UniqueIDScriptable idScriptable && json.ContainsKey(ExtraData))
         {

@@ -12,6 +12,14 @@ namespace ModLoader.LoaderUtil;
 
 public static class DoWarpperLoader
 {
+    public static T Pop<T>(this List<T> list)
+    {
+        if (list.Count == 0) return default;
+        var result = list[list.Count - 1];
+        list.RemoveAt(list.Count - 1);
+        return result;
+    }
+
     public static void MatchAndWarpperAllEditorGameSrouce()
     {
         foreach (var item in AllGUIDDict.Values)
@@ -36,8 +44,9 @@ public static class DoWarpperLoader
             }
         }
 
-        foreach (var item in WaitForMatchAndWarpperEditorGameSourceList)
+        while (WaitForMatchAndWarpperEditorGameSourceList.Count > 0)
         {
+            var item = WaitForMatchAndWarpperEditorGameSourceList.Pop();
             try
             {
                 if (item.CardData == null)
@@ -91,9 +100,9 @@ public static class DoWarpperLoader
     {
         // var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
         //foreach (var item in WaitForWarpperEditorGameSourceGUIDList)
-        for (var i = 0; i < WaitForWarpperEditorGameSourceGUIDList.Count; i++)
+        while (WaitForWarpperEditorGameSourceGUIDList.Count > 0)
         {
-            var item = WaitForWarpperEditorGameSourceGUIDList[i];
+            var item = WaitForWarpperEditorGameSourceGUIDList.Pop();
             try
             {
                 if (item.obj == null)
@@ -128,6 +137,7 @@ public static class DoWarpperLoader
                             JsonUtility.FromJsonOverwrite(item.CardData.ToJson(), item.obj);
                         }
                     }
+
                     WarpperFunction.JsonCommonWarpper(item.obj, json);
                 }
 
@@ -157,16 +167,18 @@ public static class DoWarpperLoader
         }
 
         // var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-        foreach (var item in WaitForWarpperEditorGuidDict)
+        var keys = WaitForWarpperEditorGuidDict.Keys.ToList();
+        foreach (var key in keys)
         {
             try
             {
-                ProcessingScriptableObjectPack = item.Value;
+                ProcessingScriptableObjectPack = WaitForWarpperEditorGuidDict[key];
+                WaitForWarpperEditorGuidDict.Remove(key);
 
-                var json = item.Value.CardData;
+                var json = ProcessingScriptableObjectPack.CardData;
                 if (json == null) continue;
-                WarpperFunction.JsonCommonWarpper(item.Value.obj, json);
-                if (item.Value.obj is CardData cardData)
+                WarpperFunction.JsonCommonWarpper(ProcessingScriptableObjectPack.obj, json);
+                if (ProcessingScriptableObjectPack.obj is CardData cardData)
                 {
                     if (cardData.CardType == CardTypes.Blueprint &&
                         json.ContainsKey("BlueprintCardDataCardTabGroup") &&
@@ -185,8 +197,8 @@ public static class DoWarpperLoader
                         for (var i = 0; i < json["ItemCardDataCardTabGpGroup"].Count; i++)
                             if (json["ItemCardDataCardTabGpGroup"][i].IsString &&
                                 dict.TryGetValue(json["ItemCardDataCardTabGpGroup"][i].ToString(),
-                                    out var tab_group))
-                                (tab_group as CardTabGroup)!.IncludedCards.Add(cardData);
+                                    out var tabGroup))
+                                (tabGroup as CardTabGroup)!.IncludedCards.Add(cardData);
 
                     if (json.ContainsKey("CardDataCardFilterGroup") && json["CardDataCardFilterGroup"].IsArray)
                         for (var i = 0; i < json["CardDataCardFilterGroup"].Count; i++)
@@ -202,22 +214,22 @@ public static class DoWarpperLoader
                     //     FillDropsList.Invoke(item.Value.obj, null);
                     // }
                 }
-                else if (item.Value.obj is CharacterPerk)
+                else if (ProcessingScriptableObjectPack.obj is CharacterPerk perk)
                 {
                     if (json.ContainsKey("CharacterPerkPerkGroup") && json["CharacterPerkPerkGroup"].IsString &&
                         !json["CharacterPerkPerkGroup"].ToString().IsNullOrWhiteSpace())
                         WaitForAddPerkGroup.Add(new Tuple<string, CharacterPerk>(
-                            json["CharacterPerkPerkGroup"].ToString(), item.Value.obj as CharacterPerk));
+                            json["CharacterPerkPerkGroup"].ToString(), perk));
                 }
-                else if (item.Value.obj is GameStat)
+                else if (ProcessingScriptableObjectPack.obj is GameStat stat)
                 {
                     if (json.ContainsKey("VisibleGameStatStatListTab") &&
                         json["VisibleGameStatStatListTab"].IsString &&
                         !json["VisibleGameStatStatListTab"].ToString().IsNullOrWhiteSpace())
                         WaitForAddVisibleGameStat.Add(new Tuple<string, GameStat>(
-                            json["VisibleGameStatStatListTab"].ToString(), item.Value.obj as GameStat));
+                            json["VisibleGameStatStatListTab"].ToString(), stat));
                 }
-                else if (item.Value.obj is PlayerCharacter)
+                else if (ProcessingScriptableObjectPack.obj is PlayerCharacter character)
                 {
                     if (AllGUIDTypeDict.TryGetValue(typeof(Gamemode), out var dict))
                     {
@@ -227,12 +239,12 @@ public static class DoWarpperLoader
                             Array.Resize(ref mode.PlayableCharacters,
                                 mode.PlayableCharacters.Length + 1);
                             mode.PlayableCharacters[mode.PlayableCharacters.Length - 1] =
-                                item.Value.obj as PlayerCharacter;
+                                character;
                         }
                     }
 
-                    WaitForAddJournalPlayerCharacter.Add(new ScriptableObjectPack(item.Value.obj, "", "", "",
-                        item.Value.CardData));
+                    WaitForAddJournalPlayerCharacter.Add(new ScriptableObjectPack(character, "", "", "",
+                        ProcessingScriptableObjectPack.CardData));
                 }
             }
             catch (Exception ex)

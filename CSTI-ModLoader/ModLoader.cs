@@ -61,7 +61,7 @@ public class ModPack
 [SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.6.26";
+    public const string ModVersion = "2.3.6.27";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
@@ -150,6 +150,7 @@ public class ModLoader : BaseUnityPlugin
 
     public static readonly List<ScriptableObjectPack> WaitForWarpperEditorNoGuidList = new();
 
+    // ReSharper disable once InconsistentNaming
     public static readonly List<ScriptableObjectPack> WaitForWarpperEditorGameSourceGUIDList = new();
 
     public static readonly List<ScriptableObjectPack> WaitForMatchAndWarpperEditorGameSourceList = new();
@@ -174,12 +175,12 @@ public class ModLoader : BaseUnityPlugin
     public static bool HasEncounterType;
     public static Image MainUIBackPanel;
     public static RectTransform MainUIBackPanelRT;
-    public bool ModLoaderUpdated;
+    [NonSerialized] public bool ModLoaderUpdated;
 
     private void Start()
     {
         StartCoroutine(FontLoader());
-        
+
         CompatibleCheck.MainCheck();
     }
 
@@ -211,7 +212,7 @@ public class ModLoader : BaseUnityPlugin
         {
             if (fontAsset.name == "LiberationSans SDF") continue;
             if (fontAsset.fallbackFontAssetTable == null)
-                fontAsset.fallbackFontAssetTable = new List<TMP_FontAsset> {font};
+                fontAsset.fallbackFontAssetTable = new List<TMP_FontAsset> { font };
             else
                 fontAsset.fallbackFontAssetTable.Add(font);
         }
@@ -738,6 +739,7 @@ public class ModLoader : BaseUnityPlugin
                                 {
                                     JsonUtility.FromJsonOverwrite(CardData, obj);
                                 }
+
                                 dict.Add(obj_name, obj);
                                 WaitForWarpperEditorNoGuidList.Add(new ScriptableObjectPack(obj,
                                     "", "", ModName, new JsonKVProvider(jsonData)));
@@ -1090,6 +1092,7 @@ public class ModLoader : BaseUnityPlugin
                                     {
                                         JsonUtility.FromJsonOverwrite(CardData, obj);
                                     }
+
                                     dict.Add(obj_name, obj);
                                     WaitForWarpperEditorNoGuidList.Add(
                                         new ScriptableObjectPack(obj, "", "", ModName,
@@ -1265,8 +1268,9 @@ public class ModLoader : BaseUnityPlugin
 
     private static void LoadEditorScriptableObject()
     {
-        foreach (var item in WaitForWarpperEditorNoGuidList)
+        while (WaitForWarpperEditorNoGuidList.Count > 0)
         {
+            var item = WaitForWarpperEditorNoGuidList.Pop();
             try
             {
                 ProcessingScriptableObjectPack = item;
@@ -1572,7 +1576,9 @@ public class ModLoader : BaseUnityPlugin
 
         while (!_onceWarp.Done()) yield return null;
 
-        foreach (var item in WaitForAddDefaultContentPage)
+        while (WaitForAddDefaultContentPage.Count > 0)
+        {
+            var item = WaitForAddDefaultContentPage.Pop();
             try
             {
                 if (CustomGameObjectListDict.ContainsKey(item.obj.name))
@@ -1616,8 +1622,11 @@ public class ModLoader : BaseUnityPlugin
             {
                 Debug.LogWarning("WaiterForContentDisplayer WaitForAddDefaultContentPage " + ex.Message);
             }
+        }
 
-        foreach (var item in WaitForAddMainContentPage)
+        while (WaitForAddMainContentPage.Count>0)
+        {
+            var item = WaitForAddMainContentPage.Pop();
             try
             {
                 var name_parts = item.obj.name.Split('_');
@@ -1635,8 +1644,11 @@ public class ModLoader : BaseUnityPlugin
             {
                 Debug.LogWarning("WaiterForContentDisplayer WaitForAddMainContentPage " + ex.Message);
             }
+        }
 
-        foreach (var item in WaitForAddJournalPlayerCharacter)
+        while (WaitForAddJournalPlayerCharacter.Count > 0)
+        {
+            var item = WaitForAddJournalPlayerCharacter.Pop();
             try
             {
                 if (item.obj is not PlayerCharacter character)
@@ -1653,6 +1665,7 @@ public class ModLoader : BaseUnityPlugin
             {
                 Debug.LogWarning("WaiterForContentDisplayer PlayerCharacterJournalName " + ex.Message);
             }
+        }
     }
 
     private static void CustomGameObjectFixed()
