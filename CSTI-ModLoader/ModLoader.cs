@@ -61,7 +61,7 @@ public class ModPack
 [SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.6.22";
+    public const string ModVersion = "2.3.6.23";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
