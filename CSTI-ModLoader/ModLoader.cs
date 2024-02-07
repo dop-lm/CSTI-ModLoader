@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -57,9 +58,10 @@ public class ModPack
 
 [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", ModVersion)]
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
+[SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.6.21";
+    public const string ModVersion = "2.3.6.22";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 

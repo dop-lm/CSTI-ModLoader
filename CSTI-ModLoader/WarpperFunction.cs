@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using CSTI_LuaActionSupport.DataStruct;
+using LitJson;
 using ModLoader.ExportUtil;
 using ModLoader.LoaderUtil;
 using UnityEngine;
@@ -113,6 +114,11 @@ public class WarpperFunction
         {
             LogErrorWithModInfo("JsonCommonRefWarpper Unexpect List Object Type " + field_type.Name);
         }
+    }
+
+    public static void JsonCommonWarpper(Object obj, JsonData json)
+    {
+        JsonCommonWarpper(obj, new JsonKVProvider(json));
     }
 
     public static void JsonCommonWarpper(Object obj, KVProvider json)
