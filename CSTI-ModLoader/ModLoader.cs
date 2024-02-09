@@ -30,14 +30,16 @@ using Debug = UnityEngine.Debug;
 namespace ModLoader;
 
 [Serializable]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 public class ModInfo
 {
-    public string Name;
-    public string Version;
+    public string Name = "";
+    public string Version = "";
 
-    public string ModLoaderVerison;
+    // ReSharper disable once IdentifierTypo
+    public string ModLoaderVerison = "";
 
-    public string ModEditorVersion;
+    public string ModEditorVersion = "";
 }
 
 public class ModPack
@@ -59,9 +61,10 @@ public class ModPack
 [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", ModVersion)]
 [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 [SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.6.28";
+    public const string ModVersion = "2.3.6.29";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
@@ -88,13 +91,13 @@ public class ModLoader : BaseUnityPlugin
         AccessTools.StaticFieldRefAccess<Dictionary<string, string>>(AccessTools.Field(typeof(LocalizationManager),
             "CurrentTexts"));
 
-    public static ConfigEntry<bool> TexCompatibilityMode;
+    public static ConfigEntry<bool> TexCompatibilityMode = null!;
     public static readonly Dictionary<string, ModPack> ModPacks = new();
 
-    public static Version PluginVersion;
-    public static Assembly GameSourceAssembly;
+    public static Version PluginVersion = null!;
+    public static Assembly GameSourceAssembly = null!;
     public static readonly Harmony HarmonyInstance = new("Dop.plugin.CSTI.ModLoader");
-    public static ModLoader ModLoaderInstance;
+    public static ModLoader ModLoaderInstance = null!;
 
     public static readonly Dictionary<string, Sprite> SpriteDict = new();
 
@@ -124,6 +127,7 @@ public class ModLoader : BaseUnityPlugin
 
     public struct ScriptableObjectPack
     {
+        // ReSharper disable once InconsistentNaming
         public ScriptableObject? obj;
         public readonly string CardDirOrGuid;
         public string CardPath;
@@ -131,16 +135,16 @@ public class ModLoader : BaseUnityPlugin
         public readonly KVProvider? CardData;
 
         public ScriptableObjectPack(ScriptableObject? obj,
-            string CardDirOrGuid,
-            string CardPath,
-            string ModName,
-            KVProvider? CardData)
+            string cardDirOrGuid,
+            string cardPath,
+            string modName,
+            KVProvider? cardData)
         {
             this.obj = obj;
-            this.CardDirOrGuid = CardDirOrGuid;
-            this.CardPath = CardPath;
-            this.ModName = ModName;
-            this.CardData = CardData;
+            this.CardDirOrGuid = cardDirOrGuid;
+            this.CardPath = cardPath;
+            this.ModName = modName;
+            this.CardData = cardData;
         }
     }
 
@@ -173,8 +177,8 @@ public class ModLoader : BaseUnityPlugin
     private static readonly List<ScriptableObjectPack> WaitForAddDefaultContentPage = new();
     private static readonly List<ScriptableObjectPack> WaitForAddMainContentPage = new();
     public static bool HasEncounterType;
-    public static Image MainUIBackPanel;
-    public static RectTransform MainUIBackPanelRT;
+    public static Image MainUIBackPanel = null!;
+    public static RectTransform MainUIBackPanelRT = null!;
     [NonSerialized] public bool ModLoaderUpdated;
 
     private void Start()
@@ -184,7 +188,7 @@ public class ModLoader : BaseUnityPlugin
         CompatibleCheck.MainCheck();
     }
 
-    public static AssetBundle FontAssetBundle;
+    public static AssetBundle FontAssetBundle = null!;
 
     private static IEnumerator FontLoader()
     {
@@ -376,7 +380,7 @@ public class ModLoader : BaseUnityPlugin
     public static void LogErrorWithModInfo(string error_info)
     {
         Debug.LogWarning(string.Format("{0}.{1} Error: {2}", ProcessingScriptableObjectPack.ModName,
-            ProcessingScriptableObjectPack.obj.name, error_info));
+            ProcessingScriptableObjectPack.obj == null ? "null" : ProcessingScriptableObjectPack.obj.name, error_info));
     }
 
     private static void LoadGameResource()
@@ -412,10 +416,13 @@ public class ModLoader : BaseUnityPlugin
                 else
                 {
                     if (!AllScriptableObjectDict.ContainsKey(ele.name))
-                        AllScriptableObjectDict.Add(ele.name, ele as ScriptableObject);
+                    {
+                        if (ele is ScriptableObject scriptableObject)
+                            AllScriptableObjectDict.Add(ele.name, scriptableObject);
+                    }
                     else
                         Debug.LogWarning("AllScriptableObjectDict Same Key was Add " +
-                                         (ele as UniqueIDScriptable).name);
+                                         (ele as UniqueIDScriptable)?.name);
                 }
 
                 if (ele is not UniqueIDScriptable)
@@ -424,13 +431,15 @@ public class ModLoader : BaseUnityPlugin
                     {
                         AllScriptableObjectWithoutGuidTypeDict.Add(ele.GetType(),
                             new Dictionary<string, ScriptableObject>());
-                        if (AllScriptableObjectWithoutGuidTypeDict.TryGetValue(ele.GetType(), out var type_dict))
-                            type_dict.Add(ele.name, ele as ScriptableObject);
+                        if (AllScriptableObjectWithoutGuidTypeDict.TryGetValue(ele.GetType(), out var type_dict)
+                            && ele is ScriptableObject scriptableObject)
+                            type_dict.Add(ele.name, scriptableObject);
                     }
                     else
                     {
-                        if (AllScriptableObjectWithoutGuidTypeDict.TryGetValue(ele.GetType(), out var type_dict))
-                            type_dict.Add(ele.name, ele as ScriptableObject);
+                        if (AllScriptableObjectWithoutGuidTypeDict.TryGetValue(ele.GetType(), out var type_dict)
+                            && ele is ScriptableObject scriptableObject)
+                            type_dict.Add(ele.name, scriptableObject);
                     }
                 }
 
@@ -463,19 +472,28 @@ public class ModLoader : BaseUnityPlugin
 
         foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(Sprite)))
             if (!SpriteDict.ContainsKey(ele.name))
-                SpriteDict.Add(ele.name, ele as Sprite);
+            {
+                if (ele is Sprite sprite)
+                    SpriteDict.Add(ele.name, sprite);
+            }
             else
                 Debug.Log("SpriteDict Same Key was Add " + ele.name);
 
         foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(AudioClip)))
             if (!AudioClipDict.ContainsKey(ele.name))
-                AudioClipDict.Add(ele.name, ele as AudioClip);
+            {
+                if (ele is AudioClip clip)
+                    AudioClipDict.Add(ele.name, clip);
+            }
             else
                 Debug.Log("AudioClipDict Same Key was Add " + ele.name);
 
         foreach (var ele in Resources.FindObjectsOfTypeAll(typeof(WeatherSpecialEffect)))
             if (!WeatherSpecialEffectDict.ContainsKey(ele.name))
-                WeatherSpecialEffectDict.Add(ele.name, ele as WeatherSpecialEffect);
+            {
+                if (ele is WeatherSpecialEffect weatherSpecialEffect)
+                    WeatherSpecialEffectDict.Add(ele.name, weatherSpecialEffect);
+            }
             else
                 Debug.Log("WeatherSpecialEffectDict Same Key was Add " + ele.name);
     }
@@ -491,6 +509,7 @@ public class ModLoader : BaseUnityPlugin
                     continue;
                 var Info = new ModInfo();
                 var ModName = Path.GetFileNameWithoutExtension(file);
+                // ReSharper disable once RedundantAssignment
                 var ModDirName = Path.GetFileNameWithoutExtension(file);
                 //System.Collections.ObjectModel.ReadOnlyCollection<ZipArchiveEntry> entrys = null;
                 ICollection<ZipEntry> entrys;
@@ -813,8 +832,9 @@ public class ModLoader : BaseUnityPlugin
                                 continue;
                             }
 
-                            var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
+                            var card = (UniqueIDScriptable)ScriptableObject.CreateInstance(type);
                             // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
+                            // ReSharper disable once SuspiciousTypeConversion.Global
                             if (card is IModLoaderJsonObj modLoaderJsonObj)
                             {
                                 modLoaderJsonObj.CreateByJson(CardData);
@@ -895,9 +915,6 @@ public class ModLoader : BaseUnityPlugin
             Debug.LogWarning(ex.Message);
         }
     }
-
-    private static readonly List<Task<(List<(byte[] dat, string name)> sprites, string modName)>> spritesWaitList =
-        new();
 
     public static readonly List<Task<(List<(byte[] dat, string pat, Type type)> uniqueObjs, string modName)>>
         uniqueObjWaitList = new();
@@ -1404,7 +1421,7 @@ public class ModLoader : BaseUnityPlugin
                     if (dict.TryGetValue(tuple.Item1, out var group))
                     {
                         var obj = group as PerkGroup;
-                        if (obj)
+                        if (obj != null)
                         {
                             Array.Resize(ref obj.PerksList, obj.PerksList.Length + 1);
                             obj.PerksList[obj.PerksList.Length - 1] = tuple.Item2;
@@ -1460,7 +1477,7 @@ public class ModLoader : BaseUnityPlugin
                 if (itemObj.SubGroups.Count == 0)
                 {
                     var json = item.CardData;
-                    if (json.ContainsKey("BlueprintCardDataCardTabGroup") &&
+                    if (json != null && json.ContainsKey("BlueprintCardDataCardTabGroup") &&
                         json["BlueprintCardDataCardTabGroup"].IsString && !json["BlueprintCardDataCardTabGroup"]
                             .ToString().IsNullOrWhiteSpace())
                         foreach (var group in instance.BlueprintModelsPopup.BlueprintTabs)
@@ -1486,7 +1503,8 @@ public class ModLoader : BaseUnityPlugin
         {
             if (ele.GetType().Assembly != GameSourceAssembly)
                 continue;
-            CardFilterGroupDict.Add(ele.name, ele as CardFilterGroup);
+            if (ele is CardFilterGroup cardFilterGroup)
+                CardFilterGroupDict.Add(ele.name, cardFilterGroup);
         }
 
         foreach (var item in WaitForAddCardFilterGroupCard)
@@ -1535,8 +1553,8 @@ public class ModLoader : BaseUnityPlugin
             foreach (var obj in objs)
             {
                 if (obj.gameObject.name != "JournalTourist") continue;
-                ContentDisplayer displayer = null;
-                GameObject clone = null;
+                ContentDisplayer? displayer = null;
+                GameObject? clone = null;
                 try
                 {
                     clone = Instantiate(obj.gameObject);
@@ -1549,11 +1567,15 @@ public class ModLoader : BaseUnityPlugin
 
                 if (displayer == null)
                     break;
-                clone.name = "JournalDefaultSample";
-                clone.hideFlags = HideFlags.HideAndDontSave;
-                CustomGameObjectListDict.Add(clone.name, clone);
-                CustomContentDisplayerDict.Add(clone.name, displayer);
-                done = true;
+                if (clone != null)
+                {
+                    clone.name = "JournalDefaultSample";
+                    clone.hideFlags = HideFlags.HideAndDontSave;
+                    CustomGameObjectListDict.Add(clone.name, clone);
+                    CustomContentDisplayerDict.Add(clone.name, displayer);
+                    done = true;
+                }
+
                 break;
             }
 
@@ -1566,8 +1588,9 @@ public class ModLoader : BaseUnityPlugin
         foreach (var displayer in displayers)
             try
             {
-                if (!CustomContentDisplayerDict.ContainsKey(displayer.name))
-                    CustomContentDisplayerDict.Add(displayer.name, displayer as ContentDisplayer);
+                if (!CustomContentDisplayerDict.ContainsKey(displayer.name) &&
+                    displayer is ContentDisplayer contentDisplayer)
+                    CustomContentDisplayerDict.Add(displayer.name, contentDisplayer);
             }
             catch (Exception ex)
             {
@@ -1581,12 +1604,12 @@ public class ModLoader : BaseUnityPlugin
             var item = WaitForAddDefaultContentPage.Pop();
             try
             {
-                if (CustomGameObjectListDict.ContainsKey(item.obj.name))
+                if (item.obj != null && CustomGameObjectListDict.ContainsKey(item.obj.name))
                     continue;
                 if (CustomGameObjectListDict.TryGetValue("JournalDefaultSample", out var sample))
                 {
-                    GameObject clone = null;
-                    ContentDisplayer displayer = null;
+                    GameObject? clone = null;
+                    ContentDisplayer? displayer = null;
                     try
                     {
                         clone = Instantiate(sample);
@@ -1608,13 +1631,16 @@ public class ModLoader : BaseUnityPlugin
                     pages.Add(modPage);
                     tDisplayer.Field<ContentPage>("DefaultPage").Value = modPage;
 
-                    var name_parts = item.obj.name.Split('_');
-                    if (name_parts.Length > 2)
+                    if (item.obj != null)
                     {
-                        clone.name = name_parts[0] + "_" + name_parts[1];
-                        clone.hideFlags = HideFlags.HideAndDontSave;
-                        CustomGameObjectListDict.Add(clone.name, clone);
-                        CustomContentDisplayerDict.Add(clone.name, displayer);
+                        var nameParts = item.obj.name.Split('_');
+                        if (nameParts.Length > 2 && clone != null)
+                        {
+                            clone.name = nameParts[0] + "_" + nameParts[1];
+                            clone.hideFlags = HideFlags.HideAndDontSave;
+                            CustomGameObjectListDict.Add(clone.name, clone);
+                            CustomContentDisplayerDict.Add(clone.name, displayer);
+                        }
                     }
                 }
             }
@@ -1624,21 +1650,22 @@ public class ModLoader : BaseUnityPlugin
             }
         }
 
-        while (WaitForAddMainContentPage.Count>0)
+        while (WaitForAddMainContentPage.Count > 0)
         {
             var item = WaitForAddMainContentPage.Pop();
             try
             {
-                var name_parts = item.obj.name.Split('_');
-                if (name_parts.Length > 2)
-                    if (CustomContentDisplayerDict.TryGetValue(name_parts[0] + "_" + name_parts[1],
+                if (item.obj != null)
+                {
+                    var name_parts = item.obj.name.Split('_');
+                    if (name_parts.Length > 2 && CustomContentDisplayerDict.TryGetValue(
+                            name_parts[0] + "_" + name_parts[1],
                             out var displayer))
                     {
-                        var bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-                        var pages = typeof(ContentDisplayer).GetField("ExplicitPageContent", bindingFlags)
-                            .GetValue(displayer) as IList;
-                        pages.Add(item.obj);
+                        var pages = Traverse.Create(displayer).Field("ExplicitPageContent").GetValue() as IList;
+                        pages?.Add(item.obj);
                     }
+                }
             }
             catch (Exception ex)
             {
@@ -1655,7 +1682,8 @@ public class ModLoader : BaseUnityPlugin
                     continue;
 
                 var json = item.CardData;
-                if (json.ContainsKey("PlayerCharacterJournalName") && json["PlayerCharacterJournalName"].IsString &&
+                if (json != null && json.ContainsKey("PlayerCharacterJournalName") &&
+                    json["PlayerCharacterJournalName"].IsString &&
                     !json["PlayerCharacterJournalName"].ToString().IsNullOrWhiteSpace())
                     if (CustomContentDisplayerDict.TryGetValue(json["PlayerCharacterJournalName"].ToString(),
                             out var displayer))
@@ -1883,7 +1911,7 @@ public class ModLoader : BaseUnityPlugin
 
     public static float ShowLoadSuccess;
 
-    public static GUIStyle bigLabel;
+    public static GUIStyle? bigLabel;
     public static int CurrentMainUIId;
     public static Vector2 CurrentMainUIIdSelectScroll;
 
@@ -1976,7 +2004,7 @@ public class ModLoader : BaseUnityPlugin
             GUILayout.Toggle(TexCompatibilityMode.Value, "是否启用纹理兼容模式（开启后纹理占用内存会增加，请仅在缺图时开启）");
         ModManagerUIScrollViewPos = GUILayout.BeginScrollView(ModManagerUIScrollViewPos);
 
-        foreach (var (key, val) in ModPacks) ModManagerIns(val);
+        foreach (var (_, val) in ModPacks) ModManagerIns(val);
 
         GUILayout.EndScrollView();
 
