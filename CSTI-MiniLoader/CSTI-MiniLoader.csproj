@@ -1,0 +1,141 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net472</TargetFramework>
+        <RootNamespace>CSTI_MiniLoader</RootNamespace>
+        <Nullable>enable</Nullable>
+        <LangVersion>default</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Reference Include="0Harmony">
+        <HintPath>installer_deps\core\0Harmony.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Accessibility">
+        <HintPath>..\.MelonLoader057\Managed\Accessibility.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Assembly-CSharp">
+        <HintPath>managed\Assembly-CSharp.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="AssetRipper.VersionUtilities">
+        <HintPath>installer_deps\core\AssetRipper.VersionUtilities.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="AssetsTools.NET">
+        <HintPath>installer_deps\core\AssetsTools.NET.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="bHapticsLib">
+        <HintPath>installer_deps\core\bHapticsLib.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Il2Cppmscorlib">
+        <HintPath>managed\Il2Cppmscorlib.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Il2CppSystem">
+        <HintPath>managed\Il2CppSystem.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Il2CppSystem.Core">
+        <HintPath>managed\Il2CppSystem.Core.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="IndexRange">
+        <HintPath>installer_deps\core\IndexRange.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="JNISharp">
+        <HintPath>installer_deps\core\JNISharp.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="MelonLoader">
+        <HintPath>installer_deps\core\MelonLoader.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Mono.Cecil">
+        <HintPath>installer_deps\core\Mono.Cecil.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Mono.Cecil.Mdb">
+        <HintPath>installer_deps\core\Mono.Cecil.Mdb.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Mono.Cecil.Pdb">
+        <HintPath>installer_deps\core\Mono.Cecil.Pdb.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Mono.Cecil.Rocks">
+        <HintPath>installer_deps\core\Mono.Cecil.Rocks.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="MonoMod.RuntimeDetour">
+        <HintPath>installer_deps\core\MonoMod.RuntimeDetour.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="MonoMod.Utils">
+        <HintPath>installer_deps\core\MonoMod.Utils.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Tomlet">
+        <HintPath>installer_deps\core\Tomlet.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="UnhollowerBaseLib">
+        <HintPath>managed\UnhollowerBaseLib.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="UnhollowerRuntimeLib">
+        <HintPath>managed\UnhollowerRuntimeLib.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="UnityEngine">
+        <HintPath>managed\UnityEngine.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="UnityEngine.AudioModule">
+        <HintPath>managed\UnityEngine.AudioModule.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="UnityEngine.CoreModule">
+        <HintPath>managed\UnityEngine.CoreModule.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="UnityEngine.Il2CppAssetBundleManager">
+        <HintPath>..\.MelonLoader057\Managed\UnityEngine.Il2CppAssetBundleManager.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="UnityEngine.JSONSerializeModule">
+        <HintPath>managed\UnityEngine.JSONSerializeModule.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="ValueTupleBridge">
+        <HintPath>installer_deps\core\ValueTupleBridge.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="WebSocketDotNet">
+        <HintPath>installer_deps\core\WebSocketDotNet.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Fody" Version="6.8.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="ILMerge.Fody" Version="1.24.0" />
+      <PackageReference Include="LitJson" Version="0.19.0" />
+      <PackageReference Include="lz4net" Version="1.0.15.93" />
+      <PackageReference Include="NAudio" Version="1.10.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="installer_deps.zip" />
+    </ItemGroup>
+
+</Project>
