@@ -113,6 +113,9 @@
         <HintPath>managed\UnityEngine.JSONSerializeModule.dll</HintPath>
         <Private>False</Private>
       </Reference>
+      <Reference Include="UnityEngine.SharedInternalsModule">
+        <HintPath>managed\UnityEngine.SharedInternalsModule.dll</HintPath>
+      </Reference>
       <Reference Include="ValueTupleBridge">
         <HintPath>installer_deps\core\ValueTupleBridge.dll</HintPath>
         <Private>False</Private>

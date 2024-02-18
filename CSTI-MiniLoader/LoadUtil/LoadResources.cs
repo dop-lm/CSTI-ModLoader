@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CSTI_MiniLoader.LoadUtil.DataFind;
 using CSTI_MiniLoader.Patchers;
 using CSTI_MiniLoader.WarpperClassGen;
-using HarmonyLib;
+using MelonLoader;
 using UnhollowerBaseLib;
 using UnhollowerRuntimeLib;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace CSTI_MiniLoader.LoadUtil;
 
@@ -52,11 +54,28 @@ public static class LoadResources
         }
     }
 
+    public static IEnumerable<Object> WithGameDataFinder(this IEnumerable<Object> enumerable)
+    {
+        foreach (var o in enumerable)
+        {
+            yield return o;
+        }
+
+        foreach (var data in GameLoad.Instance.DataBase.AllData)
+        {
+            yield return data;
+            foreach (var o in data.Find())
+            {
+                yield return o;
+            }
+        }
+    }
+
     public static void LoadGameResource()
     {
-        foreach (var ele in Resources.FindObjectsOfTypeAll(Il2CppType.Of<ScriptableObject>()))
+        try
         {
-            try
+            foreach (var ele in Object.FindObjectsOfType(Il2CppType.Of<ScriptableObject>()).WithGameDataFinder())
             {
                 if (ele is not UniqueIDScriptable)
                 {
@@ -67,10 +86,10 @@ public static class LoadResources
                     RegObj(idScriptable.UniqueID, idScriptable, idScriptable.GetType());
                 }
             }
-            catch (Exception ex)
-            {
-                Debug.LogWarning("LoadGameResource Error " + ex.Message);
-            }
+        }
+        catch (Exception ex)
+        {
+            MelonLogger.Error("LoadGameResource Error " + ex.Message);
         }
     }
 

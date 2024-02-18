@@ -20,18 +20,22 @@ public static class LoadArchMod
 
     public static void LoadAllArchMod()
     {
-        foreach (var file in Directory.EnumerateFiles(MelonHandler.ModsDirectory, "*.modArch_V3",
+        var sBuf = new StringBuilder();
+        foreach (var file in Directory.EnumerateFiles(Path.Combine(MelonUtils.GetApplicationPath(),MelonHandler.ModsDirectory), "*.modArch_V3",
                      SearchOption.AllDirectories))
         {
             try
             {
                 var loadMod = LoadMod(file, 3);
-                Debug.Log(loadMod);
+                MelonLogger.Msg(loadMod);
+                sBuf.Append(Path.GetFileNameWithoutExtension(file));
+                sBuf.Append(";");
             }
             catch (Exception)
             {
             }
         }
+        MelonLogger.Msg(sBuf);
     }
 
     public static string LoadMod(string modPath, int version)
@@ -49,7 +53,7 @@ public static class LoadArchMod
         }
 
         var endTime = DateTime.Now;
-        Debug.Log($"加载模组:{modName} 文件总用时:{endTime - startTime:g}");
+        MelonLogger.Msg($"加载模组:{modName} 文件总用时:{endTime - startTime:g}");
         return $"加载 {modName} 成功";
     }
 

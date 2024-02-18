@@ -2,12 +2,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Text.RegularExpressions;
 using CSTI_MiniLoader.LoadUtil;
 using HarmonyLib;
 using MelonLoader;
 using UnhollowerBaseLib;
 using UnhollowerRuntimeLib;
 using UnityEngine;
+using Exception = System.Exception;
 using Object = UnityEngine.Object;
 
 namespace CSTI_MiniLoader.Patchers;
@@ -15,6 +18,67 @@ namespace CSTI_MiniLoader.Patchers;
 [SuppressMessage("ReSharper", "EmptyGeneralCatchClause")]
 public static class LoadPatchMain
 {
+    [HarmonyPostfix, HarmonyPatch(typeof(LocalizationManager), nameof(LocalizationManager.LoadLanguage))]
+    public static void LocalizationManagerLoadLanguagePostfix()
+    {
+        try
+        {
+            LoadLocalization();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning(ex.Message);
+        }
+    }
+
+    private static void LoadLocalization()
+    {
+        var regex = new Regex(@"\\n");
+        if (LocalizationManager.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "简体中文")
+            foreach (var pair in WaitForLoadCSVList)
+                try
+                {
+                    if (pair.Item1.Contains("SimpCn"))
+                    {
+                        var currentTexts = LocalizationManager.CurrentTexts;
+                        var dictionary = CSVParser.LoadFromString(pair.Item2);
+                        foreach (var keyValuePair in dictionary)
+                            if (!currentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
+                            {
+                                var chLocal = regex.Replace(keyValuePair.Value.get_Item(1), "\n");
+                                if (!string.IsNullOrWhiteSpace(chLocal.Trim()))
+                                    currentTexts.Add(keyValuePair.Key, chLocal);
+                            }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning("LoadLocalization " + ex.Message);
+                }
+
+        if (LocalizationManager.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "English")
+            foreach (var pair in WaitForLoadCSVList)
+                try
+                {
+                    if (pair.Item1.Contains("SimpEn"))
+                    {
+                        var currentTexts = LocalizationManager.CurrentTexts;
+                        var dictionary = CSVParser.LoadFromString(pair.Item2);
+                        foreach (var keyValuePair in dictionary)
+                            if (!currentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
+                            {
+                                var enLocal = regex.Replace(keyValuePair.Value.get_Item(0), "\n");
+                                if (!string.IsNullOrWhiteSpace(enLocal.Trim()))
+                                    currentTexts.Add(keyValuePair.Key, enLocal);
+                            }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning("LoadLocalization " + ex.Message);
+                }
+    }
+
     public static void Deconstruct<TKey, TVal>(this KeyValuePair<TKey, TVal> pair, out TKey key, out TVal val)
     {
         key = pair.Key;
@@ -56,7 +120,28 @@ public static class LoadPatchMain
         var done = false;
         while (true)
         {
-            var objs = Resources.FindObjectsOfTypeAll(Il2CppType.Of<ContentDisplayer>());
+            List<Object> objs;
+            try
+            {
+                objs = Object.FindObjectsOfTypeAll(Il2CppType.Of<ContentDisplayer>()).ToList();
+            }
+            catch (Exception e)
+            {
+                try
+                {
+                    objs = [Resources.Load("Assets/JournalTourist")];
+                    if (objs[0] == null)
+                    {
+                        objs = [];
+                    }
+                }
+                catch (Exception exception)
+                {
+                    MelonLogger.Error(exception);
+                    objs = [];
+                }
+            }
+
 
             foreach (var o in objs)
             {
@@ -93,7 +178,7 @@ public static class LoadPatchMain
             yield return new WaitForSeconds(0.5f);
         }
 
-        var displayers = Resources.FindObjectsOfTypeAll(Il2CppType.Of<ContentDisplayer>());
+        var displayers = Object.FindObjectsOfTypeAll(Il2CppType.Of<ContentDisplayer>());
         foreach (var displayer in displayers)
             try
             {
@@ -217,8 +302,8 @@ public static class LoadPatchMain
         }
     }
 
-    [HarmonyPrefix, HarmonyPatch(typeof(UniqueIDScriptable), nameof(UniqueIDScriptable.ClearDict))]
-    public static void UniqueIDScriptableClearDictPrefix()
+    // [HarmonyPrefix, HarmonyPatch(typeof(UniqueIDScriptable), nameof(UniqueIDScriptable.ClearDict))]
+    public static void LoadAndInit()
     {
         AllItemDictionary[typeof(Sprite)] = new Dictionary<string, object>();
         AllItemDictionary[typeof(AudioClip)] = new Dictionary<string, object>();
@@ -230,10 +315,39 @@ public static class LoadPatchMain
             LoadResources.WarpperAllEditorMods();
             LoadResources.WarpperAllEditorGameSrouces();
             LoadResources.MatchAndWarpperAllEditorGameSrouce();
+            AddPerkGroup();
+            foreach (var (id, uniqueIDScriptable) in AllGUIDDict)
+            {
+                uniqueIDScriptable.Init();
+            }
         }
         catch (Exception e)
         {
+            MelonLogger.Error(e);
         }
+    }
+
+    private static void AddPerkGroup()
+    {
+        foreach (var tuple in WaitForAddPerkGroup)
+            try
+            {
+                if (ItemDictionary(typeof(PerkGroup)).TryGetValue(tuple.Item1, out var group))
+                {
+                    var obj = group as PerkGroup;
+                    if (obj != null)
+                    {
+                        var il2CppReferenceArray = (Il2CppArrayBase<CharacterPerk>)obj.PerksList;
+                        Il2CppSystem.Array.Resize(ref il2CppReferenceArray, obj.PerksList.Length + 1);
+                        obj.PerksList = (Il2CppReferenceArray<CharacterPerk>)il2CppReferenceArray;
+                        obj.PerksList[^1] = tuple.Item2;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("AddPerkGroup " + ex.Message);
+            }
     }
 
     private static bool _initFlag;
@@ -269,7 +383,7 @@ public static class LoadPatchMain
     {
         var cardFilterGroupDict = new Dictionary<string, CardFilterGroup>();
 
-        foreach (var ele in Resources.FindObjectsOfTypeAll(Il2CppType.Of<CardFilterGroup>()))
+        foreach (var ele in Object.FindObjectsOfTypeAll(Il2CppType.Of<CardFilterGroup>()))
         {
             if (ele is CardFilterGroup cardFilterGroup)
                 cardFilterGroupDict.Add(ele.name, cardFilterGroup);
@@ -373,7 +487,7 @@ public static class LoadPatchMain
                 if (tabGroup.SubGroups.Count != 0)
                 {
                     Il2CppArrayBase<CardTabGroup> il2CppReferenceArray = instance.BlueprintModelsPopup.BlueprintTabs;
-                    Array.Resize<>(ref il2CppReferenceArray,
+                    Il2CppSystem.Array.Resize(ref il2CppReferenceArray,
                         instance.BlueprintModelsPopup.BlueprintTabs.Length + 1);
                     instance.BlueprintModelsPopup.BlueprintTabs =
                         (Il2CppReferenceArray<CardTabGroup>)il2CppReferenceArray;

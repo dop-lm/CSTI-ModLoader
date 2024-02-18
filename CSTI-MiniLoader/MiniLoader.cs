@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using CSTI_MiniLoader.LoadUtil;
 using CSTI_MiniLoader.Patchers;
 using MelonLoader;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace CSTI_MiniLoader;
 
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 public class MiniLoader : MelonMod
 {
     public struct ScriptableObjectPack
@@ -31,7 +35,7 @@ public class MiniLoader : MelonMod
         }
     }
 
-    public const string Version = "0.0.0.1";
+    public const string Version = "0.0.2";
     public static readonly Dictionary<Type, Dictionary<string, object>> AllItemDictionary = new();
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
     public static readonly List<(string LocalName, string LocalContent)> WaitForLoadCSVList = new();
@@ -53,6 +57,7 @@ public class MiniLoader : MelonMod
     public static readonly Dictionary<string, Dictionary<string, CardData>> AllCardTagGuidCardDataDict = new();
     public static readonly Dictionary<string, GameObject> CustomGameObjectListDict = new();
     public static readonly Dictionary<string, ContentDisplayer> CustomContentDisplayerDict = new();
+    public static readonly HarmonyLib.Harmony HarmonyIns = new("zender.CSTI-MiniLoader");
 
     public static void RegObj(string id, object o, Type? type)
     {
@@ -86,8 +91,11 @@ public class MiniLoader : MelonMod
         return objects;
     }
 
-    public override void OnLateInitializeMelon()
+    public override void OnInitializeMelon()
     {
-        HarmonyInstance.PatchAll(typeof(LoadPatchMain));
+        throw new NotImplementedException("这不现实");
+        HarmonyIns.PatchAll(typeof(LoadPatchMain));
+        MelonLogger.Msg("Call LoadPatchMain.LoadAndInit");
+        LoadPatchMain.LoadAndInit();
     }
 }
