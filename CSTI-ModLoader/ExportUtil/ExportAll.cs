@@ -72,7 +72,8 @@ public static class ExportAll
 
     public class ExportArch
     {
-        public int ModArchVersion = 3;
+        public bool ForAndroid = false;
+        public readonly int ModArchVersion = 3;
 
         public readonly string ModPath;
 
@@ -275,7 +276,7 @@ public static class ExportAll
             {
                 var (s, pop) = allCacheTexture.RandPop(t => 8192f / (t.height * t.width));
                 var cacheCurTexPackSize = curTexPackSize;
-                while (cacheCurTexPackSize < 8192)
+                while (cacheCurTexPackSize < (!ForAndroid ? 8192 : 2048))
                 {
                     if (CheckGenerateAtlas(cacheTexture.Values.Append(pop), cacheCurTexPackSize)) break;
                     cacheCurTexPackSize *= 2;
@@ -292,13 +293,13 @@ public static class ExportAll
                 {
                     if (cacheTexture.Count == 0)
                     {
-                        pop.Compress(true);
+                        if (!ForAndroid) pop.Compress(true);
                         var rawTextureData = pop.GetRawTextureData();
                         writer.Write(1);
                         writer.Write(Path.GetFileName(s));
                         writer.Write(pop.width);
                         writer.Write(pop.height);
-                        writer.Write((int) pop.format);
+                        writer.Write((int)pop.format);
                         writer.Write(rawTextureData.Length);
                         writer.Write(rawTextureData);
                         Object.DestroyImmediate(pop);
@@ -307,7 +308,7 @@ public static class ExportAll
                     {
                         var packTextures = texture2D.PackTextures(cacheTexture.Values.ToArray(),
                             1, curTexPackSize, false);
-                        texture2D.Compress(true);
+                        if (!ForAndroid) texture2D.Compress(true);
                         var rawTextureData = texture2D.GetRawTextureData();
                         writer.Write(2);
                         writer.Write(packTextures);
@@ -315,7 +316,7 @@ public static class ExportAll
                             $"ImgPack_{ModName}_{Random.Range(int.MinValue, int.MaxValue):X}_{Random.Range(int.MinValue, int.MaxValue):X}";
                         writer.Write(texture2D.name);
                         writer.Write(cacheTexture.Keys.ToList());
-                        writer.Write((int) texture2D.format);
+                        writer.Write((int)texture2D.format);
                         writer.Write(texture2D.width);
                         writer.Write(texture2D.height);
                         writer.Write(rawTextureData.Length);
@@ -331,7 +332,7 @@ public static class ExportAll
                     {
                         writer.Write(0);
                         var maximumOutputSize =
-                            LZ4Codec.MaximumOutputLength((int) AllData[ExportArchDataType.Img].Length);
+                            LZ4Codec.MaximumOutputLength((int)AllData[ExportArchDataType.Img].Length);
                         var buffer = new byte[maximumOutputSize];
                         var memoryStream = AllData[ExportArchDataType.Img];
                         var bytes = memoryStream.ToArray();
@@ -353,7 +354,7 @@ public static class ExportAll
                     {
                         var packTextures = texture2D.PackTextures(cacheTexture.Values.ToArray(),
                             1, curTexPackSize, false);
-                        texture2D.Compress(true);
+                        if (!ForAndroid) texture2D.Compress(true);
                         var rawTextureData = texture2D.GetRawTextureData();
                         writer.Write(2);
                         writer.Write(packTextures);
@@ -361,7 +362,7 @@ public static class ExportAll
                             $"ImgPack_{ModName}_{Random.Range(int.MinValue, int.MaxValue):X}_{Random.Range(int.MinValue, int.MaxValue):X}";
                         writer.Write(texture2D.name);
                         writer.Write(cacheTexture.Keys.ToList());
-                        writer.Write((int) texture2D.format);
+                        writer.Write((int)texture2D.format);
                         writer.Write(texture2D.width);
                         writer.Write(texture2D.height);
                         writer.Write(rawTextureData.Length);
@@ -374,7 +375,7 @@ public static class ExportAll
 
                     writer.Write(0);
                     var maximumOutputSize =
-                        LZ4Codec.MaximumOutputLength((int) AllData[ExportArchDataType.Img].Length);
+                        LZ4Codec.MaximumOutputLength((int)AllData[ExportArchDataType.Img].Length);
                     var buffer = new byte[maximumOutputSize];
                     var memoryStream = AllData[ExportArchDataType.Img];
                     var bytes = memoryStream.ToArray();
@@ -410,17 +411,17 @@ public static class ExportAll
                     var bytes = tmp.ToArray();
                     tmp.Close();
                     texture2D.LoadImage(bytes);
-                    texture2D.Compress(true);
+                    if (!ForAndroid) texture2D.Compress(true);
                     var rawTextureData = texture2D.GetRawTextureData();
                     var binaryWriter = new BinaryWriter(AllData[ExportArchDataType.Img], Encoding.UTF8, true);
                     binaryWriter.Write(Path.GetFileName(file));
                     binaryWriter.Write(texture2D.width);
                     binaryWriter.Write(texture2D.height);
-                    binaryWriter.Write((int) texture2D.format);
+                    binaryWriter.Write((int)texture2D.format);
                     binaryWriter.Write(rawTextureData.Length);
                     binaryWriter.Write(rawTextureData);
                     binaryWriter.Flush();
-                    var maximumOutputSize = LZ4Codec.MaximumOutputLength((int) AllData[ExportArchDataType.Img].Length);
+                    var maximumOutputSize = LZ4Codec.MaximumOutputLength((int)AllData[ExportArchDataType.Img].Length);
                     if (maximumOutputSize <= MaxBlockSizeForRes) continue;
                     var nativeArray = new byte[maximumOutputSize];
                     new BinaryWriter(AllData[ExportArchDataType.Img], Encoding.UTF8, true).Write(LoadArchMod.EndFlg);
@@ -436,7 +437,7 @@ public static class ExportAll
                 }
             }
 
-            var outputSize = LZ4Codec.MaximumOutputLength((int) AllData[ExportArchDataType.Img].Length);
+            var outputSize = LZ4Codec.MaximumOutputLength((int)AllData[ExportArchDataType.Img].Length);
             var buffer = new byte[outputSize];
             new BinaryWriter(AllData[ExportArchDataType.Img], Encoding.UTF8, true).Write(LoadArchMod.EndFlg);
             var dataBuf = AllData[ExportArchDataType.Img].ToArray();
@@ -471,7 +472,7 @@ public static class ExportAll
                     binaryWriter.Write(bytes);
                     binaryWriter.Flush();
                     var maximumOutputSize =
-                        LZ4Codec.MaximumOutputLength((int) AllData[ExportArchDataType.Audio].Length);
+                        LZ4Codec.MaximumOutputLength((int)AllData[ExportArchDataType.Audio].Length);
                     if (maximumOutputSize <= MaxBlockSizeForRes) continue;
                     var nativeArray = new byte[maximumOutputSize];
                     new BinaryWriter(AllData[ExportArchDataType.Audio], Encoding.UTF8, true).Write(LoadArchMod.EndFlg);
@@ -487,7 +488,7 @@ public static class ExportAll
                 }
             }
 
-            var outputSize = LZ4Codec.MaximumOutputLength((int) AllData[ExportArchDataType.Audio].Length);
+            var outputSize = LZ4Codec.MaximumOutputLength((int)AllData[ExportArchDataType.Audio].Length);
             var buffer = new byte[outputSize];
             new BinaryWriter(AllData[ExportArchDataType.Audio], Encoding.UTF8, true).Write(LoadArchMod.EndFlg);
             var dataBuf = AllData[ExportArchDataType.Audio].ToArray();
@@ -523,11 +524,13 @@ public static class ExportAll
                     CollectObj();
                     break;
                 case 3:
+                case 4:
                     CollectObjV3();
                     break;
             }
 
             CollectAudio();
+
             switch (ModArchVersion)
             {
                 case 1:
@@ -535,6 +538,7 @@ public static class ExportAll
                     break;
                 case 2:
                 case 3:
+                case 4:
                     CollectImgV2();
                     break;
             }

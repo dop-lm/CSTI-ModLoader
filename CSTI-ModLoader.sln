@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModLoader安装包", "ModLo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DoorStop4Helper", "DoorStop4Helper\DoorStop4Helper.csproj", "{8693CE25-3B95-4703-B806-C23FD46099A4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSTI-MiniLoader", "CSTI-MiniLoader\CSTI-MiniLoader.csproj", "{5BF62FD5-89A1-4CB1-909C-94B9179A72F1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{8693CE25-3B95-4703-B806-C23FD46099A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8693CE25-3B95-4703-B806-C23FD46099A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8693CE25-3B95-4703-B806-C23FD46099A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BF62FD5-89A1-4CB1-909C-94B9179A72F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BF62FD5-89A1-4CB1-909C-94B9179A72F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BF62FD5-89A1-4CB1-909C-94B9179A72F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BF62FD5-89A1-4CB1-909C-94B9179A72F1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -6,6 +6,27 @@ namespace ModLoader.ExportUtil;
 
 public static class RWUtil
 {
+    public static void Write(this BinaryWriter writer, float[] data)
+    {
+        writer.Write(data.Length);
+        foreach (var f in data)
+        {
+            writer.Write(f);
+        }
+    }
+
+    public static float[] Read(this BinaryReader reader)
+    {
+        var readInt32 = reader.ReadInt32();
+        var floats = new float[readInt32];
+        for (var i = 0; i < readInt32; i++)
+        {
+            floats[i] = reader.ReadSingle();
+        }
+
+        return floats;
+    }
+
     public static void Write(this BinaryWriter writer, List<string> data)
     {
         writer.Write(data.Count);
