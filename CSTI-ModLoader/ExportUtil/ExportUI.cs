@@ -8,15 +8,10 @@ public static class ExportUI
 {
     public static string ModPath = "";
     public static string ModExportPath = "";
-    public static bool ForAndroid;
 
     public static void ModExportUIWindow()
     {
         GUILayout.BeginVertical();
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("是否兼容安卓: " + (ForAndroid ? "<兼容>" : "<不兼容>"))) ForAndroid = !ForAndroid;
-        GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
         GUILayout.Label("源模组路径：", GUILayout.ExpandWidth(false));
@@ -36,8 +31,6 @@ public static class ExportUI
                 GUILayout.EndVertical();
                 return;
             }
-
-            initExportArch.ForAndroid = ForAndroid;
 
             if (ModExportPath.IsNullOrWhiteSpace() || !Directory.Exists(ModExportPath))
             {

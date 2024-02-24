@@ -35,7 +35,9 @@ public static class AutoUpdate
         public static MyVersion Parse(string s)
         {
             var versions = s.Split('.').Select(int.Parse);
-            return new MyVersion(versions.ToList());
+            var list = versions.ToList();
+            // Console.WriteLine(string.Join(";", list.Select((v, i) => $"[{i}:{v}]")));
+            return new MyVersion(list);
         }
 
         public static bool operator <(MyVersion version1, MyVersion version2)
