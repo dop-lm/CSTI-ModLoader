@@ -88,7 +88,7 @@ public static class LoadArchMod
         while (blk != EndFlg)
         {
             LoadModArchBLK(blk, binaryReader, modName, version);
-            blk = binaryReader.ReadString();
+            blk = binaryReader.ReadString(); 
         }
 
         var endTime = DateTime.Now;

@@ -55,7 +55,7 @@ public static class WarpHelper
             ilGenerator.Emit(OpCodes.Ret);
         }
 
-        return dynamicMethod.CreateDelegate(typeof(Func<object>)) as Func<object>;
+        return (Func<object>) dynamicMethod.CreateDelegate(typeof(Func<object>));
     }
 
     public static (FieldInfo field, Func<object, object> getter, Action<object, object> setter) FieldFromCache(
@@ -79,7 +79,7 @@ public static class WarpHelper
         else
         {
             fieldInfo = AccessTools.Field(type, field_name);
-            FieldInfoCache[type] = new Dictionary<string, FieldInfo> { { field_name, fieldInfo } };
+            FieldInfoCache[type] = new Dictionary<string, FieldInfo> {{field_name, fieldInfo}};
         }
 
         if (fieldInfo != null && getter_use)
@@ -100,7 +100,7 @@ public static class WarpHelper
             {
                 getter = GenGetter(fieldInfo, type);
                 FieldGetterDynamicMethodCache[type] = new Dictionary<string, Func<object, object>>
-                    { { field_name, getter } };
+                    {{field_name, getter}};
             }
         }
 
@@ -122,7 +122,7 @@ public static class WarpHelper
             {
                 setter = GenSetter(fieldInfo, type);
                 FieldSetterDynamicMethodCache[type] = new Dictionary<string, Action<object, object>>
-                    { { field_name, setter } };
+                    {{field_name, setter}};
             }
         }
 
@@ -142,7 +142,7 @@ public static class WarpHelper
             return accessHelper.Get;
         }
 
-        var dynamicMethod = new DynamicMethod("simple_getter", ObjType, new[] { ObjType }, true);
+        var dynamicMethod = new DynamicMethod("simple_getter", ObjType, new[] {ObjType}, true);
         var ilGenerator = dynamicMethod.GetILGenerator();
         ilGenerator.Emit(OpCodes.Ldarg_0);
         ilGenerator.Emit(typeIsValueType ? OpCodes.Unbox : OpCodes.Castclass, type);
@@ -168,7 +168,7 @@ public static class WarpHelper
             return accessHelper.Set;
         }
 
-        var dynamicMethod = new DynamicMethod("simple_setter", typeof(void), new[] { ObjType, ObjType }, true);
+        var dynamicMethod = new DynamicMethod("simple_setter", typeof(void), new[] {ObjType, ObjType}, true);
         var ilGenerator = dynamicMethod.GetILGenerator();
         ilGenerator.Emit(OpCodes.Ldarg_0);
         ilGenerator.Emit(typeIsValueType ? OpCodes.Unbox : OpCodes.Castclass, type);
@@ -215,7 +215,7 @@ public static class WarpHelper
         public object Get(object o)
         {
             var ptr = UnsafeUtility.PinGCObjectAndGetAddress(o, out var gcHandle);
-            var obj = Unsafe.ToObj(*(void**)((IntPtr)ptr + Offset));
+            var obj = Unsafe.ToObj(*(void**) ((IntPtr) ptr + Offset));
             UnsafeUtility.ReleaseGCObject(gcHandle);
             return obj;
         }
@@ -224,7 +224,7 @@ public static class WarpHelper
         {
             var ptr = UnsafeUtility.PinGCObjectAndGetAddress(o, out var gcHandle);
             var ptrVal = UnsafeUtility.PinGCObjectAndGetAddress(val, out var gcHandle1);
-            *(void**)((IntPtr)ptr + Offset) = ptrVal;
+            *(void**) ((IntPtr) ptr + Offset) = ptrVal;
             UnsafeUtility.ReleaseGCObject(gcHandle);
             UnsafeUtility.ReleaseGCObject(gcHandle1);
         }
@@ -239,9 +239,8 @@ public static class WarpHelper
             // ReSharper disable once NotAccessedField.Local
             [FieldOffset(0)] private Func<object, object> __accessBackend = __transform;
 
-#pragma warning disable CS0414 // 字段已被赋值，但它的值从未被使用
             [FieldOffset(0)] public Obj2PtrFunc ToPtr = null!;
-#pragma warning restore CS0414 // 字段已被赋值，但它的值从未被使用
+
             // ReSharper disable once FieldCanBeMadeReadOnly.Local
             [FieldOffset(0)] public Ptr2ObjFunc ToObj = null!;
 
