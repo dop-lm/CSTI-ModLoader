@@ -87,7 +87,9 @@ public class WarpperFunction
         else if (field_type == typeof(Sprite))
         {
             if (warp_type == WarpType.ADD_REFERENCE)
-                ObjectAddReferenceWarpper(obj, data, field_name, SpriteDict);
+            {
+                ObjectAddReferenceWarpper_PostSprite(obj, data, field_name);
+            }
             else
                 ObjectReferenceWarpper(obj, data, field_name, SpriteDict);
         }
@@ -148,8 +150,8 @@ public class WarpperFunction
                 {
                     if (!keyData.IsInt || !json.ContainsKey(key.Substring(0, key.Length - 8) + "WarpData"))
                         continue;
-                    if ((int)keyData == (int)WarpType.REFERENCE ||
-                        (int)keyData == (int)WarpType.ADD_REFERENCE)
+                    if ((int) keyData == (int) WarpType.REFERENCE ||
+                        (int) keyData == (int) WarpType.ADD_REFERENCE)
                     {
                         var field_name = key.Substring(0, key.Length - 8);
                         var (field, _, _) = obj_type.FieldFromCache(field_name, getter_use: false,
@@ -160,7 +162,7 @@ public class WarpperFunction
                         if (fieldWarpData.IsString)
                         {
                             JsonCommonRefWarpper(obj, fieldWarpData.ToString(), field_name,
-                                field_type, (WarpType)(int)keyData);
+                                field_type, (WarpType) (int) keyData);
                         }
                         else if (fieldWarpData.IsArray)
                         {
@@ -200,7 +202,7 @@ public class WarpperFunction
                                     "CommonWarpper REFERENCE Size Error" + field_type.Name);
 
                             JsonCommonRefWarpper(obj, list_data, field_name, sub_field_type,
-                                (WarpType)(int)keyData);
+                                (WarpType) (int) keyData);
                         }
                         else
                         {
@@ -208,7 +210,7 @@ public class WarpperFunction
                                                 field_type.Name);
                         }
                     }
-                    else if ((int)keyData == (int)WarpType.ADD)
+                    else if ((int) keyData == (int) WarpType.ADD)
                     {
                         var field_name = key.Substring(0, key.Length - 8);
                         var (field, getter, setter) = obj_type.FieldFromCache(field_name);
@@ -293,7 +295,7 @@ public class WarpperFunction
                                                 field_type.Name);
                         }
                     }
-                    else if ((int)keyData == (int)WarpType.MODIFY)
+                    else if ((int) keyData == (int) WarpType.MODIFY)
                     {
                         var field_name = key.Substring(0, key.Length - 8);
                         var (field, getter, setter) = obj_type.FieldFromCache(field_name);
@@ -529,6 +531,39 @@ public class WarpperFunction
     {
         LogErrorWithModInfo(string.Format("ObjectAddReferenceWarpper {0}.{1} {2}", obj.GetType().Name,
             field_name, "AddReferenceWarpper Only Vaild in List or Array Filed"));
+    }
+
+    public static void ObjectAddReferenceWarpper_PostSprite(Object obj, List<string> data, string fieldName)
+    {
+        try
+        {
+            foreach (var id in data)
+            {
+                obj.PostSetEnQueue((o, sprite) =>
+                {
+                    var (field, getter, setter) = o.GetType().FieldFromCache(fieldName);
+                    if (field.FieldType.IsGenericType &&
+                        field.FieldType.GetGenericTypeDefinition() == typeof(List<>))
+                    {
+                        var instance = getter(obj) as IList;
+                        instance?.Add(sprite);
+                    }
+                    else if (field.FieldType.IsArray)
+                    {
+                        if (getter(obj) is not Array instance) return;
+                        var startIdx = instance.Length;
+                        ArrayResize(ref instance, instance.Length + 1);
+                        instance.SetValue(sprite, startIdx);
+                        setter(obj, instance);
+                    }
+                }, id);
+            }
+        }
+        catch (Exception ex)
+        {
+            LogErrorWithModInfo(string.Format("ObjectAddReferenceWarpper_PostSprite {0}.{1} {2}", obj.GetType().Name,
+                fieldName, ex.Message));
+        }
     }
 
     public static void ObjectAddReferenceWarpper<TValueType>(Object obj, List<string> data,
