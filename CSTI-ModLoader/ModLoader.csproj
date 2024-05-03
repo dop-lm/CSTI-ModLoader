@@ -77,8 +77,8 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
             <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-CSharp">
-            <HintPath>..\..\Libs\Assembly-CSharp.dll</HintPath>
-            <Private>False</Private>
+          <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Tropical Island\Card Survival - Tropical Island_Data\Managed\Assembly-CSharp.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="BepInEx">
             <HintPath>..\..\Libs\BepInEx.dll</HintPath>
