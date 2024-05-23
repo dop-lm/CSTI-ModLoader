@@ -23,6 +23,7 @@ using ModLoader.LoaderUtil;
 using ModLoader.UI;
 using ModLoader.Updater;
 using TMPro;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
@@ -64,7 +65,7 @@ public class ModPack
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.6.46";
+    public const string ModVersion = "2.3.6.47";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 

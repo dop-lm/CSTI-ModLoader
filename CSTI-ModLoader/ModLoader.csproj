@@ -88,10 +88,9 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
             <HintPath>..\..\Libs\BepInEx.Harmony.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <ProjectReference Include="..\..\CSTI-LuaActionSupport\CSTI-ChatTreeLoader\CSTI-ChatTreeLoader.csproj">
-            <Project>{A7DEC75F-D58F-4E55-98EC-6CA0AAC9F127}</Project>
-            <Name>CSTI-ChatTreeLoader</Name>
-        </ProjectReference>
+        <Reference Include="CSTI-ChatTreeLoader">
+          <HintPath>..\..\CSTI-LuaActionSupport\CSTI-ChatTreeLoader\bin\Release\CSTI-ChatTreeLoader.dll</HintPath>
+        </Reference>
         <Reference Include="CSTI_LuaActionSupport">
           <HintPath>..\..\CSTI-LuaActionSupport\CSTI-LuaActionSupport\bin\Release\CSTI_LuaActionSupport.dll</HintPath>
         </Reference>

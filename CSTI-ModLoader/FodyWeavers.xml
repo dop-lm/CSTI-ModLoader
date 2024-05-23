@@ -2,5 +2,8 @@
   <ILMerge>
     <ExcludeAssemblies>(CSTI\-ChatTreeLoader|DotNetZip|LitJSON|CSTI_LuaActionSupport).*</ExcludeAssemblies>
     <IncludeAssemblies>(NAudio|Pfim|JeremyAnsel|NVorbis|CompilerServices|System|LZ4).*</IncludeAssemblies>
+    <NamespacePrefix>
+      MLM
+    </NamespacePrefix>
   </ILMerge>
 </Weavers>

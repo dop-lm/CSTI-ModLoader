@@ -9,6 +9,8 @@ using ModLoader.LoaderUtil;
 using UnityEngine;
 using Object = System.Object;
 
+// ReSharper disable InconsistentNaming
+
 namespace ModLoader;
 
 public class WarpperFunction
@@ -334,10 +336,10 @@ public class WarpperFunction
                                 {
                                     if (fieldWarpData[i].IsObject)
                                     {
-                                        object target_obj = null;
+                                        object? target_obj = null;
                                         try
                                         {
-                                            target_obj = instance.GetValue(i);
+                                            target_obj = instance?.GetValue(i);
                                         }
                                         catch (Exception e)
                                         {
@@ -359,7 +361,7 @@ public class WarpperFunction
                                         }
 
                                         JsonCommonWarpper(target_obj, fieldWarpData[i]);
-                                        instance.SetValue(target_obj, i);
+                                        instance?.SetValue(target_obj, i);
                                     }
                                     else
                                         LogErrorWithModInfo(
@@ -431,6 +433,7 @@ public class WarpperFunction
                                     object? ele = null;
                                     try
                                     {
+                                        _ = array!.Length;
                                         ele = array.GetValue(i);
                                     }
                                     catch (Exception e)
@@ -481,12 +484,11 @@ public class WarpperFunction
             try
             {
                 var (_, _, setter) = obj.GetType().FieldFromCache(field_name, getter_use: false);
-                setter(obj, ele);
+                setter(obj, ele!);
             }
             catch (Exception ex)
             {
-                LogErrorWithModInfo(string.Format("ObjectReferenceWarpper {0}.{1} {2}",
-                    obj.GetType().Name, field_name, ex.Message));
+                LogErrorWithModInfo($"ObjectReferenceWarpper {obj.GetType().Name}.{field_name} {ex.Message}");
             }
         }
     }
