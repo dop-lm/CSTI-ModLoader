@@ -194,7 +194,7 @@ public class ModLoader : BaseUnityPlugin
     private static IEnumerator FontLoader()
     {
         AssetBundleCreateRequest assetBundleCreateRequest;
-        try
+        try 
         {
             assetBundleCreateRequest = AssetBundle.LoadFromStreamAsync(EmbeddedResources.CSTIFonts);
         }
