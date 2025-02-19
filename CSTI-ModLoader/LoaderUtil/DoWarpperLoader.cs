@@ -210,6 +210,15 @@ public static class DoWarpperLoader
                     // {
                     //     FillDropsList.Invoke(item.Value.obj, null);
                     // }
+
+                    if (cardData.OldDefaultEnvCards != null)
+                    {
+                        if (cardData.DefaultEnvCardDrops == null || cardData.DefaultEnvCardDrops.Length == 0)
+                        {
+                            cardData.DefaultEnvCardDrops =
+                                cardData.OldDefaultEnvCards.Select(data => new CardDrop(data)).ToArray();
+                        }
+                    }
                 }
                 else if (ProcessingScriptableObjectPack.obj is CharacterPerk perk)
                 {

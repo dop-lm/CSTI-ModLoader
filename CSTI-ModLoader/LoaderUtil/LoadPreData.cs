@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using BepInEx;
 using LitJson;
@@ -44,6 +45,12 @@ public static class LoadPreData
                         }
 
                         var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
+                        if (card is CardData card0)
+                        {
+                            card0.DefaultEnvCardDrops = Array.Empty<CardDrop>();
+                            card0.OldDefaultEnvCards = Array.Empty<CardData>();
+                        }
+
                         // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                         // if (card is IModLoaderJsonObj modLoaderJsonObj)
                         // {

@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using HarmonyLib;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine.Serialization;
 
 namespace ModLoader;
 
@@ -55,13 +58,13 @@ public static class WarpHelper
             ilGenerator.Emit(OpCodes.Ret);
         }
 
-        return (Func<object>) dynamicMethod.CreateDelegate(typeof(Func<object>));
+        return (Func<object>)dynamicMethod.CreateDelegate(typeof(Func<object>));
     }
 
     public static (FieldInfo field, Func<object, object> getter, Action<object, object> setter) FieldFromCache(
         this Type type, string field_name, bool getter_use = true, bool setter_use = true)
     {
-        FieldInfo fieldInfo;
+        FieldInfo? fieldInfo;
         Func<object, object> getter = null;
         Action<object, object> setter = null;
         if (FieldInfoCache.TryGetValue(type, out var fieldInfos))
@@ -73,13 +76,33 @@ public static class WarpHelper
             else
             {
                 fieldInfo = AccessTools.Field(type, field_name);
+                if (fieldInfo == null)
+                {
+                    fieldInfo = AccessTools.GetDeclaredFields(type).FirstOrDefault(fi =>
+                        fi.CustomAttributes.Any(data =>
+                            data.AttributeType == typeof(FormerlySerializedAsAttribute) &&
+                            (data.ConstructorArguments.Any(argument => argument.Value.ToString() == field_name) ||
+                             data.NamedArguments?.Any(argument =>
+                                 argument.TypedValue.Value.ToString() == field_name) is true)));
+                }
+
                 fieldInfos[field_name] = fieldInfo;
             }
         }
         else
         {
             fieldInfo = AccessTools.Field(type, field_name);
-            FieldInfoCache[type] = new Dictionary<string, FieldInfo> {{field_name, fieldInfo}};
+            if (fieldInfo == null)
+            {
+                fieldInfo = AccessTools.GetDeclaredFields(type).FirstOrDefault(fi =>
+                    fi.CustomAttributes.Any(data =>
+                        data.AttributeType == typeof(FormerlySerializedAsAttribute) &&
+                        (data.ConstructorArguments.Any(argument => argument.Value.ToString() == field_name) ||
+                         data.NamedArguments?.Any(argument =>
+                             argument.TypedValue.Value.ToString() == field_name) is true)));
+            }
+
+            FieldInfoCache[type] = new Dictionary<string, FieldInfo> { { field_name, fieldInfo } };
         }
 
         if (fieldInfo != null && getter_use)
@@ -100,7 +123,7 @@ public static class WarpHelper
             {
                 getter = GenGetter(fieldInfo, type);
                 FieldGetterDynamicMethodCache[type] = new Dictionary<string, Func<object, object>>
-                    {{field_name, getter}};
+                    { { field_name, getter } };
             }
         }
 
@@ -122,7 +145,7 @@ public static class WarpHelper
             {
                 setter = GenSetter(fieldInfo, type);
                 FieldSetterDynamicMethodCache[type] = new Dictionary<string, Action<object, object>>
-                    {{field_name, setter}};
+                    { { field_name, setter } };
             }
         }
 
@@ -142,7 +165,7 @@ public static class WarpHelper
             return accessHelper.Get;
         }
 
-        var dynamicMethod = new DynamicMethod("simple_getter", ObjType, new[] {ObjType}, true);
+        var dynamicMethod = new DynamicMethod("simple_getter", ObjType, new[] { ObjType }, true);
         var ilGenerator = dynamicMethod.GetILGenerator();
         ilGenerator.Emit(OpCodes.Ldarg_0);
         ilGenerator.Emit(typeIsValueType ? OpCodes.Unbox : OpCodes.Castclass, type);
@@ -168,7 +191,7 @@ public static class WarpHelper
             return accessHelper.Set;
         }
 
-        var dynamicMethod = new DynamicMethod("simple_setter", typeof(void), new[] {ObjType, ObjType}, true);
+        var dynamicMethod = new DynamicMethod("simple_setter", typeof(void), new[] { ObjType, ObjType }, true);
         var ilGenerator = dynamicMethod.GetILGenerator();
         ilGenerator.Emit(OpCodes.Ldarg_0);
         ilGenerator.Emit(typeIsValueType ? OpCodes.Unbox : OpCodes.Castclass, type);
@@ -215,7 +238,7 @@ public static class WarpHelper
         public object Get(object o)
         {
             var ptr = UnsafeUtility.PinGCObjectAndGetAddress(o, out var gcHandle);
-            var obj = Unsafe.ToObj(*(void**) ((IntPtr) ptr + Offset));
+            var obj = Unsafe.ToObj(*(void**)((IntPtr)ptr + Offset));
             UnsafeUtility.ReleaseGCObject(gcHandle);
             return obj;
         }
@@ -224,7 +247,7 @@ public static class WarpHelper
         {
             var ptr = UnsafeUtility.PinGCObjectAndGetAddress(o, out var gcHandle);
             var ptrVal = UnsafeUtility.PinGCObjectAndGetAddress(val, out var gcHandle1);
-            *(void**) ((IntPtr) ptr + Offset) = ptrVal;
+            *(void**)((IntPtr)ptr + Offset) = ptrVal;
             UnsafeUtility.ReleaseGCObject(gcHandle);
             UnsafeUtility.ReleaseGCObject(gcHandle1);
         }
