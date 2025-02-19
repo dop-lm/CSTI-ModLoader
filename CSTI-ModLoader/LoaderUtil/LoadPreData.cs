@@ -2,7 +2,6 @@
 using System.IO;
 using System.Text;
 using BepInEx;
-using CSTI_LuaActionSupport.DataStruct;
 using LitJson;
 using ModLoader.ExportUtil;
 using ModLoader.FFI;
@@ -46,11 +45,11 @@ public static class LoadPreData
 
                         var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
                         // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                        if (card is IModLoaderJsonObj modLoaderJsonObj)
-                        {
-                            modLoaderJsonObj.CreateByJson(CardData);
-                        }
-                        else
+                        // if (card is IModLoaderJsonObj modLoaderJsonObj)
+                        // {
+                        //     modLoaderJsonObj.CreateByJson(CardData);
+                        // }
+                        // else
                         {
                             JsonUtility.FromJsonOverwrite(CardData, card);
                         }

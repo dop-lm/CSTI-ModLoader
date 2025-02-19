@@ -11,11 +11,7 @@ using System.Threading.Tasks;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
-using ChatTreeLoader.Patchers;
-using CSTI_LuaActionSupport;
-using CSTI_LuaActionSupport.DataStruct;
 using HarmonyLib;
-using Ionic.Zip;
 using LitJson;
 using ModLoader.Compatible;
 using ModLoader.ExportUtil;
@@ -23,7 +19,6 @@ using ModLoader.LoaderUtil;
 using ModLoader.UI;
 using ModLoader.Updater;
 using TMPro;
-using Unity.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
@@ -60,7 +55,7 @@ public class ModPack
 }
 
 [BepInPlugin("Dop.plugin.CSTI.ModLoader", "ModLoader", ModVersion)]
-[BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
+// [BepInDependency("zender.LuaActionSupport.LuaSupportRuntime")]
 [SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public class ModLoader : BaseUnityPlugin
@@ -73,8 +68,8 @@ public class ModLoader : BaseUnityPlugin
     {
         try
         {
-            LuaSupportRuntime.Init(SpriteDict, AllLuaFiles);
-            NormalPatcher.DoPatch(HarmonyInstance);
+            // LuaSupportRuntime.Init(SpriteDict, AllLuaFiles);
+            // NormalPatcher.DoPatch(HarmonyInstance);
         }
         catch (Exception e)
         {
@@ -194,7 +189,7 @@ public class ModLoader : BaseUnityPlugin
     private static IEnumerator FontLoader()
     {
         AssetBundleCreateRequest assetBundleCreateRequest;
-        try 
+        try
         {
             assetBundleCreateRequest = AssetBundle.LoadFromStreamAsync(EmbeddedResources.CSTIFonts);
         }
@@ -251,7 +246,7 @@ public class ModLoader : BaseUnityPlugin
         // Plugin startup logic
         if (AccessTools.TypeByName("EncounterPopup") != null)
         {
-            MainPatcher.DoPatch(HarmonyInstance);
+            // MainPatcher.DoPatch(HarmonyInstance);
             HasEncounterType = true;
         }
 
@@ -499,8 +494,10 @@ public class ModLoader : BaseUnityPlugin
                 Debug.Log("WeatherSpecialEffectDict Same Key was Add " + ele.name);
     }
 
+    [Obsolete("暂时移除")]
     private static void LoadModsFromZip()
     {
+#if ZIP_READY
         try
         {
             var files = Directory.GetFiles(Path.Combine(Paths.BepInExRootPath, "plugins"));
@@ -915,6 +912,8 @@ public class ModLoader : BaseUnityPlugin
         {
             Debug.LogWarning(ex.Message);
         }
+
+#endif
     }
 
     public static readonly List<Task<(List<(byte[] dat, string pat, Type type)> uniqueObjs, string modName)>>
@@ -1102,11 +1101,11 @@ public class ModLoader : BaseUnityPlugin
 
                                     obj.name = obj_name;
                                     var jsonData = JsonMapper.ToObject(CardData);
-                                    if (obj is IModLoaderJsonObj modLoaderJsonObj)
-                                    {
-                                        modLoaderJsonObj.CreateByJson(CardData);
-                                    }
-                                    else
+                                    // if (obj is IModLoaderJsonObj modLoaderJsonObj)
+                                    // {
+                                    //     modLoaderJsonObj.CreateByJson(CardData);
+                                    // }
+                                    // else
                                     {
                                         JsonUtility.FromJsonOverwrite(CardData, obj);
                                     }
@@ -1760,11 +1759,11 @@ public class ModLoader : BaseUnityPlugin
 
             LoadGameResource();
 
-            LoadArchMod.LoadAllArchMod();
+            // LoadArchMod.LoadAllArchMod();
 
             LoadMods(Path.Combine(Paths.BepInExRootPath, "plugins"));
 
-            LoadModsFromZip();
+            LoadModsFromZip(); // 替换zip库并 #define ZIP_READY
             PostSpriteLoad.BeginCompress = true;
 
             LoadPreData.LoadFromPreLoadData();

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using JeremyAnsel.Media.Dds;
+// using JeremyAnsel.Media.Dds;
 using UnityEngine;
 using static ModLoader.ResourceLoadHelper;
 
@@ -127,23 +127,23 @@ public static class PostSpriteLoad
 
                 Texture2D t2d;
                 Rect spriteSize;
-                if (imageEntry.DdsPath != null)
-                {
-                    var dds = DdsFile.FromStream(new MemoryStream(dat));
-                    spriteSize = new Rect(0, 0, dds.Width, dds.Height);
-                    var rawSize = new Vector2Int((dds.Width & 0b11) == 0 ? dds.Width : ((dds.Width >> 2) + 1) << 2,
-                        (dds.Height & 0b11) == 0 ? dds.Height : ((dds.Height >> 2) + 1) << 2);
-                    t2d = dds.PixelFormat.FourCC switch
-                    {
-                        DdsFourCC.DXT1 => new Texture2D(rawSize.x, rawSize.y, TextureFormat.DXT1, 0, false),
-                        DdsFourCC.DXT5 => new Texture2D(rawSize.x, rawSize.y, TextureFormat.DXT5, 0, false),
-                        _ => new Texture2D(dds.Width, dds.Height, TextureFormat.RGBA32, 0, false)
-                    };
-                    t2d.GetRawTextureData<byte>().CopyFrom(dds.Data);
-                    t2d.Apply();
-                    dds = null;
-                }
-                else
+                // if (imageEntry.DdsPath != null)
+                // {
+                //     var dds = DdsFile.FromStream(new MemoryStream(dat));
+                //     spriteSize = new Rect(0, 0, dds.Width, dds.Height);
+                //     var rawSize = new Vector2Int((dds.Width & 0b11) == 0 ? dds.Width : ((dds.Width >> 2) + 1) << 2,
+                //         (dds.Height & 0b11) == 0 ? dds.Height : ((dds.Height >> 2) + 1) << 2);
+                //     t2d = dds.PixelFormat.FourCC switch
+                //     {
+                //         DdsFourCC.DXT1 => new Texture2D(rawSize.x, rawSize.y, TextureFormat.DXT1, 0, false),
+                //         DdsFourCC.DXT5 => new Texture2D(rawSize.x, rawSize.y, TextureFormat.DXT5, 0, false),
+                //         _ => new Texture2D(dds.Width, dds.Height, TextureFormat.RGBA32, 0, false)
+                //     };
+                //     t2d.GetRawTextureData<byte>().CopyFrom(dds.Data);
+                //     t2d.Apply();
+                //     dds = null;
+                // }
+                // else
                 {
                     t2d = new Texture2D(0, 0, TextureFormat.RGBA32, 0, false);
                     t2d.LoadImage(dat);

@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using BepInEx;
-using CSTI_LuaActionSupport.DataStruct;
 using HarmonyLib;
 using LitJson;
 using LZ4;
@@ -17,6 +16,7 @@ public static class LoadArchMod
 {
     public const string EndFlg = "_End_";
 
+    [Obsolete("暂时移除")]
     public static void LoadAllArchMod()
     {
         foreach (var file in Directory.EnumerateFiles(Paths.PluginPath, "*.modArch_V3", SearchOption.AllDirectories))
@@ -299,11 +299,11 @@ public static class LoadArchMod
 
                     obj.name = obj_name;
                     var jsonData = JsonMapper.ToObject(json);
-                    if (obj is IModLoaderJsonObj modLoaderJsonObj)
-                    {
-                        modLoaderJsonObj.CreateByJson(json);
-                    }
-                    else
+                    // if (obj is IModLoaderJsonObj modLoaderJsonObj)
+                    // {
+                    //     modLoaderJsonObj.CreateByJson(json);
+                    // }
+                    // else
                     {
                         JsonUtility.FromJsonOverwrite(json, obj);
                     }
@@ -344,11 +344,11 @@ public static class LoadArchMod
 
                         var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
                         // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
-                        if (card is IModLoaderJsonObj modLoaderJsonObj)
-                        {
-                            modLoaderJsonObj.CreateByJson(json);
-                        }
-                        else
+                        // if (card is IModLoaderJsonObj modLoaderJsonObj)
+                        // {
+                        //     modLoaderJsonObj.CreateByJson(json);
+                        // }
+                        // else
                         {
                             JsonUtility.FromJsonOverwrite(json, card);
                         }
@@ -451,11 +451,11 @@ public static class LoadArchMod
                     obj.name = obj_name;
                     try
                     {
-                        if (obj is IModLoaderJsonObj modLoaderJsonObj)
-                        {
-                            modLoaderJsonObj.CreateByJson(mapperObject.ToJson());
-                        }
-                        else
+                        // if (obj is IModLoaderJsonObj modLoaderJsonObj)
+                        // {
+                        //     modLoaderJsonObj.CreateByJson(mapperObject.ToJson());
+                        // }
+                        // else
                         {
                             JsonUtility.FromJsonOverwrite(mapperObject.ToJson(), obj);
                         }
@@ -502,11 +502,11 @@ public static class LoadArchMod
                         // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                         try
                         {
-                            if (card is IModLoaderJsonObj modLoaderJsonObj)
-                            {
-                                modLoaderJsonObj.CreateByJson(mapperObject.ToJson());
-                            }
-                            else
+                            // if (card is IModLoaderJsonObj modLoaderJsonObj)
+                            // {
+                            //     modLoaderJsonObj.CreateByJson(mapperObject.ToJson());
+                            // }
+                            // else
                             {
                                 JsonUtility.FromJsonOverwrite(mapperObject.ToJson(), card);
                             }

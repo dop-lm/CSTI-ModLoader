@@ -2,14 +2,14 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <Import Project="..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props" Condition="Exists('..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props')" />
     <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-    <Target Name="CopyOutputFiles" AfterTargets="Build">
-        <ItemGroup>
-            <OutputFiles Include="$(OutputPath)CSTI_LuaActionSupport.dll;$(OutputPath)CSTI-ChatTreeLoader.dll;$(OutputPath)DotNetZip.dll;
-$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
-        </ItemGroup>
-        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath1)" />
-        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath2)" />
-    </Target>
+<!--    <Target Name="CopyOutputFiles" AfterTargets="Build">-->
+<!--        <ItemGroup>-->
+<!--            <OutputFiles Include="$(OutputPath)CSTI_LuaActionSupport.dll;$(OutputPath)CSTI-ChatTreeLoader.dll;$(OutputPath)DotNetZip.dll;-->
+<!--$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />-->
+<!--        </ItemGroup>-->
+<!--        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath1)" />-->
+<!--        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath2)" />-->
+<!--    </Target>-->
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -23,6 +23,7 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         <Deterministic>true</Deterministic>
         <LangVersion>11</LangVersion>
         <Nullable>enable</Nullable>
+        <SignAssembly>true</SignAssembly>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <DebugSymbols>true</DebugSymbols>
@@ -35,7 +36,7 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-        <DebugType>none</DebugType>
+        <DebugType>embedded</DebugType>
         <Optimize>true</Optimize>
         <OutputPath>bin\Release\</OutputPath>
         <DefineConstants>TRACE</DefineConstants>
@@ -73,71 +74,105 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
     </ItemGroup>
     <ItemGroup>
         <Reference Include="0Harmony">
-            <HintPath>..\..\Libs\0Harmony.dll</HintPath>
-            <Private>False</Private>
+          <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\core\0Harmony.dll</HintPath>
+          <Private>False</Private>
         </Reference>
-        <Reference Include="Assembly-CSharp">
-          <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Tropical Island\Card Survival - Tropical Island_Data\Managed\Assembly-CSharp.dll</HintPath>
+        <Reference Include="AsmResolver, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+          <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\AsmResolver.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="AsmResolver.DotNet, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+          <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\AsmResolver.DotNet.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="AsmResolver.PE, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+          <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\AsmResolver.PE.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="AsmResolver.PE.File, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+          <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\AsmResolver.PE.File.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Assembly-CSharp" Publicize="true">
+          <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\Assembly-CSharp.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="BepInEx">
-            <HintPath>..\..\Libs\BepInEx.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\core\BepInEx.dll</HintPath>
             <Private>False</Private>
+        </Reference>
+        <Reference Include="BepInEx.AssemblyPublicizer, Version=0.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+          <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\BepInEx.AssemblyPublicizer.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="BepInEx.AssemblyPublicizer.MSBuild, Version=0.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+          <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\BepInEx.AssemblyPublicizer.MSBuild.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="BepInEx.Harmony">
-            <HintPath>..\..\Libs\BepInEx.Harmony.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\core\BepInEx.Harmony.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="CSTI-ChatTreeLoader">
-          <HintPath>..\..\CSTI-LuaActionSupport\CSTI-ChatTreeLoader\bin\Release\CSTI-ChatTreeLoader.dll</HintPath>
-        </Reference>
-        <Reference Include="CSTI_LuaActionSupport">
-          <HintPath>..\..\CSTI-LuaActionSupport\CSTI-LuaActionSupport\bin\Release\CSTI_LuaActionSupport.dll</HintPath>
-        </Reference>
-        <Reference Include="DotNetZip">
-            <HintPath>..\..\Libs\DotNetZip.dll</HintPath>
-        </Reference>
+<!--        <Reference Include="CSTI-ChatTreeLoader">-->
+<!--          <HintPath>..\..\CSTI-LuaActionSupport\CSTI-ChatTreeLoader\bin\Release\CSTI-ChatTreeLoader.dll</HintPath>-->
+<!--        </Reference>-->
+<!--        <Reference Include="CSTI_LuaActionSupport">-->
+<!--          <HintPath>..\..\CSTI-LuaActionSupport\CSTI-LuaActionSupport\bin\Release\CSTI_LuaActionSupport.dll</HintPath>-->
+<!--        </Reference>-->
+<!--        <Reference Include="DotNetZip">-->
+<!--            <HintPath>..\..\Libs\DotNetZip.dll</HintPath>-->
+<!--        </Reference>-->
         <Reference Include="ILMerge, Version=1.24.0.0, Culture=neutral, PublicKeyToken=4d0e9a1cbec0d397, processorArchitecture=MSIL">
             <HintPath>..\packages\ILMerge.Fody.1.24.0\lib\net452\ILMerge.dll</HintPath>
+            <Private>False</Private>
         </Reference>
-        <Reference Include="JeremyAnsel.DirectX.D3D11, Version=3.0.31.0, Culture=neutral, processorArchitecture=MSIL">
-          <HintPath>..\packages\JeremyAnsel.DirectX.D3D11.3.0.31\lib\net48\JeremyAnsel.DirectX.D3D11.dll</HintPath>
-        </Reference>
-        <Reference Include="JeremyAnsel.DirectX.Dds, Version=2.0.10.0, Culture=neutral, processorArchitecture=MSIL">
-          <HintPath>..\packages\JeremyAnsel.DirectX.Dds.2.0.10\lib\net48\JeremyAnsel.DirectX.Dds.dll</HintPath>
-        </Reference>
-        <Reference Include="JeremyAnsel.DirectX.Dxgi, Version=3.0.31.0, Culture=neutral, processorArchitecture=MSIL">
-          <HintPath>..\packages\JeremyAnsel.DirectX.Dxgi.3.0.31\lib\net48\JeremyAnsel.DirectX.Dxgi.dll</HintPath>
-        </Reference>
-        <Reference Include="JeremyAnsel.Media.Dds, Version=2.0.4.0, Culture=neutral, processorArchitecture=MSIL">
-          <HintPath>..\packages\JeremyAnsel.Media.Dds.2.0.4\lib\net48\JeremyAnsel.Media.Dds.dll</HintPath>
-        </Reference>
+<!--        <Reference Include="JeremyAnsel.DirectX.D3D11, Version=3.0.31.0, Culture=neutral, processorArchitecture=MSIL">-->
+<!--          <HintPath>..\packages\JeremyAnsel.DirectX.D3D11.3.0.31\lib\net48\JeremyAnsel.DirectX.D3D11.dll</HintPath>-->
+<!--          <Private>False</Private>-->
+<!--        </Reference>-->
+<!--        <Reference Include="JeremyAnsel.DirectX.Dds, Version=2.0.10.0, Culture=neutral, processorArchitecture=MSIL">-->
+<!--          <HintPath>..\packages\JeremyAnsel.DirectX.Dds.2.0.10\lib\net48\JeremyAnsel.DirectX.Dds.dll</HintPath>-->
+<!--          <Private>False</Private>-->
+<!--        </Reference>-->
+<!--        <Reference Include="JeremyAnsel.DirectX.Dxgi, Version=3.0.31.0, Culture=neutral, processorArchitecture=MSIL">-->
+<!--          <HintPath>..\packages\JeremyAnsel.DirectX.Dxgi.3.0.31\lib\net48\JeremyAnsel.DirectX.Dxgi.dll</HintPath>-->
+<!--          <Private>False</Private>-->
+<!--        </Reference>-->
+<!--        <Reference Include="JeremyAnsel.Media.Dds, Version=2.0.4.0, Culture=neutral, processorArchitecture=MSIL">-->
+<!--          <HintPath>..\packages\JeremyAnsel.Media.Dds.2.0.4\lib\net48\JeremyAnsel.Media.Dds.dll</HintPath>-->
+<!--          <Private>False</Private>-->
+<!--        </Reference>-->
         <Reference Include="LitJSON, Version=0.18.0.0, Culture=neutral, processorArchitecture=MSIL">
             <HintPath>..\packages\LitJson.0.18.0\lib\net45\LitJSON.dll</HintPath>
+            <Private>True</Private>
         </Reference>
         <Reference Include="LZ4, Version=1.0.15.93, Culture=neutral, PublicKeyToken=62e1b5ec1eec9bdd, processorArchitecture=MSIL">
           <HintPath>..\packages\lz4net.1.0.15.93\lib\net4-client\LZ4.dll</HintPath>
+          <Private>True</Private>
         </Reference>
         <Reference Include="Microsoft.Win32.Primitives, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\Microsoft.Win32.Primitives.4.3.0\lib\net46\Microsoft.Win32.Primitives.dll</HintPath>
         </Reference>
         <Reference Include="Microsoft.Win32.Registry, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\Microsoft.Win32.Registry.4.7.0\lib\net461\Microsoft.Win32.Registry.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="MonoMod.RuntimeDetour">
-            <HintPath>..\..\Libs\MonoMod.RuntimeDetour.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\core\MonoMod.RuntimeDetour.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="MonoMod.Utils">
-            <HintPath>..\..\Libs\MonoMod.Utils.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\core\MonoMod.Utils.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="mscorlib" />
         <Reference Include="NAudio, Version=1.10.0.0, Culture=neutral, processorArchitecture=MSIL">
           <HintPath>..\packages\NAudio.1.10.0\lib\net35\NAudio.dll</HintPath>
+          <Private>True</Private>
         </Reference>
         <Reference Include="NVorbis, Version=0.10.5.0, Culture=neutral, processorArchitecture=MSIL">
           <HintPath>..\packages\NVorbis.0.10.5\lib\net45\NVorbis.dll</HintPath>
+          <Private>True</Private>
         </Reference>
         <Reference Include="System" />
         <Reference Include="Microsoft.CSharp" />
@@ -146,6 +181,7 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         </Reference>
         <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="System.ComponentModel.Composition" />
         <Reference Include="System.Console, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -154,6 +190,7 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         <Reference Include="System.Core" />
         <Reference Include="System.Diagnostics.DiagnosticSource, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Diagnostics.DiagnosticSource.4.3.0\lib\net46\System.Diagnostics.DiagnosticSource.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="System.Diagnostics.Tracing, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Diagnostics.Tracing.4.3.0\lib\net462\System.Diagnostics.Tracing.dll</HintPath>
@@ -185,6 +222,7 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         </Reference>
         <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="System.Net.Http, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Net.Http.4.3.0\lib\net46\System.Net.Http.dll</HintPath>
@@ -195,6 +233,7 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         <Reference Include="System.Numerics" />
         <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="System.Reflection, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Reflection.4.3.0\lib\net462\System.Reflection.dll</HintPath>
@@ -204,6 +243,7 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         </Reference>
         <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="System.Runtime.Extensions, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Runtime.Extensions.4.3.0\lib\net462\System.Runtime.Extensions.dll</HintPath>
@@ -216,6 +256,7 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         </Reference>
         <Reference Include="System.Security.AccessControl, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Security.AccessControl.4.7.0\lib\net461\System.Security.AccessControl.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="System.Security.Cryptography.Algorithms, Version=4.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Security.Cryptography.Algorithms.4.3.0\lib\net463\System.Security.Cryptography.Algorithms.dll</HintPath>
@@ -231,12 +272,14 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
         </Reference>
         <Reference Include="System.Security.Principal.Windows, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Security.Principal.Windows.4.7.0\lib\net461\System.Security.Principal.Windows.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="System.Text.RegularExpressions, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
           <HintPath>..\packages\System.Text.RegularExpressions.4.3.0\lib\net463\System.Text.RegularExpressions.dll</HintPath>
         </Reference>
         <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
           <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="System.Windows.Forms" />
         <Reference Include="System.Xml" />
@@ -245,55 +288,55 @@ $(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />
           <HintPath>..\packages\System.Xml.ReaderWriter.4.3.0\lib\net46\System.Xml.ReaderWriter.dll</HintPath>
         </Reference>
         <Reference Include="Unity.TextMeshPro">
-            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Tropical Island\Card Survival - Tropical Island_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\Unity.TextMeshPro.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine">
-            <HintPath>..\..\Libs\UnityEngine.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\UnityEngine.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.AssetBundleModule">
-            <HintPath>..\..\Libs\UnityEngine.AssetBundleModule.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.AudioModule">
-            <HintPath>..\..\Libs\UnityEngine.AudioModule.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.CoreModule">
-            <HintPath>..\..\Libs\UnityEngine.CoreModule.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.ImageConversionModule">
-            <HintPath>..\..\Libs\UnityEngine.ImageConversionModule.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.IMGUIModule">
-            <HintPath>..\..\Libs\UnityEngine.IMGUIModule.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.InputLegacyModule">
-            <HintPath>..\..\Libs\UnityEngine.InputLegacyModule.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.JSONSerializeModule">
-            <HintPath>..\..\Libs\UnityEngine.JSONSerializeModule.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\UnityEngine.JSONSerializeModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.SpriteMaskModule">
-            <HintPath>..\..\Libs\UnityEngine.SpriteMaskModule.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\UnityEngine.SpriteMaskModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UI">
-            <HintPath>..\..\Libs\UnityEngine.UI.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\UnityEngine.UI.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UIElementsModule">
-            <HintPath>..\..\Libs\UnityEngine.UIElementsModule.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\UnityEngine.UIElementsModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UIModule">
-            <HintPath>..\..\Libs\UnityEngine.UIModule.dll</HintPath>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\UnityEngine.UIModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>

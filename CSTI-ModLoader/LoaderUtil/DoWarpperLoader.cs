@@ -2,10 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx;
-using CSTI_LuaActionSupport.DataStruct;
 using HarmonyLib;
-using LitJson;
-using ModLoader.ExportUtil;
 using UnityEngine;
 
 namespace ModLoader.LoaderUtil;
@@ -128,11 +125,11 @@ public static class DoWarpperLoader
                     if (json.ContainsKey("ModLoaderSpecialOverwrite") && json["ModLoaderSpecialOverwrite"].IsBoolean &&
                         (bool)json["ModLoaderSpecialOverwrite"])
                     {
-                        if (item.obj is IModLoaderJsonObj modLoaderJsonObj)
-                        {
-                            modLoaderJsonObj.CreateByJson(item.CardData.ToJson());
-                        }
-                        else
+                        // if (item.obj is IModLoaderJsonObj modLoaderJsonObj)
+                        // {
+                        //     modLoaderJsonObj.CreateByJson(item.CardData.ToJson());
+                        // }
+                        // else
                         {
                             JsonUtility.FromJsonOverwrite(item.CardData.ToJson(), item.obj);
                         }

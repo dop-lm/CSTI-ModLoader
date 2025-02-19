@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using CSTI_LuaActionSupport.DataStruct;
 using LitJson;
 using ModLoader.ExportUtil;
 using ModLoader.LoaderUtil;
@@ -234,11 +233,11 @@ public class WarpperFunction
                                         var new_obj = sub_field_type.IsSubclassOf(typeof(ScriptableObject))
                                             ? ScriptableObject.CreateInstance(sub_field_type)
                                             : sub_field_type.ConstructorFromCache()();
-                                        if (new_obj is IModLoaderJsonObj modLoaderJsonObj)
-                                        {
-                                            modLoaderJsonObj.CreateByJson(fieldWarpData[i].ToJson());
-                                        }
-                                        else
+                                        // if (new_obj is IModLoaderJsonObj modLoaderJsonObj)
+                                        // {
+                                        //     modLoaderJsonObj.CreateByJson(fieldWarpData[i].ToJson());
+                                        // }
+                                        // else
                                         {
                                             JsonUtility.FromJsonOverwrite(fieldWarpData[i].ToJson(),
                                                 new_obj);
@@ -265,11 +264,11 @@ public class WarpperFunction
                                         var new_obj = sub_field_type.IsSubclassOf(typeof(ScriptableObject))
                                             ? ScriptableObject.CreateInstance(sub_field_type)
                                             : sub_field_type.ConstructorFromCache()();
-                                        if (new_obj is IModLoaderJsonObj modLoaderJsonObj)
-                                        {
-                                            modLoaderJsonObj.CreateByJson(fieldWarpData[i].ToJson());
-                                        }
-                                        else
+                                        // if (new_obj is IModLoaderJsonObj modLoaderJsonObj)
+                                        // {
+                                        //     modLoaderJsonObj.CreateByJson(fieldWarpData[i].ToJson());
+                                        // }
+                                        // else
                                         {
                                             JsonUtility.FromJsonOverwrite(fieldWarpData[i].ToJson(),
                                                 new_obj);
