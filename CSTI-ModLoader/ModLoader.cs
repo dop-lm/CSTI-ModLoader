@@ -16,6 +16,7 @@ using LitJson;
 using ModLoader.Compatible;
 using ModLoader.ExportUtil;
 using ModLoader.LoaderUtil;
+using ModLoader.Patchers;
 using ModLoader.UI;
 using ModLoader.Updater;
 using TMPro;
@@ -70,6 +71,7 @@ public class ModLoader : BaseUnityPlugin
         {
             // LuaSupportRuntime.Init(SpriteDict, AllLuaFiles);
             // NormalPatcher.DoPatch(HarmonyInstance);
+            HarmonyInstance.PatchAll(typeof(NullFixPatch));
         }
         catch (Exception e)
         {
@@ -737,7 +739,7 @@ public class ModLoader : BaseUnityPlugin
                                     continue;
                                 string CardData;
 
-                                var obj = ScriptableObject.CreateInstance(type);
+                                var obj = ScriptableUtil.CreateInstance(type);
                                 var ms = new MemoryStream();
                                 entry.Extract(ms);
                                 ms.Seek(0, SeekOrigin.Begin);
@@ -830,7 +832,7 @@ public class ModLoader : BaseUnityPlugin
                                 continue;
                             }
 
-                            var card = (UniqueIDScriptable)ScriptableObject.CreateInstance(type);
+                            var card = (UniqueIDScriptable)ScriptableUtil.CreateInstance(type);
                             // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                             // ReSharper disable once SuspiciousTypeConversion.Global
                             if (card is IModLoaderJsonObj modLoaderJsonObj)
@@ -1093,7 +1095,7 @@ public class ModLoader : BaseUnityPlugin
                                         continue;
                                     string CardData;
 
-                                    var obj = ScriptableObject.CreateInstance(type);
+                                    var obj = ScriptableUtil.CreateInstance(type);
                                     using (var sr = new StreamReader(file))
                                     {
                                         CardData = sr.ReadToEnd();

@@ -44,7 +44,7 @@ public static class LoadPreData
                             continue;
                         }
 
-                        var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
+                        var card = ScriptableUtil.CreateInstance(type) as UniqueIDScriptable;
                         if (card is CardData card0)
                         {
                             card0.DefaultEnvCardDrops = Array.Empty<CardDrop>();

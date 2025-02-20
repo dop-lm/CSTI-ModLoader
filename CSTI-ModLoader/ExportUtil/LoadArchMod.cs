@@ -295,7 +295,7 @@ public static class LoadArchMod
                     if (dict.ContainsKey(obj_name))
                         continue;
 
-                    var obj = ScriptableObject.CreateInstance(find_ScriptableObjectT);
+                    var obj = ScriptableUtil.CreateInstance(find_ScriptableObjectT);
 
                     obj.name = obj_name;
                     var jsonData = JsonMapper.ToObject(json);
@@ -342,7 +342,7 @@ public static class LoadArchMod
                             continue;
                         }
 
-                        var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
+                        var card = ScriptableUtil.CreateInstance(type) as UniqueIDScriptable;
                         // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                         // if (card is IModLoaderJsonObj modLoaderJsonObj)
                         // {
@@ -446,7 +446,7 @@ public static class LoadArchMod
                     if (dict.ContainsKey(obj_name))
                         continue;
 
-                    var obj = ScriptableObject.CreateInstance(find_ScriptableObjectT);
+                    var obj = ScriptableUtil.CreateInstance(find_ScriptableObjectT);
 
                     obj.name = obj_name;
                     try
@@ -498,7 +498,7 @@ public static class LoadArchMod
                             continue;
                         }
 
-                        var card = ScriptableObject.CreateInstance(type) as UniqueIDScriptable;
+                        var card = ScriptableUtil.CreateInstance(type) as UniqueIDScriptable;
                         // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                         try
                         {

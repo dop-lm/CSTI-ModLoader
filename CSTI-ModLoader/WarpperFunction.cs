@@ -231,7 +231,7 @@ public class WarpperFunction
                                     if (fieldWarpData[i].IsObject)
                                     {
                                         var new_obj = sub_field_type.IsSubclassOf(typeof(ScriptableObject))
-                                            ? ScriptableObject.CreateInstance(sub_field_type)
+                                            ? ScriptableUtil.CreateInstance(sub_field_type)
                                             : sub_field_type.ConstructorFromCache()();
                                         // if (new_obj is IModLoaderJsonObj modLoaderJsonObj)
                                         // {
@@ -262,7 +262,7 @@ public class WarpperFunction
                                     if (fieldWarpData[i].IsObject)
                                     {
                                         var new_obj = sub_field_type.IsSubclassOf(typeof(ScriptableObject))
-                                            ? ScriptableObject.CreateInstance(sub_field_type)
+                                            ? ScriptableUtil.CreateInstance(sub_field_type)
                                             : sub_field_type.ConstructorFromCache()();
                                         // if (new_obj is IModLoaderJsonObj modLoaderJsonObj)
                                         // {
