@@ -16,7 +16,7 @@ public static class LoadArchMod
 {
     public const string EndFlg = "_End_";
 
-    [Obsolete("暂时移除")]
+    // [Obsolete("暂时移除")]
     public static void LoadAllArchMod()
     {
         foreach (var file in Directory.EnumerateFiles(Paths.PluginPath, "*.modArch_V3", SearchOption.AllDirectories))

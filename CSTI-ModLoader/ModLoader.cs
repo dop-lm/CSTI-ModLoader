@@ -1761,7 +1761,7 @@ public class ModLoader : BaseUnityPlugin
 
             LoadGameResource();
 
-            // LoadArchMod.LoadAllArchMod();
+            LoadArchMod.LoadAllArchMod();
 
             LoadMods(Path.Combine(Paths.BepInExRootPath, "plugins"));
 
