@@ -45,12 +45,7 @@ public static class LoadPreData
                         }
 
                         var card = ScriptableUtil.CreateInstance(type) as UniqueIDScriptable;
-                        if (card is CardData card0)
-                        {
-                            card0.DefaultEnvCardDrops = Array.Empty<CardDrop>();
-                            card0.OldDefaultEnvCards = Array.Empty<CardData>();
-                        }
-
+                        
                         // JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                         // if (card is IModLoaderJsonObj modLoaderJsonObj)
                         // {

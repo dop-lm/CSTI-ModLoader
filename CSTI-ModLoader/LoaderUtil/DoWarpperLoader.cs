@@ -219,6 +219,38 @@ public static class DoWarpperLoader
                                 cardData.OldDefaultEnvCards.Select(data => new CardDrop(data)).ToArray();
                         }
                     }
+
+                    if (cardData.EffectsToInventoryContent is { Length: > 0 })
+                    {
+                        for (int i = 0; i < cardData.EffectsToInventoryContent.Length; i++)
+                        {
+                            var pe = cardData.EffectsToInventoryContent[i];
+                            pe.DroppedCards ??= Array.Empty<CardsDropCollection>();
+                            cardData.EffectsToInventoryContent[i] = pe;
+                        }
+                    }
+
+                    if (cardData.PassiveEffects is { Length: > 0 })
+                    {
+                        for (int i = 0; i < cardData.PassiveEffects.Length; i++)
+                        {
+                            var pe = cardData.PassiveEffects[i];
+                            pe.DroppedCards ??= Array.Empty<CardsDropCollection>();
+                            cardData.PassiveEffects[i] = pe;
+                        }
+                    }
+
+                    if (cardData.RemotePassiveEffects is { Length: > 0 })
+                    {
+                        for (int i = 0; i < cardData.RemotePassiveEffects.Length; i++)
+                        {
+                            var rpe = cardData.RemotePassiveEffects[i];
+                            var pe = rpe.Effect;
+                            pe.DroppedCards ??= Array.Empty<CardsDropCollection>();
+                            rpe.Effect = pe;
+                            cardData.RemotePassiveEffects[i] = rpe;
+                        }
+                    }
                 }
                 else if (ProcessingScriptableObjectPack.obj is CharacterPerk perk)
                 {
@@ -251,6 +283,9 @@ public static class DoWarpperLoader
 
                     WaitForAddJournalPlayerCharacter.Add(new ScriptableObjectPack(character, "", "", "",
                         ProcessingScriptableObjectPack.CardData));
+
+                    character.SunsCost = -1;
+                    character.MoonsCost = -1;
                 }
             }
             catch (Exception ex)

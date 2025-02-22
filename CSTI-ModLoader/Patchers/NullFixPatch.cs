@@ -7,12 +7,6 @@ namespace ModLoader.Patchers;
 [HarmonyPatch]
 public static class NullFixPatch
 {
-    [HarmonyPrefix, HarmonyPatch(typeof(PassiveEffect), nameof(PassiveEffect.Instantiate))]
-    public static void PassiveEffect_Instantiate(ref PassiveEffect __instance)
-    {
-        __instance.DroppedCards ??= Array.Empty<CardsDropCollection>();
-        __instance.StatModifiers ??= Array.Empty<StatModifier>();
-    }
 
     [HarmonyPrefix, HarmonyPatch(typeof(AmbienceImageEffect), nameof(AmbienceImageEffect.SetWeather))]
     public static bool AmbienceImageEffect_SetWeather(WeatherSet _Weather)

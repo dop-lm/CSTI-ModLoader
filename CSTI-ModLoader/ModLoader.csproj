@@ -2,14 +2,14 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <Import Project="..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props" Condition="Exists('..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props')" />
     <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-<!--    <Target Name="CopyOutputFiles" AfterTargets="Build">-->
-<!--        <ItemGroup>-->
-<!--            <OutputFiles Include="$(OutputPath)CSTI_LuaActionSupport.dll;$(OutputPath)CSTI-ChatTreeLoader.dll;$(OutputPath)DotNetZip.dll;-->
-<!--$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll;更新历史.txt" />-->
-<!--        </ItemGroup>-->
+    <Target Name="CopyOutputFiles" AfterTargets="Build">
+        <ItemGroup>
+<!--            <OutputFiles Include="$(OutputPath)DotNetZip.dll;$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll" />-->
+            <OutputFiles Include="$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll" />
+        </ItemGroup>
 <!--        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath1)" />-->
-<!--        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath2)" />-->
-<!--    </Target>-->
+        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath2)" />
+    </Target>
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -43,8 +43,8 @@
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <OutputPath1>..\..\my-cstimods\ModLoader</OutputPath1>
-        <OutputPath2>D:\SteamLibrary\steamapps\common\Card Survival Tropical Island\BepInEx\plugins\ModLoader</OutputPath2>
+<!--        <OutputPath1>..\..\my-cstimods\ModLoader</OutputPath1>-->
+        <OutputPath2>D:\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\plugins\ModLoader</OutputPath2>
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="Compatible\CompatibleCheck.cs" />
