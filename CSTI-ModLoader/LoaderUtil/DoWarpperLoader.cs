@@ -251,6 +251,18 @@ public static class DoWarpperLoader
                             cardData.RemotePassiveEffects[i] = rpe;
                         }
                     }
+
+                    if (cardData.EffectsToContainer is { Length: > 0 })
+                    {
+                        for (int i = 0; i < cardData.EffectsToContainer.Length; i++)
+                        {
+                            var rpe = cardData.EffectsToContainer[i];
+                            var pe = rpe.Effect;
+                            pe.DroppedCards ??= Array.Empty<CardsDropCollection>();
+                            rpe.Effect = pe;
+                            cardData.EffectsToContainer[i] = rpe;
+                        }
+                    }
                 }
                 else if (ProcessingScriptableObjectPack.obj is CharacterPerk perk)
                 {
