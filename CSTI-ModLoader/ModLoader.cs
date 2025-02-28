@@ -61,7 +61,7 @@ public class ModPack
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "1.0.1";
+    public const string ModVersion = "1.0.2";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
@@ -72,6 +72,7 @@ public class ModLoader : BaseUnityPlugin
             // LuaSupportRuntime.Init(SpriteDict, AllLuaFiles);
             // NormalPatcher.DoPatch(HarmonyInstance);
             HarmonyInstance.PatchAll(typeof(BpFixPatch));
+            HarmonyInstance.PatchAll(typeof(EnvPatch));
             HarmonyInstance.PatchAll(typeof(NullFixPatch));
         }
         catch (Exception e)

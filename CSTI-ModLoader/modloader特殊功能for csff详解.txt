@@ -1,0 +1,2 @@
+- 非实例化场景的返回上一场景支持（在env卡上添加一项ObjectiveName为NeedTravelToPreviousEnvSupport的TimeValues即可）
+  - 考虑到存档大小问题，不能为所有场景开放改功能，也没法加字段，只好做成这样

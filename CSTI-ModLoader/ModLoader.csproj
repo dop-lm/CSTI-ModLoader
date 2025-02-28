@@ -64,6 +64,7 @@
         <Compile Include="LoaderUtil\ResourceDataLoader.cs" />
         <Compile Include="LoaderUtil\ScriptableUtil.cs" />
         <Compile Include="Patchers\BpFixPatch.cs" />
+        <Compile Include="Patchers\EnvPatch.cs" />
         <Compile Include="Patchers\NullFixPatch.cs" />
         <Compile Include="ResourceLoadHelper.cs" />
         <Compile Include="StringHelper.cs" />
@@ -348,6 +349,7 @@
     </ItemGroup>
     <ItemGroup>
         <Content Include="ExampleModify.json" />
+        <Content Include="modloader特殊功能for csff详解.txt" />
         <Content Include="更新csff.txt" />
         <Content Include="更新历史.txt" />
         <Content Include="FodyWeavers.xml" />
