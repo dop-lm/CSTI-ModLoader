@@ -9,6 +9,8 @@ namespace ModLoader.LoaderUtil;
 
 public static class DoWarpperLoader
 {
+    public static PerkTabGroup? PerkTabGroup_All;
+
     public static T Pop<T>(this List<T> list)
     {
         if (list.Count == 0) return default;
@@ -270,6 +272,13 @@ public static class DoWarpperLoader
                         !json["CharacterPerkPerkGroup"].ToString().IsNullOrWhiteSpace())
                         WaitForAddPerkGroup.Add(new Tuple<string, CharacterPerk>(
                             json["CharacterPerkPerkGroup"].ToString(), perk));
+
+                    if (!PerkTabGroup_All)
+                        PerkTabGroup_All = GameLoad.Instance.DataBase.AllData.OfType<PerkTabGroup>().FirstOrDefault();
+                    if (PerkTabGroup_All != null && !PerkTabGroup_All.ContainsPerk(perk))
+                    {
+                        PerkTabGroup_All.ContainedPerks.Add(perk);
+                    }
                 }
                 else if (ProcessingScriptableObjectPack.obj is GameStat stat)
                 {

@@ -1,2 +1,3 @@
 v1.0.1 临时引入蓝图功能,禁用更新
 v1.0.2 特殊引入返回场景支持（需要在Environment卡上添加一个ObjectiveName为NeedTravelToPreviousEnvSupport的TimeValues）
+v1.0.3 使mod perk默认显示

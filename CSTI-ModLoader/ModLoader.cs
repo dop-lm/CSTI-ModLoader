@@ -61,7 +61,7 @@ public class ModPack
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "1.0.2";
+    public const string ModVersion = "1.0.3";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
@@ -964,11 +964,11 @@ public class ModLoader : BaseUnityPlugin
                     Debug.Log($"ModLoader Load Mod {ModName} {Info.Version}");
 
                     // Check Verison
-                    var ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
-                    if (PluginVersion.CompareTo(ModRequestVersion) < 0)
-                        Debug.LogWarningFormat(
-                            "ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModName,
-                            ModRequestVersion);
+                    // var ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
+                    // if (PluginVersion.CompareTo(ModRequestVersion) < 0)
+                    //     Debug.LogWarningFormat(
+                    //         "ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion, ModName,
+                    //         ModRequestVersion);
                 }
                 catch (Exception ex)
                 {
