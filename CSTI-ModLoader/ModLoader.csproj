@@ -63,6 +63,7 @@
         <Compile Include="LoaderUtil\PostSpriteLoad.cs" />
         <Compile Include="LoaderUtil\ResourceDataLoader.cs" />
         <Compile Include="LoaderUtil\ScriptableUtil.cs" />
+        <Compile Include="Patchers\BpFixPatch.cs" />
         <Compile Include="Patchers\NullFixPatch.cs" />
         <Compile Include="ResourceLoadHelper.cs" />
         <Compile Include="StringHelper.cs" />
@@ -95,7 +96,7 @@
           <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-CSharp" Publicize="true">
-          <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\Assembly-CSharp.dll</HintPath>
+          <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Assembly-CSharp.dll</HintPath>
           <Private>False</Private>
         </Reference>
         <Reference Include="BepInEx">
@@ -347,6 +348,7 @@
     </ItemGroup>
     <ItemGroup>
         <Content Include="ExampleModify.json" />
+        <Content Include="更新csff.txt" />
         <Content Include="更新历史.txt" />
         <Content Include="FodyWeavers.xml" />
         <EmbeddedResource Include="csti_fonts.bundle" LogicalName="csti_fonts.bundle" />

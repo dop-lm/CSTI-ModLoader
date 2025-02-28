@@ -61,7 +61,7 @@ public class ModPack
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "2.3.6.47";
+    public const string ModVersion = "1.0.1";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
@@ -71,6 +71,7 @@ public class ModLoader : BaseUnityPlugin
         {
             // LuaSupportRuntime.Init(SpriteDict, AllLuaFiles);
             // NormalPatcher.DoPatch(HarmonyInstance);
+            HarmonyInstance.PatchAll(typeof(BpFixPatch));
             HarmonyInstance.PatchAll(typeof(NullFixPatch));
         }
         catch (Exception e)
@@ -223,14 +224,14 @@ public class ModLoader : BaseUnityPlugin
     private void Awake()
     {
         ModLoaderInstance = this;
-        try
-        {
-            StartCoroutine(AutoUpdate.UpdateModIfNecessary());
-        }
-        catch (Exception e)
-        {
-            Logger.LogWarning(e);
-        }
+        // try
+        // {
+        //     StartCoroutine(AutoUpdate.UpdateModIfNecessary());
+        // }
+        // catch (Exception e)
+        // {
+        //     Logger.LogWarning(e);
+        // }
 
         MainUI.CreatePanel();
         MainUIBackPanelRT.sizeDelta = new Vector2(1920, 1080) * 0.55f;
