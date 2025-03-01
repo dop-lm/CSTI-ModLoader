@@ -38,7 +38,10 @@ public static class BpFixPatch
     [HarmonyPostfix, HarmonyPatch(typeof(MenuCardPreview), nameof(MenuCardPreview.Setup))]
     public static void MenuCardPreview_Setup(MenuCardPreview __instance)
     {
-        __instance.CardDesc.text += "\n点击锁定蓝图开始研究";
+        if (__instance.CardDesc && __instance.AssociatedCard)
+        {
+            __instance.CardDesc.text += $"\n点击锁定蓝图开始研究,共需{__instance.AssociatedCard.BlueprintUnlockSunsCost}天";
+        }
     }
 
     [HarmonyPrefix, HarmonyPatch(typeof(BlueprintModelsScreen), nameof(BlueprintModelsScreen.FinishBlueprintResearch))]

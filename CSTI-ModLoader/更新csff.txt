@@ -2,3 +2,5 @@ v1.0.1 临时引入蓝图功能,禁用更新
 v1.0.2 特殊引入返回场景支持（需要在Environment卡上添加一个ObjectiveName为NeedTravelToPreviousEnvSupport的TimeValues）
 v1.0.3 使mod perk默认显示
 v1.0.4 自动使模组npcAgent在世界中生成
+v1.0.5 BpFixPatch添加一项null保护
+v1.0.6 展示蓝图研究所需时间
