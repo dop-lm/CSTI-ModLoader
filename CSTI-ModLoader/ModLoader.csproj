@@ -1,14 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Import Project="..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props" Condition="Exists('..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props')" />
-    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+    <Import Project="..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props" Condition="Exists('..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props')"/>
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
     <Target Name="CopyOutputFiles" AfterTargets="Build">
         <ItemGroup>
-<!--            <OutputFiles Include="$(OutputPath)DotNetZip.dll;$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll" />-->
-            <OutputFiles Include="$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll" />
+            <!--            <OutputFiles Include="$(OutputPath)DotNetZip.dll;$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll" />-->
+            <OutputFiles Include="$(OutputPath)LitJSON.dll;$(OutputPath)ModLoader.dll"/>
         </ItemGroup>
-<!--        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath1)" />-->
-        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath2)" />
+        <!--        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath1)" />-->
+        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(OutputPath2)"/>
     </Target>
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -43,122 +43,122 @@
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-<!--        <OutputPath1>..\..\my-cstimods\ModLoader</OutputPath1>-->
+        <!--        <OutputPath1>..\..\my-cstimods\ModLoader</OutputPath1>-->
         <OutputPath2>D:\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\plugins\ModLoader</OutputPath2>
     </PropertyGroup>
     <ItemGroup>
-        <Compile Include="Compatible\CompatibleCheck.cs" />
-        <Compile Include="EmbeddedResources.cs" />
-        <Compile Include="ExportUtil\ExportAll.cs" />
-        <Compile Include="ExportUtil\ExportUI.cs" />
-        <Compile Include="ExportUtil\KVProvider.cs" />
-        <Compile Include="ExportUtil\LoadArchMod.cs" />
-        <Compile Include="ExportUtil\MapperObject.cs" />
-        <Compile Include="ExportUtil\RWUtil.cs" />
-        <Compile Include="ExportUtil\StringMapper.cs" />
-        <Compile Include="FFI\JsonnetRuntime.cs" />
-        <Compile Include="GlobalUsings.cs" />
-        <Compile Include="LoaderUtil\DoWarpperLoader.cs" />
-        <Compile Include="LoaderUtil\LoadPreData.cs" />
-        <Compile Include="LoaderUtil\PostSpriteLoad.cs" />
-        <Compile Include="LoaderUtil\ResourceDataLoader.cs" />
-        <Compile Include="LoaderUtil\ScriptableUtil.cs" />
-        <Compile Include="Patchers\BpFixPatch.cs" />
-        <Compile Include="Patchers\EnvPatch.cs" />
-        <Compile Include="Patchers\NullFixPatch.cs" />
-        <Compile Include="ResourceLoadHelper.cs" />
-        <Compile Include="StringHelper.cs" />
-        <Compile Include="UI\MainUI.cs" />
-        <Compile Include="Updater\AutoUpdate.cs" />
-        <Compile Include="WarpHelper.cs" />
-        <Compile Include="WarpperFunction.cs" />
-        <Compile Include="ModLoader.cs" />
-        <Compile Include="Properties\AssemblyInfo.cs" />
+        <Compile Include="Compatible\CompatibleCheck.cs"/>
+        <Compile Include="EmbeddedResources.cs"/>
+        <Compile Include="ExportUtil\ExportAll.cs"/>
+        <Compile Include="ExportUtil\ExportUI.cs"/>
+        <Compile Include="ExportUtil\KVProvider.cs"/>
+        <Compile Include="ExportUtil\LoadArchMod.cs"/>
+        <Compile Include="ExportUtil\MapperObject.cs"/>
+        <Compile Include="ExportUtil\RWUtil.cs"/>
+        <Compile Include="ExportUtil\StringMapper.cs"/>
+        <Compile Include="FFI\JsonnetRuntime.cs"/>
+        <Compile Include="GlobalUsings.cs"/>
+        <Compile Include="LoaderUtil\DoWarpperLoader.cs"/>
+        <Compile Include="LoaderUtil\LoadPreData.cs"/>
+        <Compile Include="LoaderUtil\PostSpriteLoad.cs"/>
+        <Compile Include="LoaderUtil\ResourceDataLoader.cs"/>
+        <Compile Include="LoaderUtil\ScriptableUtil.cs"/>
+        <Compile Include="Patchers\BpFixPatch.cs"/>
+        <Compile Include="Patchers\EnvPatch.cs"/>
+        <Compile Include="Patchers\NullFixPatch.cs"/>
+        <Compile Include="ResourceLoadHelper.cs"/>
+        <Compile Include="StringHelper.cs"/>
+        <Compile Include="UI\MainUI.cs"/>
+        <Compile Include="Updater\AutoUpdate.cs"/>
+        <Compile Include="WarpHelper.cs"/>
+        <Compile Include="WarpperFunction.cs"/>
+        <Compile Include="ModLoader.cs"/>
+        <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <ItemGroup>
         <Reference Include="0Harmony">
-          <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\core\0Harmony.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\core\0Harmony.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="AsmResolver, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-          <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\AsmResolver.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\AsmResolver.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="AsmResolver.DotNet, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-          <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\AsmResolver.DotNet.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\AsmResolver.DotNet.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="AsmResolver.PE, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-          <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\AsmResolver.PE.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\AsmResolver.PE.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="AsmResolver.PE.File, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-          <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\AsmResolver.PE.File.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\AsmResolver.PE.File.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="Assembly-CSharp" Publicize="true">
-          <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Assembly-CSharp.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Assembly-CSharp.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="BepInEx">
             <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\core\BepInEx.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="BepInEx.AssemblyPublicizer, Version=0.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-          <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\BepInEx.AssemblyPublicizer.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\BepInEx.AssemblyPublicizer.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="BepInEx.AssemblyPublicizer.MSBuild, Version=0.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-          <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\BepInEx.AssemblyPublicizer.MSBuild.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\BepInEx.AssemblyPublicizer.MSBuild.0.5.0-beta.1\lib\net472\BepInEx.AssemblyPublicizer.MSBuild.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="BepInEx.Harmony">
             <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\core\BepInEx.Harmony.dll</HintPath>
             <Private>False</Private>
         </Reference>
-<!--        <Reference Include="CSTI-ChatTreeLoader">-->
-<!--          <HintPath>..\..\CSTI-LuaActionSupport\CSTI-ChatTreeLoader\bin\Release\CSTI-ChatTreeLoader.dll</HintPath>-->
-<!--        </Reference>-->
-<!--        <Reference Include="CSTI_LuaActionSupport">-->
-<!--          <HintPath>..\..\CSTI-LuaActionSupport\CSTI-LuaActionSupport\bin\Release\CSTI_LuaActionSupport.dll</HintPath>-->
-<!--        </Reference>-->
-<!--        <Reference Include="DotNetZip">-->
-<!--            <HintPath>..\..\Libs\DotNetZip.dll</HintPath>-->
-<!--        </Reference>-->
+        <!--        <Reference Include="CSTI-ChatTreeLoader">-->
+        <!--          <HintPath>..\..\CSTI-LuaActionSupport\CSTI-ChatTreeLoader\bin\Release\CSTI-ChatTreeLoader.dll</HintPath>-->
+        <!--        </Reference>-->
+        <!--        <Reference Include="CSTI_LuaActionSupport">-->
+        <!--          <HintPath>..\..\CSTI-LuaActionSupport\CSTI-LuaActionSupport\bin\Release\CSTI_LuaActionSupport.dll</HintPath>-->
+        <!--        </Reference>-->
+        <!--        <Reference Include="DotNetZip">-->
+        <!--            <HintPath>..\..\Libs\DotNetZip.dll</HintPath>-->
+        <!--        </Reference>-->
         <Reference Include="ILMerge, Version=1.24.0.0, Culture=neutral, PublicKeyToken=4d0e9a1cbec0d397, processorArchitecture=MSIL">
             <HintPath>..\packages\ILMerge.Fody.1.24.0\lib\net452\ILMerge.dll</HintPath>
             <Private>False</Private>
         </Reference>
-<!--        <Reference Include="JeremyAnsel.DirectX.D3D11, Version=3.0.31.0, Culture=neutral, processorArchitecture=MSIL">-->
-<!--          <HintPath>..\packages\JeremyAnsel.DirectX.D3D11.3.0.31\lib\net48\JeremyAnsel.DirectX.D3D11.dll</HintPath>-->
-<!--          <Private>False</Private>-->
-<!--        </Reference>-->
-<!--        <Reference Include="JeremyAnsel.DirectX.Dds, Version=2.0.10.0, Culture=neutral, processorArchitecture=MSIL">-->
-<!--          <HintPath>..\packages\JeremyAnsel.DirectX.Dds.2.0.10\lib\net48\JeremyAnsel.DirectX.Dds.dll</HintPath>-->
-<!--          <Private>False</Private>-->
-<!--        </Reference>-->
-<!--        <Reference Include="JeremyAnsel.DirectX.Dxgi, Version=3.0.31.0, Culture=neutral, processorArchitecture=MSIL">-->
-<!--          <HintPath>..\packages\JeremyAnsel.DirectX.Dxgi.3.0.31\lib\net48\JeremyAnsel.DirectX.Dxgi.dll</HintPath>-->
-<!--          <Private>False</Private>-->
-<!--        </Reference>-->
-<!--        <Reference Include="JeremyAnsel.Media.Dds, Version=2.0.4.0, Culture=neutral, processorArchitecture=MSIL">-->
-<!--          <HintPath>..\packages\JeremyAnsel.Media.Dds.2.0.4\lib\net48\JeremyAnsel.Media.Dds.dll</HintPath>-->
-<!--          <Private>False</Private>-->
-<!--        </Reference>-->
+        <!--        <Reference Include="JeremyAnsel.DirectX.D3D11, Version=3.0.31.0, Culture=neutral, processorArchitecture=MSIL">-->
+        <!--          <HintPath>..\packages\JeremyAnsel.DirectX.D3D11.3.0.31\lib\net48\JeremyAnsel.DirectX.D3D11.dll</HintPath>-->
+        <!--          <Private>False</Private>-->
+        <!--        </Reference>-->
+        <!--        <Reference Include="JeremyAnsel.DirectX.Dds, Version=2.0.10.0, Culture=neutral, processorArchitecture=MSIL">-->
+        <!--          <HintPath>..\packages\JeremyAnsel.DirectX.Dds.2.0.10\lib\net48\JeremyAnsel.DirectX.Dds.dll</HintPath>-->
+        <!--          <Private>False</Private>-->
+        <!--        </Reference>-->
+        <!--        <Reference Include="JeremyAnsel.DirectX.Dxgi, Version=3.0.31.0, Culture=neutral, processorArchitecture=MSIL">-->
+        <!--          <HintPath>..\packages\JeremyAnsel.DirectX.Dxgi.3.0.31\lib\net48\JeremyAnsel.DirectX.Dxgi.dll</HintPath>-->
+        <!--          <Private>False</Private>-->
+        <!--        </Reference>-->
+        <!--        <Reference Include="JeremyAnsel.Media.Dds, Version=2.0.4.0, Culture=neutral, processorArchitecture=MSIL">-->
+        <!--          <HintPath>..\packages\JeremyAnsel.Media.Dds.2.0.4\lib\net48\JeremyAnsel.Media.Dds.dll</HintPath>-->
+        <!--          <Private>False</Private>-->
+        <!--        </Reference>-->
         <Reference Include="LitJSON, Version=0.18.0.0, Culture=neutral, processorArchitecture=MSIL">
             <HintPath>..\packages\LitJson.0.18.0\lib\net45\LitJSON.dll</HintPath>
             <Private>True</Private>
         </Reference>
         <Reference Include="LZ4, Version=1.0.15.93, Culture=neutral, PublicKeyToken=62e1b5ec1eec9bdd, processorArchitecture=MSIL">
-          <HintPath>..\packages\lz4net.1.0.15.93\lib\net4-client\LZ4.dll</HintPath>
-          <Private>True</Private>
+            <HintPath>..\packages\lz4net.1.0.15.93\lib\net4-client\LZ4.dll</HintPath>
+            <Private>True</Private>
         </Reference>
         <Reference Include="Microsoft.Win32.Primitives, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\Microsoft.Win32.Primitives.4.3.0\lib\net46\Microsoft.Win32.Primitives.dll</HintPath>
+            <HintPath>..\packages\Microsoft.Win32.Primitives.4.3.0\lib\net46\Microsoft.Win32.Primitives.dll</HintPath>
         </Reference>
         <Reference Include="Microsoft.Win32.Registry, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\Microsoft.Win32.Registry.4.7.0\lib\net461\Microsoft.Win32.Registry.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\Microsoft.Win32.Registry.4.7.0\lib\net461\Microsoft.Win32.Registry.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="MonoMod.RuntimeDetour">
             <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\core\MonoMod.RuntimeDetour.dll</HintPath>
@@ -168,127 +168,127 @@
             <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\core\MonoMod.Utils.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="mscorlib" />
+        <Reference Include="mscorlib"/>
         <Reference Include="NAudio, Version=1.10.0.0, Culture=neutral, processorArchitecture=MSIL">
-          <HintPath>..\packages\NAudio.1.10.0\lib\net35\NAudio.dll</HintPath>
-          <Private>True</Private>
+            <HintPath>..\packages\NAudio.1.10.0\lib\net35\NAudio.dll</HintPath>
+            <Private>True</Private>
         </Reference>
         <Reference Include="NVorbis, Version=0.10.5.0, Culture=neutral, processorArchitecture=MSIL">
-          <HintPath>..\packages\NVorbis.0.10.5\lib\net45\NVorbis.dll</HintPath>
-          <Private>True</Private>
+            <HintPath>..\packages\NVorbis.0.10.5\lib\net45\NVorbis.dll</HintPath>
+            <Private>True</Private>
         </Reference>
-        <Reference Include="System" />
-        <Reference Include="Microsoft.CSharp" />
+        <Reference Include="System"/>
+        <Reference Include="Microsoft.CSharp"/>
         <Reference Include="System.AppContext, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.AppContext.4.3.0\lib\net463\System.AppContext.dll</HintPath>
+            <HintPath>..\packages\System.AppContext.4.3.0\lib\net463\System.AppContext.dll</HintPath>
         </Reference>
         <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+            <Private>False</Private>
         </Reference>
-        <Reference Include="System.ComponentModel.Composition" />
+        <Reference Include="System.ComponentModel.Composition"/>
         <Reference Include="System.Console, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Console.4.3.0\lib\net46\System.Console.dll</HintPath>
+            <HintPath>..\packages\System.Console.4.3.0\lib\net46\System.Console.dll</HintPath>
         </Reference>
-        <Reference Include="System.Core" />
+        <Reference Include="System.Core"/>
         <Reference Include="System.Diagnostics.DiagnosticSource, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Diagnostics.DiagnosticSource.4.3.0\lib\net46\System.Diagnostics.DiagnosticSource.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\System.Diagnostics.DiagnosticSource.4.3.0\lib\net46\System.Diagnostics.DiagnosticSource.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="System.Diagnostics.Tracing, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Diagnostics.Tracing.4.3.0\lib\net462\System.Diagnostics.Tracing.dll</HintPath>
+            <HintPath>..\packages\System.Diagnostics.Tracing.4.3.0\lib\net462\System.Diagnostics.Tracing.dll</HintPath>
         </Reference>
         <Reference Include="System.Globalization.Calendars, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Globalization.Calendars.4.3.0\lib\net46\System.Globalization.Calendars.dll</HintPath>
+            <HintPath>..\packages\System.Globalization.Calendars.4.3.0\lib\net46\System.Globalization.Calendars.dll</HintPath>
         </Reference>
         <Reference Include="System.IO, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.IO.4.3.0\lib\net462\System.IO.dll</HintPath>
+            <HintPath>..\packages\System.IO.4.3.0\lib\net462\System.IO.dll</HintPath>
         </Reference>
         <Reference Include="System.IO.Compression, Version=4.1.2.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.IO.Compression.4.3.0\lib\net46\System.IO.Compression.dll</HintPath>
+            <HintPath>..\packages\System.IO.Compression.4.3.0\lib\net46\System.IO.Compression.dll</HintPath>
         </Reference>
-        <Reference Include="System.IO.Compression.FileSystem" />
+        <Reference Include="System.IO.Compression.FileSystem"/>
         <Reference Include="System.IO.Compression.ZipFile, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.IO.Compression.ZipFile.4.3.0\lib\net46\System.IO.Compression.ZipFile.dll</HintPath>
+            <HintPath>..\packages\System.IO.Compression.ZipFile.4.3.0\lib\net46\System.IO.Compression.ZipFile.dll</HintPath>
         </Reference>
         <Reference Include="System.IO.FileSystem, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.IO.FileSystem.4.3.0\lib\net46\System.IO.FileSystem.dll</HintPath>
+            <HintPath>..\packages\System.IO.FileSystem.4.3.0\lib\net46\System.IO.FileSystem.dll</HintPath>
         </Reference>
         <Reference Include="System.IO.FileSystem.Primitives, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.IO.FileSystem.Primitives.4.3.0\lib\net46\System.IO.FileSystem.Primitives.dll</HintPath>
+            <HintPath>..\packages\System.IO.FileSystem.Primitives.4.3.0\lib\net46\System.IO.FileSystem.Primitives.dll</HintPath>
         </Reference>
         <Reference Include="System.Linq, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Linq.4.3.0\lib\net463\System.Linq.dll</HintPath>
+            <HintPath>..\packages\System.Linq.4.3.0\lib\net463\System.Linq.dll</HintPath>
         </Reference>
         <Reference Include="System.Linq.Expressions, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Linq.Expressions.4.3.0\lib\net463\System.Linq.Expressions.dll</HintPath>
+            <HintPath>..\packages\System.Linq.Expressions.4.3.0\lib\net463\System.Linq.Expressions.dll</HintPath>
         </Reference>
         <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="System.Net.Http, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Net.Http.4.3.0\lib\net46\System.Net.Http.dll</HintPath>
+            <HintPath>..\packages\System.Net.Http.4.3.0\lib\net46\System.Net.Http.dll</HintPath>
         </Reference>
         <Reference Include="System.Net.Sockets, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Net.Sockets.4.3.0\lib\net46\System.Net.Sockets.dll</HintPath>
+            <HintPath>..\packages\System.Net.Sockets.4.3.0\lib\net46\System.Net.Sockets.dll</HintPath>
         </Reference>
-        <Reference Include="System.Numerics" />
+        <Reference Include="System.Numerics"/>
         <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="System.Reflection, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Reflection.4.3.0\lib\net462\System.Reflection.dll</HintPath>
+            <HintPath>..\packages\System.Reflection.4.3.0\lib\net462\System.Reflection.dll</HintPath>
         </Reference>
         <Reference Include="System.Runtime, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Runtime.4.3.0\lib\net462\System.Runtime.dll</HintPath>
+            <HintPath>..\packages\System.Runtime.4.3.0\lib\net462\System.Runtime.dll</HintPath>
         </Reference>
         <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="System.Runtime.Extensions, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Runtime.Extensions.4.3.0\lib\net462\System.Runtime.Extensions.dll</HintPath>
+            <HintPath>..\packages\System.Runtime.Extensions.4.3.0\lib\net462\System.Runtime.Extensions.dll</HintPath>
         </Reference>
         <Reference Include="System.Runtime.InteropServices, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Runtime.InteropServices.4.3.0\lib\net463\System.Runtime.InteropServices.dll</HintPath>
+            <HintPath>..\packages\System.Runtime.InteropServices.4.3.0\lib\net463\System.Runtime.InteropServices.dll</HintPath>
         </Reference>
         <Reference Include="System.Runtime.InteropServices.RuntimeInformation, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
+            <HintPath>..\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
         </Reference>
         <Reference Include="System.Security.AccessControl, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Security.AccessControl.4.7.0\lib\net461\System.Security.AccessControl.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\System.Security.AccessControl.4.7.0\lib\net461\System.Security.AccessControl.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="System.Security.Cryptography.Algorithms, Version=4.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Security.Cryptography.Algorithms.4.3.0\lib\net463\System.Security.Cryptography.Algorithms.dll</HintPath>
+            <HintPath>..\packages\System.Security.Cryptography.Algorithms.4.3.0\lib\net463\System.Security.Cryptography.Algorithms.dll</HintPath>
         </Reference>
         <Reference Include="System.Security.Cryptography.Encoding, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Security.Cryptography.Encoding.4.3.0\lib\net46\System.Security.Cryptography.Encoding.dll</HintPath>
+            <HintPath>..\packages\System.Security.Cryptography.Encoding.4.3.0\lib\net46\System.Security.Cryptography.Encoding.dll</HintPath>
         </Reference>
         <Reference Include="System.Security.Cryptography.Primitives, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Security.Cryptography.Primitives.4.3.0\lib\net46\System.Security.Cryptography.Primitives.dll</HintPath>
+            <HintPath>..\packages\System.Security.Cryptography.Primitives.4.3.0\lib\net46\System.Security.Cryptography.Primitives.dll</HintPath>
         </Reference>
         <Reference Include="System.Security.Cryptography.X509Certificates, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Security.Cryptography.X509Certificates.4.3.0\lib\net461\System.Security.Cryptography.X509Certificates.dll</HintPath>
+            <HintPath>..\packages\System.Security.Cryptography.X509Certificates.4.3.0\lib\net461\System.Security.Cryptography.X509Certificates.dll</HintPath>
         </Reference>
         <Reference Include="System.Security.Principal.Windows, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Security.Principal.Windows.4.7.0\lib\net461\System.Security.Principal.Windows.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\System.Security.Principal.Windows.4.7.0\lib\net461\System.Security.Principal.Windows.dll</HintPath>
+            <Private>False</Private>
         </Reference>
         <Reference Include="System.Text.RegularExpressions, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Text.RegularExpressions.4.3.0\lib\net463\System.Text.RegularExpressions.dll</HintPath>
+            <HintPath>..\packages\System.Text.RegularExpressions.4.3.0\lib\net463\System.Text.RegularExpressions.dll</HintPath>
         </Reference>
         <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
-          <Private>False</Private>
+            <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+            <Private>False</Private>
         </Reference>
-        <Reference Include="System.Windows.Forms" />
-        <Reference Include="System.Xml" />
-        <Reference Include="System.Xml.Linq" />
+        <Reference Include="System.Windows.Forms"/>
+        <Reference Include="System.Xml"/>
+        <Reference Include="System.Xml.Linq"/>
         <Reference Include="System.Xml.ReaderWriter, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-          <HintPath>..\packages\System.Xml.ReaderWriter.4.3.0\lib\net46\System.Xml.ReaderWriter.dll</HintPath>
+            <HintPath>..\packages\System.Xml.ReaderWriter.4.3.0\lib\net46\System.Xml.ReaderWriter.dll</HintPath>
         </Reference>
         <Reference Include="Unity.TextMeshPro">
             <HintPath>..\..\..\..\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\Card Survival - Fantasy Forest_Data\Managed\Unity.TextMeshPro.dll</HintPath>
@@ -344,29 +344,29 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
-        <None Include="App.config" />
-        <None Include="packages.config" />
+        <None Include="App.config"/>
+        <None Include="packages.config"/>
     </ItemGroup>
     <ItemGroup>
-        <Content Include="ExampleModify.json" />
-        <Content Include="modloader特殊功能for csff详解.txt" />
-        <Content Include="更新csff.txt" />
-        <Content Include="更新历史.txt" />
-        <Content Include="FodyWeavers.xml" />
-        <EmbeddedResource Include="csti_fonts.bundle" LogicalName="csti_fonts.bundle" />
+        <Content Include="ExampleModify.json"/>
+        <Content Include="modloader特殊功能for csff详解.txt"/>
+        <Content Include="更新csff.txt"/>
+        <Content Include="更新历史.txt"/>
+        <Content Include="FodyWeavers.xml"/>
+        <EmbeddedResource Include="csti_fonts.bundle" LogicalName="csti_fonts.bundle"/>
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="DataStruct\" />
+        <Folder Include="DataStruct\"/>
     </ItemGroup>
-    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-    <Import Project="..\packages\Fody.6.6.4\build\Fody.targets" Condition="Exists('..\packages\Fody.6.6.4\build\Fody.targets')" />
+    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+    <Import Project="..\packages\Fody.6.6.4\build\Fody.targets" Condition="Exists('..\packages\Fody.6.6.4\build\Fody.targets')"/>
     <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
         <PropertyGroup>
             <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them. For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
         </PropertyGroup>
-        <Error Condition="!Exists('..\packages\Fody.6.6.4\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.6.6.4\build\Fody.targets'))" />
-        <Error Condition="!Exists('..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props'))" />
-        <Error Condition="!Exists('..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets'))" />
+        <Error Condition="!Exists('..\packages\Fody.6.6.4\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.6.6.4\build\Fody.targets'))"/>
+        <Error Condition="!Exists('..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ILMerge.Fody.1.24.0\build\ILMerge.Fody.props'))"/>
+        <Error Condition="!Exists('..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets'))"/>
     </Target>
-    <Import Project="..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets" Condition="Exists('..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets')" />
+    <Import Project="..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets" Condition="Exists('..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets')"/>
 </Project>

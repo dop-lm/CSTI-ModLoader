@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <RootNamespace>ModLoader_Next安装包</RootNamespace>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UseWPF>true</UseWPF>
+        <LangVersion>default</LangVersion>
+        <TargetFrameworks>net8.0-windows;net48</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Gameloop.Vdf.JsonConverter" Version="0.2.1"/>
+        <PackageReference Include="HandyControls" Version="3.5.3"/>
+        <PackageReference Include="HandyControls.Lang.zh-CN" Version="3.5.3"/>
+        <PackageReference Include="System.IO" Version="4.3.0" />
+        <PackageReference Include="System.IO.Compression.ZipFile" Version="4.3.0" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+        <Resource Include="CIML_1.ico"/>
+    </ItemGroup>
+
+    <ItemGroup Label="resources">
+        <EmbeddedResource Include="BepInEx_win_x64_5.4.23.2.zip" LogicalName="ModLoaderInstaller.BepInEx_x64.zip"/>
+        <!--        <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/CSTI-ChatTreeLoader.dll" LogicalName="ModLoaderInstaller.ChatTreeLoader.dll" />-->
+        <!--        <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/CSTI_LuaActionSupport.dll" LogicalName="ModLoaderInstaller.CSTILuaActionSupport.dll" />-->
+        <!--        <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/DotNetZip.dll" LogicalName="ModLoaderInstaller.DotNetZip.dll" />-->
+        <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/LitJSON.dll" LogicalName="ModLoaderInstaller.LitJSON.dll"/>
+        <EmbeddedResource Include="../CSTI-ModLoader/bin/Release/ModLoader.dll" LogicalName="ModLoaderInstaller.ModLoader.dll"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="System.IO.Compression" />
+    </ItemGroup>
+
+</Project>
