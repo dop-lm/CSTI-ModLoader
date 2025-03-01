@@ -10,6 +10,7 @@ namespace ModLoader.LoaderUtil;
 public static class DoWarpperLoader
 {
     public static PerkTabGroup? PerkTabGroup_All;
+    public static HashSet<WorldSettings> AllWorldSettings = new();
 
     public static T Pop<T>(this List<T> list)
     {
@@ -307,6 +308,24 @@ public static class DoWarpperLoader
 
                     character.SunsCost = -1;
                     character.MoonsCost = -1;
+                }
+                else if (ProcessingScriptableObjectPack.obj is NPCAgent agent)
+                {
+                    if (AllWorldSettings.Count == 0)
+                    {
+                        AllWorldSettings = GameLoad.Instance.DataBase.AllData.OfType<Gamemode>()
+                            .Select(gamemode => gamemode.World).ToHashSet();
+                    }
+
+                    if (AllGUIDDict.TryGetValue(agent.AgentName.ParentObjectID, out var scriptable) &&
+                        scriptable is CardData { CardType: CardTypes.Environment } env)
+                    {
+                        foreach (var worldSetting in AllWorldSettings)
+                        {
+                            worldSetting.NPCAgents = worldSetting.NPCAgents.AddToArray(new NPCAgentSpawnSettings
+                                { SpawnedAgent = agent, StartingEnv = env });
+                        }
+                    }
                 }
             }
             catch (Exception ex)
