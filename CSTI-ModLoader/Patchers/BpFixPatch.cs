@@ -1,4 +1,5 @@
 using HarmonyLib;
+using UnityEngine;
 
 namespace ModLoader.Patchers;
 
@@ -47,8 +48,11 @@ public static class BpFixPatch
     [HarmonyPrefix, HarmonyPatch(typeof(BlueprintModelsScreen), nameof(BlueprintModelsScreen.FinishBlueprintResearch))]
     public static void BlueprintModelsScreen_FinishBlueprintResearch(BlueprintModelsScreen __instance)
     {
-        GameManager.Instance.StartCoroutineEx(
-            GameManager.Instance.MakeBlueprintAvailableRoutine(__instance.CurrentResearch), out _);
+        var currentResearch = __instance.CurrentResearch;
+        GameManager.Instance.StartCoroutine(GameManager.Instance.AddCard(currentResearch, null!, true,
+            GameManager.SpecialDrop.None, null!, null!,
+            null, null, true, SpawningLiquid.Empty,
+            new Vector2Int(GameManager.Instance.CurrentTickInfo.z, 0), null));
     }
 
     [HarmonyPostfix, HarmonyPatch(typeof(BlueprintModelsScreen), nameof(BlueprintModelsScreen.UpdateLockedBlueprints))]
@@ -56,7 +60,8 @@ public static class BpFixPatch
     {
         foreach (var menuCardPreview in __instance.LockedBlueprintsPreviews)
         {
-            if (GameManager.Instance.BlueprintModelStates[menuCardPreview.AssociatedCard] ==
+            if (GameManager.Instance.BlueprintModelStates.ContainsKey(menuCardPreview.AssociatedCard) &&
+                GameManager.Instance.BlueprintModelStates[menuCardPreview.AssociatedCard] ==
                 BlueprintModelState.Locked &&
                 menuCardPreview.AssociatedCard.GetUnlockConditions is { } unlockConditions &&
                 !unlockConditions.IsUnlocked()) menuCardPreview.gameObject.SetActive(false);

@@ -61,7 +61,7 @@ public class ModPack
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "1.0.6";
+    public const string ModVersion = "1.0.7";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
 
