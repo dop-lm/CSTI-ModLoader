@@ -125,11 +125,11 @@ public static class LoadPreData
                     Debug.Log($"ModLoader PreLoad Mod {ModName} {Info.Version}");
 
                     // Check Verison
-                    var ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
-                    if (PluginVersion.CompareTo(ModRequestVersion) < 0)
-                        Debug.LogWarningFormat(
-                            "ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion,
-                            ModName, ModRequestVersion);
+                    // var ModRequestVersion = Version.Parse(Info.ModLoaderVerison);
+                    // if (PluginVersion.CompareTo(ModRequestVersion) < 0)
+                    //     Debug.LogWarningFormat(
+                    //         "ModLoader Version {0} is lower than {1} Request Version {2}", PluginVersion,
+                    //         ModName, ModRequestVersion);
                 }
                 catch (Exception ex)
                 {

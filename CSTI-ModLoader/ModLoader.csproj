@@ -65,6 +65,7 @@
         <Compile Include="LoaderUtil\ScriptableUtil.cs"/>
         <Compile Include="Patchers\BpFixPatch.cs"/>
         <Compile Include="Patchers\EnvPatch.cs"/>
+        <Compile Include="Patchers\NpcPatch.cs" />
         <Compile Include="Patchers\NullFixPatch.cs"/>
         <Compile Include="ResourceLoadHelper.cs"/>
         <Compile Include="StringHelper.cs"/>

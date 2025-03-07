@@ -335,5 +335,6 @@ public static class DoWarpperLoader
         }
 
         _onceWarp.SetDone();
+        ModLoader.NotifyLoadModComplete();
     }
 }
