@@ -5,10 +5,10 @@ namespace ModLoader.Patchers;
 [HarmonyPatch]
 public static class NpcPatch
 {
-    [HarmonyPatch(typeof(InGameCardBase), nameof(InGameCardBase.DropInInventory)), HarmonyPrefix]
-    public static bool CanBeDragged(InGameCardBase _Card)
+    [HarmonyPatch(typeof(InGameCardBase), nameof(InGameCardBase.OnDrop)), HarmonyPrefix]
+    public static bool InGameCardBase_OnDrop()
     {
-        if (_Card.IsOwnedByNPC) return false;
+        if (GameManager.DraggedCard && GameManager.DraggedCard.IsOwnedByNPC) return false;
         return true;
     }
 }
