@@ -39,9 +39,13 @@ public static class BpFixPatch
     [HarmonyPostfix, HarmonyPatch(typeof(MenuCardPreview), nameof(MenuCardPreview.Setup))]
     public static void MenuCardPreview_Setup(MenuCardPreview __instance)
     {
-        if (__instance.CardDesc && __instance.AssociatedCard)
+        if (!__instance.AssociatedCard) return;
+        var traverse = Traverse.Create(__instance.AssociatedCard);
+        var fieldUnlockCost = traverse.Field("BlueprintUnlockSunsCost");
+        if (!fieldUnlockCost.FieldExists()) return;
+        if (__instance.CardDesc)
         {
-            __instance.CardDesc.text += $"\n点击锁定蓝图开始研究,共需{__instance.AssociatedCard.BlueprintUnlockSunsCost}天";
+            __instance.CardDesc.text += $"\n点击锁定蓝图开始研究,共需{fieldUnlockCost.GetValue()}天";
         }
     }
 

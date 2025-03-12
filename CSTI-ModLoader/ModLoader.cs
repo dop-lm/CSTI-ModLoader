@@ -61,11 +61,11 @@ public class ModPack
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "1.0.11";
+    public const string ModVersion = "1.1.0";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
-    public static event Action<string>? OnLoadMod; 
-    public static event Action? OnLoadModComplete; 
+    public static event Action<string>? OnLoadMod;
+    public static event Action? OnLoadModComplete;
 
     static ModLoader()
     {
@@ -1798,6 +1798,8 @@ public class ModLoader : BaseUnityPlugin
             stopwatch.Stop();
             Debug.Log("ModLoader Time taken: " + stopwatch.Elapsed);
             _once.SetDone();
+
+            OnLoadModComplete?.Invoke();
         }
         catch (Exception ex)
         {
@@ -2037,10 +2039,5 @@ public class ModLoader : BaseUnityPlugin
         GUILayout.Label($"文件名/FileName:{modPack.FileName}");
 
         GUILayout.EndHorizontal();
-    }
-
-    public static void NotifyLoadModComplete()
-    {
-        OnLoadModComplete?.Invoke();
     }
 }
