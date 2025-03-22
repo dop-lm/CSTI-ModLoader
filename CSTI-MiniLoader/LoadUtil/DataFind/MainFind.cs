@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HarmonyLib;
 using UnityEngine;
 
 namespace CSTI_MiniLoader.LoadUtil.DataFind;
@@ -7,36 +8,13 @@ public static class MainFind
 {
     public static IEnumerable<Object> Find(this UniqueIDScriptable idScriptable)
     {
-        if (idScriptable is CardData cardData)
+        var traverse = Traverse.Create(idScriptable);
+        foreach (var field in traverse.Fields())
         {
-            foreach (var r in cardData.ActiveCounters)
+            var tField = traverse.Field(field);
+            if (tField.GetValueType().IsSubclassOf(typeof(Object)))
             {
-                yield return r;
-            }
-
-            foreach (var cardTag in cardData.CardTags)
-            {
-                yield return cardTag;
-            }
-
-            foreach (var equipmentTag in cardData.EquipmentTags)
-            {
-                yield return equipmentTag;
-            }
-
-            yield return cardData.CardImage;
-        }
-
-        if (idScriptable is GameStat gameStat)
-        {
-            yield return gameStat.GetIcon;
-            foreach (var status in gameStat.Statuses)
-            {
-                yield return status.Icon;
-                foreach (var au in status.AlertSounds)
-                {
-                    yield return au;
-                }
+                yield return (Object)tField.GetValue();
             }
         }
     }

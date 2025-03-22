@@ -1,5 +1,4 @@
-﻿using NAudio.Wave;
-using UnityEngine;
+﻿using UnityEngine;
 using Array = System.Array;
 using Exception = System.Exception;
 using MemoryStream = System.IO.MemoryStream;
@@ -10,6 +9,7 @@ namespace CSTI_MiniLoader.LoadUtil;
 
 public static class ResourceDataLoader
 {
+#if false
     public static AudioClip GetAudioClipFromWav(Stream raw_data, string clip_name)
     {
         var waveFileReader = new WaveFileReader(raw_data);
@@ -59,4 +59,5 @@ public static class ResourceDataLoader
             return false;
         }
     }
+#endif
 }

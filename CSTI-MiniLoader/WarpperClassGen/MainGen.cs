@@ -8,7 +8,6 @@ using UnhollowerBaseLib;
 
 namespace CSTI_MiniLoader.WarpperClassGen;
 
-[SuppressMessage("ReSharper", "InconsistentNaming")]
 public enum WarpType
 {
     NONE,
@@ -22,26 +21,42 @@ public enum WarpType
 
 public static class MainGen
 {
+    public class Warp
+    {
+        public FieldInfo Fld;
+        public IntPtr FPtr;
+        public int FOffset;
+        public bool IsValueType;
+
+        public Warp(FieldInfo fld, IntPtr fPtr, int fOffset, bool isValueType)
+        {
+            this.Fld = fld;
+            this.FPtr = fPtr;
+            this.FOffset = fOffset;
+            this.IsValueType = isValueType;
+        }
+    }
+
     public static readonly
-        Dictionary<Type, Dictionary<string, (FieldInfo fld, IntPtr fPtr, int fOffset, bool isValueType)>>
+        Dictionary<Type, Dictionary<string, Warp>>
         WarpperTypes = new();
 
     static MainGen()
     {
     }
 
-    public static Dictionary<string, (FieldInfo fld, IntPtr fPtr, int fOffset, bool isValueType)> GetOrGen(Type type)
+    public static Dictionary<string, Warp> GetOrGen(Type type)
     {
         if (WarpperTypes.TryGetValue(type, out var warpperType)) return warpperType;
-        var warpper = new Dictionary<string, (FieldInfo fld, IntPtr fPtr, int fOffset, bool isValueType)>();
-        WarpperTypes[type] = warpper;
+        var warpper = new Dictionary<string, Warp>();
+        WarpperTypes.set_Item(type, warpper);
 
         foreach (var field in AccessTools.GetDeclaredFields(type))
         {
             if (!field.IsStatic || !field.Name.StartsWith("NativeFieldInfoPtr")) continue;
             var fPtr = (IntPtr)field.GetValue(null);
-            warpper[field.Name.Substring("NativeFieldInfoPtr_".Length)] =
-                (field, fPtr, (int)IL2CPP.il2cpp_field_get_offset(fPtr), field.FieldType.IsValueType);
+            warpper.set_Item(field.Name["NativeFieldInfoPtr_".Length..],
+                new Warp(field, fPtr, (int)IL2CPP.il2cpp_field_get_offset(fPtr), field.FieldType.IsValueType));
         }
 
         return warpper;

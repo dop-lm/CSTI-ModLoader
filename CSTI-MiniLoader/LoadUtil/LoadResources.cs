@@ -4,6 +4,7 @@ using System.Linq;
 using CSTI_MiniLoader.LoadUtil.DataFind;
 using CSTI_MiniLoader.Patchers;
 using CSTI_MiniLoader.WarpperClassGen;
+using HarmonyLib;
 using MelonLoader;
 using UnhollowerBaseLib;
 using UnhollowerRuntimeLib;
@@ -17,7 +18,7 @@ public static class LoadResources
     public static T Pop<T>(this List<T> list)
     {
         if (list.Count == 0) return default;
-        var result = list[^1];
+        var result = list.get_Item(list.Count - 1);
         list.RemoveAt(list.Count - 1);
         return result;
     }
@@ -49,47 +50,34 @@ public static class LoadResources
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("LoadEditorScriptableObject " + ex.Message);
+                MelonLogger.Warning("LoadEditorScriptableObject " + ex.Message);
             }
         }
     }
 
-    public static IEnumerable<Object> WithGameDataFinder(this IEnumerable<Object> enumerable)
+    public static void LoadGameResource(GameLoad __instance)
     {
-        foreach (var o in enumerable)
+        // UniqueIDScriptable.AllUniqueObjects --被内联
+        // GameLoad.DataBase --被内联
+        throw new TODO("[TODO0]我没有其他任何办法");
+        foreach (var pair in AccessTools.StaticFieldRefAccess<Dictionary<string, UniqueIDScriptable>>(
+                     typeof(UniqueIDScriptable), "AllUniqueObjects"))
         {
-            yield return o;
-        }
-
-        foreach (var data in GameLoad.Instance.DataBase.AllData)
-        {
-            yield return data;
-            foreach (var o in data.Find())
+            var uniqueIDScriptable = pair.Value;
+            var uid = pair.Key;
+            RegObj(uid, uniqueIDScriptable, uniqueIDScriptable.GetType());
+            foreach (var o in uniqueIDScriptable.Find())
             {
-                yield return o;
-            }
-        }
-    }
-
-    public static void LoadGameResource()
-    {
-        try
-        {
-            foreach (var ele in Object.FindObjectsOfType(Il2CppType.Of<ScriptableObject>()).WithGameDataFinder())
-            {
-                if (ele is not UniqueIDScriptable)
+                if (o == null) continue;
+                if (o is not UniqueIDScriptable)
                 {
-                    RegObj(ele.name, ele, ele.GetType());
+                    RegObj(o.name, o, o.GetType());
                 }
-                else if (ele is UniqueIDScriptable idScriptable)
+                else if (o is UniqueIDScriptable idScriptable)
                 {
-                    RegObj(idScriptable.UniqueID, idScriptable, idScriptable.GetType());
+                    RegObj(idScriptable.Uid(), idScriptable, idScriptable.GetType());
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            MelonLogger.Error("LoadGameResource Error " + ex.Message);
         }
     }
 
@@ -102,7 +90,7 @@ public static class LoadResources
         {
             try
             {
-                var processingScriptableObjectPack = WaitForWarpperEditorGuidDict[key];
+                var processingScriptableObjectPack = WaitForWarpperEditorGuidDict.get_Item(key);
                 WaitForWarpperEditorGuidDict.Remove(key);
 
                 var json = processingScriptableObjectPack.CardData;
@@ -137,7 +125,7 @@ public static class LoadResources
                                 WaitForAddCardFilterGroupCard.Add(new Tuple<string, CardData>(
                                     json["CardDataCardFilterGroup"][i].ToString(), cardData));
 
-                    cardData.FillDropsList();
+                    Traverse.Create(cardData).Method("FillDropsList").GetValue();
                     // var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
                     // if (FillDropsList != null)
                     // {
@@ -164,10 +152,7 @@ public static class LoadResources
                     foreach (var pair in ItemDictionary(typeof(Gamemode)))
                     {
                         var mode = pair.Value as Gamemode;
-                        var il2CppReferenceArray = (Il2CppArrayBase<PlayerCharacter>)mode.PlayableCharacters;
-                        Il2CppSystem.Array.Resize(ref il2CppReferenceArray, mode.PlayableCharacters.Length + 1);
-                        mode.PlayableCharacters = (Il2CppReferenceArray<PlayerCharacter>)il2CppReferenceArray;
-                        mode.PlayableCharacters[^1] = character;
+                        mode.PlayableCharacters = mode.PlayableCharacters.AddToArray(character);
                     }
 
                     WaitForAddJournalPlayerCharacter.Add(new ScriptableObjectPack(character, "", "", "",
@@ -176,7 +161,7 @@ public static class LoadResources
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("WarpperAllEditorMods " + ex.Message);
+                MelonLogger.Warning("WarpperAllEditorMods " + ex.Message);
             }
         }
 
@@ -197,13 +182,13 @@ public static class LoadResources
                             AllCardTagGuidCardDataDict.Add(tag.name, new Dictionary<string, CardData>());
 
                         if (AllCardTagGuidCardDataDict.TryGetValue(tag.name, out var dict))
-                            dict.Add(cardData.UniqueID, cardData);
+                            dict.Add(cardData.Uid(), cardData);
                     }
                 }
             }
             catch
             {
-                //Debug.LogWarning("MatchAndWarpperAllEditorGameSrouce Match " + ex.Message);
+                //MelonLogger.Warning("MatchAndWarpperAllEditorGameSrouce Match " + ex.Message);
             }
         }
 
@@ -242,7 +227,7 @@ public static class LoadResources
                                         json["MatchTypeWarpData"].ToString())
                                         continue;
                                 WarpFunc.JsonCommonWarpper(card, json);
-                                cardData.FillDropsList();
+                                Traverse.Create(cardData).Method("FillDropsList").GetValue();
                                 // var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
                                 // if (FillDropsList != null)
                                 //     FillDropsList.Invoke(card, null);
@@ -253,7 +238,7 @@ public static class LoadResources
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("MatchAndWarpperAllEditorGameSrouce Warpper " + ex.Message);
+                MelonLogger.Warning("MatchAndWarpperAllEditorGameSrouce Warpper " + ex.Message);
             }
         }
     }
@@ -276,8 +261,6 @@ public static class LoadResources
                         continue;
                 }
 
-                var processingScriptableObjectPack = item;
-
                 if (item.CardData != null)
                 {
                     var json = item.CardData;
@@ -299,7 +282,7 @@ public static class LoadResources
 
                 if (item.Obj is CardData cardData)
                 {
-                    cardData.FillDropsList();
+                    Traverse.Create(cardData).Method("FillDropsList").GetValue();
                     // var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
                     // if (FillDropsList != null)
                     // {
@@ -309,7 +292,7 @@ public static class LoadResources
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("WarpperAllEditorGameSrouces " + ex.Message);
+                MelonLogger.Warning("WarpperAllEditorGameSrouces " + ex.Message);
             }
         }
     }

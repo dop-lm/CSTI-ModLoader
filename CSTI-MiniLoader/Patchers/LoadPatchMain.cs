@@ -15,7 +15,7 @@ using Object = UnityEngine.Object;
 
 namespace CSTI_MiniLoader.Patchers;
 
-[SuppressMessage("ReSharper", "EmptyGeneralCatchClause")]
+[HarmonyPatch]
 public static class LoadPatchMain
 {
     [HarmonyPostfix, HarmonyPatch(typeof(LocalizationManager), nameof(LocalizationManager.LoadLanguage))]
@@ -27,25 +27,26 @@ public static class LoadPatchMain
         }
         catch (Exception ex)
         {
-            Debug.LogWarning(ex.Message);
+            MelonLogger.Warning(ex.Message);
         }
     }
 
     private static void LoadLocalization()
     {
-        var regex = new Regex(@"\\n");
+        var t_CurrentTexts = Traverse.Create(typeof(LocalizationManager))
+            .Field<Dictionary<string, string>>("CurrentTexts");
         if (LocalizationManager.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "简体中文")
             foreach (var pair in WaitForLoadCSVList)
                 try
                 {
-                    if (pair.Item1.Contains("SimpCn"))
+                    if (pair.LocalName.Contains("SimpCn"))
                     {
-                        var currentTexts = LocalizationManager.CurrentTexts;
-                        var dictionary = CSVParser.LoadFromString(pair.Item2);
+                        var currentTexts = t_CurrentTexts.Value;
+                        var dictionary = CSVParser.LoadFromString(pair.LocalContent);
                         foreach (var keyValuePair in dictionary)
                             if (!currentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
                             {
-                                var chLocal = regex.Replace(keyValuePair.Value.get_Item(1), "\n");
+                                var chLocal = keyValuePair.Value.get_Item(1);
                                 if (!string.IsNullOrWhiteSpace(chLocal.Trim()))
                                     currentTexts.Add(keyValuePair.Key, chLocal);
                             }
@@ -53,21 +54,21 @@ public static class LoadPatchMain
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning("LoadLocalization " + ex.Message);
+                    MelonLogger.Warning("LoadLocalization " + ex.Message);
                 }
 
         if (LocalizationManager.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "English")
             foreach (var pair in WaitForLoadCSVList)
                 try
                 {
-                    if (pair.Item1.Contains("SimpEn"))
+                    if (pair.LocalName.Contains("SimpEn"))
                     {
-                        var currentTexts = LocalizationManager.CurrentTexts;
-                        var dictionary = CSVParser.LoadFromString(pair.Item2);
+                        var currentTexts = t_CurrentTexts.Value;
+                        var dictionary = CSVParser.LoadFromString(pair.LocalContent);
                         foreach (var keyValuePair in dictionary)
                             if (!currentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
                             {
-                                var enLocal = regex.Replace(keyValuePair.Value.get_Item(0), "\n");
+                                var enLocal = keyValuePair.Value.get_Item(0);
                                 if (!string.IsNullOrWhiteSpace(enLocal.Trim()))
                                     currentTexts.Add(keyValuePair.Key, enLocal);
                             }
@@ -75,7 +76,7 @@ public static class LoadPatchMain
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning("LoadLocalization " + ex.Message);
+                    MelonLogger.Warning("LoadLocalization " + ex.Message);
                 }
     }
 
@@ -85,7 +86,7 @@ public static class LoadPatchMain
         val = pair.Value;
     }
 
-    [HarmonyPrefix, HarmonyPatch(typeof(GuideManager), nameof(GuideManager.Start))]
+    [HarmonyPrefix, HarmonyPatch(typeof(GuideManager), "GenerateAllPages")]
     public static void GuideManagerStartPrefix(GuideManager __instance)
     {
         try
@@ -96,7 +97,7 @@ public static class LoadPatchMain
         }
         catch (Exception ex)
         {
-            Debug.LogWarning(ex.Message);
+            MelonLogger.Warning(ex.Message);
         }
     }
 
@@ -108,7 +109,7 @@ public static class LoadPatchMain
         }
         catch (Exception ex)
         {
-            Debug.LogWarning("AddPlayerCharacter" + ex.Message);
+            MelonLogger.Warning("AddPlayerCharacter" + ex.Message);
         }
     }
 
@@ -120,10 +121,10 @@ public static class LoadPatchMain
         var done = false;
         while (true)
         {
-            List<Object> objs;
+            Object[] objs;
             try
             {
-                objs = Object.FindObjectsOfTypeAll(Il2CppType.Of<ContentDisplayer>()).ToList();
+                objs = Resources.FindObjectsOfTypeAll(typeof(ContentDisplayer));
             }
             catch (Exception e)
             {
@@ -156,7 +157,7 @@ public static class LoadPatchMain
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning("FXMask Warning " + ex.Message);
+                    MelonLogger.Warning("FXMask Warning " + ex.Message);
                 }
 
                 if (displayer == null)
@@ -178,7 +179,7 @@ public static class LoadPatchMain
             yield return new WaitForSeconds(0.5f);
         }
 
-        var displayers = Object.FindObjectsOfTypeAll(Il2CppType.Of<ContentDisplayer>());
+        var displayers = Resources.FindObjectsOfTypeAll(typeof(ContentDisplayer));
         foreach (var displayer in displayers)
             try
             {
@@ -188,7 +189,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("CustomContentDisplayerDict Warning " + ex.Message);
+                MelonLogger.Warning("CustomContentDisplayerDict Warning " + ex.Message);
             }
 
         while (!OnceWarp) yield return null;
@@ -207,11 +208,11 @@ public static class LoadPatchMain
                     try
                     {
                         clone = Object.Instantiate(sample);
-                        displayer = clone.GetComponent(Il2CppType.Of<ContentDisplayer>()) as ContentDisplayer;
+                        displayer = clone.GetComponent(typeof(ContentDisplayer)) as ContentDisplayer;
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogWarning("FXMask Warning " + ex.Message);
+                        MelonLogger.Warning("FXMask Warning " + ex.Message);
                     }
 
                     if (displayer == null) continue;
@@ -227,7 +228,7 @@ public static class LoadPatchMain
 
                     if (item.Obj != null)
                     {
-                        var nameParts = item.Obj.name.Split('_');
+                        var nameParts = item.Obj.name.Split(['_']);
                         if (nameParts.Length > 2 && clone != null)
                         {
                             clone.name = nameParts[0] + "_" + nameParts[1];
@@ -240,7 +241,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("WaiterForContentDisplayer WaitForAddDefaultContentPage " + ex.Message);
+                MelonLogger.Warning("WaiterForContentDisplayer WaitForAddDefaultContentPage " + ex.Message);
             }
         }
 
@@ -251,19 +252,19 @@ public static class LoadPatchMain
             {
                 if (item.Obj != null)
                 {
-                    var nameParts = item.Obj.name.Split('_');
+                    var nameParts = item.Obj.name.Split(['_']);
                     if (nameParts.Length > 2 && CustomContentDisplayerDict.TryGetValue(
                             nameParts[0] + "_" + nameParts[1],
                             out var displayer))
                     {
-                        var pages = displayer.ExplicitPageContent;
+                        var pages = Traverse.Create(displayer).Field<List<ContentPage>>("ExplicitPageContent").Value;
                         pages?.Add((ContentPage)item.Obj);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("WaiterForContentDisplayer WaitForAddMainContentPage " + ex.Message);
+                MelonLogger.Warning("WaiterForContentDisplayer WaitForAddMainContentPage " + ex.Message);
             }
         }
 
@@ -285,7 +286,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("WaiterForContentDisplayer PlayerCharacterJournalName " + ex.Message);
+                MelonLogger.Warning("WaiterForContentDisplayer PlayerCharacterJournalName " + ex.Message);
             }
         }
     }
@@ -294,27 +295,40 @@ public static class LoadPatchMain
     {
         try
         {
+            // GuideManager.AllEntries  -- 被内联
+            throw new TODO("[TODO1]也许有其他办法，但是没有意义，你需要解决另一个问题[TODO0]，那个才是最重要的");
             foreach (var entry in WaitForAddGuideEntry) instance.AllEntries.Add(entry);
         }
         catch (Exception ex)
         {
-            Debug.LogWarning("LoadGuideEntry" + ex.Message);
+            MelonLogger.Warning("LoadGuideEntry" + ex.Message);
         }
     }
 
-    // [HarmonyPrefix, HarmonyPatch(typeof(UniqueIDScriptable), nameof(UniqueIDScriptable.ClearDict))]
-    public static void LoadAndInit()
+    private static bool _inited;
+
+    [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "Update")]
+    public static void LoadAndInit(GameLoad __instance)
     {
-        AllItemDictionary[typeof(Sprite)] = new Dictionary<string, object>();
-        AllItemDictionary[typeof(AudioClip)] = new Dictionary<string, object>();
+        if (_inited) return;
+        _inited = true;
+        MelonLogger.Warning("Begin to miniLoader");
+        AllItemDictionary.set_Item(typeof(Sprite), new Dictionary<string, object>());
+        AllItemDictionary.set_Item(typeof(AudioClip), new Dictionary<string, object>());
+        MelonLogger.Warning("Preset AllItemDictionary");
         try
         {
-            LoadResources.LoadGameResource();
-            LoadArchMod.LoadAllArchMod();
+            MelonLogger.Msg("Try LoadGameResource");
+            LoadResources.LoadGameResource(__instance);
+            MelonLogger.Msg("Try LoadEditorScriptableObject");
             LoadResources.LoadEditorScriptableObject();
+            MelonLogger.Msg("Try WarpperAllEditorMods");
             LoadResources.WarpperAllEditorMods();
+            MelonLogger.Msg("Try WarpperAllEditorGameSrouces");
             LoadResources.WarpperAllEditorGameSrouces();
+            MelonLogger.Msg("Try MatchAndWarpperAllEditorGameSrouce");
             LoadResources.MatchAndWarpperAllEditorGameSrouce();
+            MelonLogger.Msg("Try AddPerkGroup");
             AddPerkGroup();
             foreach (var (id, uniqueIDScriptable) in AllGUIDDict)
             {
@@ -325,6 +339,8 @@ public static class LoadPatchMain
         {
             MelonLogger.Error(e);
         }
+
+        MelonLogger.Warning("miniLoader End");
     }
 
     private static void AddPerkGroup()
@@ -337,16 +353,13 @@ public static class LoadPatchMain
                     var obj = group as PerkGroup;
                     if (obj != null)
                     {
-                        var il2CppReferenceArray = (Il2CppArrayBase<CharacterPerk>)obj.PerksList;
-                        Il2CppSystem.Array.Resize(ref il2CppReferenceArray, obj.PerksList.Length + 1);
-                        obj.PerksList = (Il2CppReferenceArray<CharacterPerk>)il2CppReferenceArray;
-                        obj.PerksList[^1] = tuple.Item2;
+                        obj.PerksList = obj.PerksList.AddToArray(tuple.Item2);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("AddPerkGroup " + ex.Message);
+                MelonLogger.Warning("AddPerkGroup " + ex.Message);
             }
     }
 
@@ -375,18 +388,20 @@ public static class LoadPatchMain
         }
         catch (Exception ex)
         {
-            Debug.LogWarning(ex.Message);
+            MelonLogger.Warning(ex.Message);
         }
     }
 
     private static void AddCardFilterGroupOnce()
     {
+        if (!GraphicsManager.Instance) return;
         var cardFilterGroupDict = new Dictionary<string, CardFilterGroup>();
 
-        foreach (var ele in Object.FindObjectsOfTypeAll(Il2CppType.Of<CardFilterGroup>()))
+
+        foreach (var ele in GraphicsManager.Instance.CurrentFilterTags)
         {
-            if (ele is CardFilterGroup cardFilterGroup)
-                cardFilterGroupDict.Add(ele.name, cardFilterGroup);
+            if (ele != null)
+                cardFilterGroupDict.Add(ele.name, ele);
         }
 
         foreach (var item in WaitForAddCardFilterGroupCard)
@@ -405,12 +420,12 @@ public static class LoadPatchMain
                         Object.Destroy(transform.GetChild(i).gameObject);
 
                 transform = item.Value.transform.Find("Shadow/GuideFrame");
-                var fx = transform.gameObject.GetComponent(Il2CppType.Of<FXMask>()) as FXMask;
+                var fx = transform.gameObject.GetComponent<FXMask>();
                 if (fx != null) fx.enabled = true;
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("CustomGameObjectFixed " + ex.Message);
+                MelonLogger.Warning("CustomGameObjectFixed " + ex.Message);
             }
     }
 
@@ -444,7 +459,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("AddCustomCardTabGroup " + ex.Message);
+                MelonLogger.Warning("AddCustomCardTabGroup " + ex.Message);
             }
     }
 
@@ -457,7 +472,7 @@ public static class LoadPatchMain
                 // var StatList =
                 //     instance.AllStatsList.GetType().GetField("Tabs", bindingFlags)
                 //         .GetValue(instance.AllStatsList) as StatListTab[];
-                var statList = instance.AllStatsList.Tabs;
+                var statList = Traverse.Create(instance.AllStatsList).Field<StatListTab[]>("Tabs").Value;
                 foreach (var list in statList)
                     if (list.name == tuple.Item1)
                     {
@@ -467,7 +482,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("AddVisibleGameStat " + ex.Message);
+                MelonLogger.Warning("AddVisibleGameStat " + ex.Message);
             }
     }
 
@@ -486,17 +501,13 @@ public static class LoadPatchMain
 
                 if (tabGroup.SubGroups.Count != 0)
                 {
-                    Il2CppArrayBase<CardTabGroup> il2CppReferenceArray = instance.BlueprintModelsPopup.BlueprintTabs;
-                    Il2CppSystem.Array.Resize(ref il2CppReferenceArray,
-                        instance.BlueprintModelsPopup.BlueprintTabs.Length + 1);
                     instance.BlueprintModelsPopup.BlueprintTabs =
-                        (Il2CppReferenceArray<CardTabGroup>)il2CppReferenceArray;
-                    instance.BlueprintModelsPopup.BlueprintTabs[^1] = tabGroup;
+                        instance.BlueprintModelsPopup.BlueprintTabs.AddToArray(tabGroup);
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("AddCardTabGroup " + ex.Message);
+                MelonLogger.Warning("AddCardTabGroup " + ex.Message);
             }
     }
 
@@ -521,7 +532,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("AddBlueprintCardData " + ex.Message);
+                MelonLogger.Warning("AddBlueprintCardData " + ex.Message);
             }
     }
 }

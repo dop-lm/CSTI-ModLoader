@@ -1,11 +1,9 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using CSTI_MiniLoader.LoadUtil;
-using Il2CppSystem.Collections;
-using Il2CppSystem.Collections.Generic;
 using UnhollowerBaseLib;
 using UnityEngine;
-using Array = Il2CppSystem.Array;
-using Object = Il2CppSystem.Object;
 
 namespace CSTI_MiniLoader.WarpperClassGen;
 
@@ -46,7 +44,7 @@ public static class WarpFunc
                     {
                         var fieldName = key;
                         if (!genInfos.TryGetValue(fieldName, out var tuple)) continue;
-                        if (tuple.fld.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
+                        if (tuple.Fld.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
                             continue;
                         var subObj = MainGenTools.CommonGet((Il2CppObjectBase)obj, fieldName);
                         JsonCommonWarpper(subObj, keyData);
@@ -61,14 +59,13 @@ public static class WarpFunc
                         {
                             if (keyData[i].IsObject)
                             {
-                                if (tuple.fld.FieldType.IsGenericType &&
-                                    tuple.fld.FieldType.GetGenericTypeDefinition() == typeof(List<>))
+                                if (tuple.Fld.FieldType.IsGenericType &&
+                                    tuple.Fld.FieldType.GetGenericTypeDefinition() == typeof(List<>))
                                 {
                                     // var ele_type = field.FieldType.GetGenericArguments().Single();
-                                    if (tuple.fld.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
+                                    if (tuple.Fld.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
                                         break;
-                                    var list = ((Il2CppObjectBase)MainGenTools.CommonGet(obj, fieldName)!)
-                                        .Cast<IList>();
+                                    var list = (IList)MainGenTools.CommonGet(obj, fieldName)!;
                                     var ele = list!.get_Item(i);
                                     if (ele == null)
                                         continue;
@@ -76,37 +73,34 @@ public static class WarpFunc
                                     list.set_Item(i, ele);
                                     MainGenTools.CommonSetFld(obj, fieldName, list);
                                 }
-                                else if (tuple.fld.FieldType.IsArray)
+                                else if (tuple.Fld.FieldType.IsArray)
                                 {
                                     // var ele_type = field.FieldType.GetElementType();
-                                    if (tuple.fld.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
+                                    if (tuple.Fld.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
                                         break;
-                                    var array = ((Il2CppObjectBase)MainGenTools.CommonGet(obj, fieldName)!)
-                                        .Cast<Array>();
+                                    var array = (IList)MainGenTools.CommonGet(obj, fieldName)!;
                                     object? ele = null;
                                     try
                                     {
-                                        ele = array.GetValue(i);
+                                        ele = array.get_Item(i);
                                     }
                                     catch (Exception e)
                                     {
                                         var id = "NullId";
                                         if (obj is UniqueIDScriptable uniqueIDScriptable)
                                         {
-                                            id = uniqueIDScriptable.UniqueID;
+                                            id = uniqueIDScriptable.Uid();
                                         }
                                         else if (obj is ScriptableObject scriptableObject)
                                         {
                                             id = scriptableObject.name;
                                         }
-
-                                        Debug.LogWarning($"On access {id}::{objType}.{fieldName} : {e}");
                                     }
 
                                     if (ele == null)
                                         continue;
                                     JsonCommonWarpper(ele, keyData[i]);
-                                    array.SetValue((Object)ele, i);
+                                    array.set_Item(i, ele);
                                     MainGenTools.CommonSetFld(obj, fieldName, array);
                                 }
                             }

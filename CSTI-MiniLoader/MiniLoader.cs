@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using CSTI_MiniLoader.LoadUtil;
 using CSTI_MiniLoader.Patchers;
 using MelonLoader;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using Object = UnityEngine.Object;
 
 namespace CSTI_MiniLoader;
 
-[SuppressMessage("ReSharper", "InconsistentNaming")]
 public class MiniLoader : MelonMod
 {
     public struct ScriptableObjectPack
@@ -35,10 +32,22 @@ public class MiniLoader : MelonMod
         }
     }
 
+    public struct CSVItem
+    {
+        public string LocalName;
+        public string LocalContent;
+
+        public CSVItem(string localName, string localContent)
+        {
+            LocalName = localName;
+            LocalContent = localContent;
+        }
+    }
+
     public const string Version = "0.0.2";
     public static readonly Dictionary<Type, Dictionary<string, object>> AllItemDictionary = new();
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
-    public static readonly List<(string LocalName, string LocalContent)> WaitForLoadCSVList = new();
+    public static readonly List<CSVItem> WaitForLoadCSVList = new();
     public static readonly Dictionary<string, UniqueIDScriptable> AllGUIDDict = new();
     public static readonly Dictionary<string, ScriptableObject> AllScriptableObjectDict = new();
     public static readonly List<ScriptableObjectPack> WaitForWarpperEditorNoGuidList = new();
@@ -62,15 +71,15 @@ public class MiniLoader : MelonMod
     public static void RegObj(string id, object o, Type? type)
     {
         if (ItemDictionary(type).ContainsKey(id)) return;
-        ItemDictionary(type)[id] = o;
+        ItemDictionary(type).set_Item(id, o);
         if (type != null && type.IsSubclassOf(typeof(UniqueIDScriptable)))
         {
-            AllGUIDDict[id] = (UniqueIDScriptable)o;
+            AllGUIDDict.set_Item(id, (UniqueIDScriptable)o);
         }
 
         if (type != null && type.IsSubclassOf(typeof(ScriptableObject)))
         {
-            AllScriptableObjectDict[id] = (ScriptableObject)o;
+            AllScriptableObjectDict.set_Item(id, (ScriptableObject)o);
         }
     }
 
@@ -87,15 +96,13 @@ public class MiniLoader : MelonMod
         }
 
         var objects = new Dictionary<string, object>();
-        AllItemDictionary[type] = objects;
+        AllItemDictionary.set_Item(type, objects);
         return objects;
     }
 
     public override void OnInitializeMelon()
     {
-        throw new NotImplementedException("这不现实");
         HarmonyIns.PatchAll(typeof(LoadPatchMain));
-        MelonLogger.Msg("Call LoadPatchMain.LoadAndInit");
-        LoadPatchMain.LoadAndInit();
+        MelonLogger.Msg($"ModPath:{Path.GetDirectoryName(MelonAssembly.Location)}");
     }
 }
