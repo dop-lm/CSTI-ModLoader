@@ -63,7 +63,7 @@ public class Trav
         }
     }
 
-    public Trav Field(string fld)
+    public Trav Field(string fld, bool withStatic = true)
     {
         if (_isIl2CPP)
         {
@@ -71,6 +71,7 @@ public class Trav
 
             var fieldInfo = _il2CPPClass.GetField(fld, (BindingFlags)(-1));
             trav._il2CPPMemberInfo = fieldInfo;
+            if (!withStatic && fieldInfo.IsStatic) trav._il2CPPMemberInfo = null;
 
             return trav;
         }
@@ -82,24 +83,26 @@ public class Trav
     {
         if (_isIl2CPP)
         {
+            var cppType = Il2CppType.From(type, false);
+            if (cppType == null) return false;
             if (_il2CPPMemberInfo == null)
             {
-                return _il2CPPClass.IsSubclassOf(Il2CppType.From(type));
+                return _il2CPPClass.IsSubclassOf(cppType);
             }
 
             if (_il2CPPMemberInfo is FieldInfo fieldInfo)
             {
-                return fieldInfo.FieldType.IsSubclassOf(Il2CppType.From(type));
+                return fieldInfo.FieldType.IsSubclassOf(cppType);
             }
 
             if (_il2CPPMemberInfo is MethodInfo methodInfo)
             {
-                return methodInfo.ReturnType.IsSubclassOf(Il2CppType.From(type));
+                return methodInfo.ReturnType.IsSubclassOf(cppType);
             }
 
             if (_il2CPPMemberInfo is PropertyInfo propertyInfo)
             {
-                return propertyInfo.PropertyType.IsSubclassOf(Il2CppType.From(type));
+                return propertyInfo.PropertyType.IsSubclassOf(cppType);
             }
         }
 
@@ -118,23 +121,23 @@ public class Trav
 
             if (_il2CPPMemberInfo == null)
             {
-                return _o.Cast<T>();
+                return _o.SafeCast<T>();
             }
 
 
             if (_il2CPPMemberInfo is FieldInfo fieldInfo)
             {
-                return fieldInfo.GetValue((Object)_o).Cast<T>();
+                return fieldInfo.GetValue(_o.SafeCast<Object>()).SafeCast<T>();
             }
 
             if (_il2CPPMemberInfo is MethodInfo methodInfo)
             {
-                return methodInfo.Invoke((Object)_o, new Il2CppReferenceArray<Object>(0)).Cast<T>();
+                return methodInfo.Invoke(_o.SafeCast<Object>(), new Il2CppReferenceArray<Object>(0)).SafeCast<T>();
             }
 
             if (_il2CPPMemberInfo is PropertyInfo propertyInfo)
             {
-                return propertyInfo.GetValue((Object)_o, new Il2CppReferenceArray<Object>(0)).Cast<T>();
+                return propertyInfo.GetValue(_o.SafeCast<Object>(), new Il2CppReferenceArray<Object>(0)).SafeCast<T>();
             }
         }
 
@@ -155,7 +158,7 @@ public class Trav
 
             if (_il2CPPMemberInfo is FieldInfo fieldInfo)
             {
-                fieldInfo.SetValue((Object)_o, (Object)value);
+                fieldInfo.SetValue(_o.SafeCast<Object>(), value.SafeCast<Object>());
                 return;
             }
 
@@ -164,7 +167,7 @@ public class Trav
             if (_il2CPPMemberInfo is PropertyInfo propertyInfo)
             {
                 propertyInfo.GetSetMethod(true)
-                    .Invoke((Object)_o, new Il2CppReferenceArray<Object>([value.Cast<Object>()]));
+                    .Invoke(_o.SafeCast<Object>(), new Il2CppReferenceArray<Object>([value.SafeCast<Object>()]));
                 return;
             }
         }
@@ -184,17 +187,17 @@ public class Trav
 
             if (_il2CPPMemberInfo is FieldInfo fieldInfo)
             {
-                return fieldInfo.GetValue((Object)_o);
+                return fieldInfo.GetValue(_o.SafeCast<Object>());
             }
 
             if (_il2CPPMemberInfo is MethodInfo methodInfo)
             {
-                return methodInfo.Invoke((Object)_o, new Il2CppReferenceArray<Object>(0));
+                return methodInfo.Invoke(_o.SafeCast<Object>(), new Il2CppReferenceArray<Object>(0));
             }
 
             if (_il2CPPMemberInfo is PropertyInfo propertyInfo)
             {
-                return propertyInfo.GetValue((Object)_o, new Il2CppReferenceArray<Object>(0));
+                return propertyInfo.GetValue(_o.SafeCast<Object>(), new Il2CppReferenceArray<Object>(0));
             }
         }
 
@@ -222,5 +225,26 @@ public class Trav
         }
 
         return _traverse.FieldExists();
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is not Trav trav) return false;
+        if (_isIl2CPP)
+        {
+            return trav._isIl2CPP && trav._il2CPPClass == _il2CPPClass && trav._il2CPPMemberInfo == _il2CPPMemberInfo;
+        }
+
+        return _traverse.ToString() == trav._traverse.ToString();
+    }
+
+    public override int GetHashCode()
+    {
+        if (_isIl2CPP)
+        {
+            return (int)(10101 + (nint)_il2CPPClass.Pointer);
+        }
+
+        return _traverse.ToString().GetHashCode();
     }
 }

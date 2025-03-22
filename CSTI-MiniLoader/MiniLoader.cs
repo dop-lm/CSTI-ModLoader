@@ -79,14 +79,16 @@ public class MiniLoader : MelonMod
 
     public static void RegObj(string id, object o, Type? type)
     {
+        id ??= "";
+        var trav = Trav.Create(o);
         if (ItemDictionary(type).ContainsKey(id)) return;
         ItemDictionary(type)[id] = o;
-        if (type != null && type.IsSubclassOf(typeof(UniqueIDScriptable)))
+        if (trav.IsSubclassOf(typeof(UniqueIDScriptable)))
         {
             AllGUIDDict[id] = (UniqueIDScriptable)o;
         }
 
-        if (type != null && type.IsSubclassOf(typeof(ScriptableObject)))
+        if (trav.IsSubclassOf(typeof(ScriptableObject)))
         {
             AllScriptableObjectDict[id] = (ScriptableObject)o;
         }
@@ -179,7 +181,7 @@ public class MiniLoader : MelonMod
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning($"{ModName} Check Version Error {ex.Message}");
+                    MelonLogger.Warning($"{ModName} Check Version Error {ex}");
                 }
 
                 // Load Resource Custom Audio
@@ -210,7 +212,7 @@ public class MiniLoader : MelonMod
                 // }
                 // catch (Exception ex)
                 // {
-                //     MelonLogger.Warning($"{ModName} Load Resource Custom Audio Error {ex.Message}");
+                //     MelonLogger.Warning($"{ModName} Load Resource Custom Audio Error {ex}");
                 // }
 
                 // Load ScriptableObject
@@ -264,7 +266,7 @@ public class MiniLoader : MelonMod
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning($"{ModName} Load ScriptableObject Error {ex.Message}");
+                    MelonLogger.Warning($"{ModName} Load ScriptableObject Error {ex}");
                 }
 
                 // Load Localization
@@ -286,7 +288,7 @@ public class MiniLoader : MelonMod
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning($"{ModName} Load Localization Error {ex.Message}");
+                    MelonLogger.Warning($"{ModName} Load Localization Error {ex}");
                 }
 
                 // Load and init UniqueIDScriptable
@@ -319,7 +321,7 @@ public class MiniLoader : MelonMod
 
                                 var bindingFlags = (BindingFlags)(-1);
                                 var card = ScriptableObject.CreateInstance(Il2CppType.From(t))
-                                    .Cast<UniqueIDScriptable>();
+                                    .SafeCast<UniqueIDScriptable>();
                                 JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(card), card);
                                 JsonUtility.FromJsonOverwrite(CardData, card);
 
@@ -337,14 +339,14 @@ public class MiniLoader : MelonMod
                             }
                             catch (Exception ex)
                             {
-                                MelonLogger.Warning($"{type_name} EditorLoad {ModName} {CardName} Error {ex.Message}");
+                                MelonLogger.Warning($"{type_name} EditorLoad {ModName} {CardName} Error {ex}");
                             }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning($"{ModName} Load UniqueIDScriptable Error {ex.Message}");
+                    MelonLogger.Warning($"{ModName} Load UniqueIDScriptable Error {ex}");
                 }
 
                 // Load GameSourceModify
@@ -372,13 +374,13 @@ public class MiniLoader : MelonMod
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning($"{ModName} Load GameSourceModify Error {ex.Message}");
+                    MelonLogger.Warning($"{ModName} Load GameSourceModify Error {ex}");
                 }
             }
         }
         catch (Exception ex)
         {
-            MelonLogger.Warning(ex.Message);
+            MelonLogger.Warning(ex);
         }
     }
 }

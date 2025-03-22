@@ -61,7 +61,7 @@ public static class Utils
         return o.UniqueID;
     }
 
-    public static T Cast<T>(this object o)
+    public static T SafeCast<T>(this object o)
     {
         if (Il2CppType.Of<T>() == null)
         {

@@ -28,7 +28,7 @@ public static class LoadPatchMain
         }
         catch (Exception ex)
         {
-            MelonLogger.Warning(ex.Message);
+            MelonLogger.Warning(ex);
         }
     }
 
@@ -53,7 +53,7 @@ public static class LoadPatchMain
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning("LoadLocalization " + ex.Message);
+                    MelonLogger.Warning("LoadLocalization " + ex);
                 }
 
         if (LocalizationManager.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "English")
@@ -74,7 +74,7 @@ public static class LoadPatchMain
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning("LoadLocalization " + ex.Message);
+                    MelonLogger.Warning("LoadLocalization " + ex);
                 }
     }
 
@@ -95,7 +95,7 @@ public static class LoadPatchMain
         }
         catch (Exception ex)
         {
-            MelonLogger.Warning(ex.Message);
+            MelonLogger.Warning(ex);
         }
     }
 
@@ -107,7 +107,7 @@ public static class LoadPatchMain
         }
         catch (Exception ex)
         {
-            MelonLogger.Warning("AddPlayerCharacter" + ex.Message);
+            MelonLogger.Warning("AddPlayerCharacter" + ex);
         }
     }
 
@@ -128,7 +128,7 @@ public static class LoadPatchMain
             {
                 try
                 {
-                    objs = [Resources.Load("Assets/JournalTourist").Cast<Object>()];
+                    objs = [Resources.Load("Assets/JournalTourist").SafeCast<Object>()];
                     if (objs[0] == null)
                     {
                         objs = [];
@@ -144,7 +144,7 @@ public static class LoadPatchMain
 
             foreach (var o in objs)
             {
-                var obj = o.Cast<ContentDisplayer>();
+                var obj = o.SafeCast<ContentDisplayer>();
                 if (obj.gameObject.name != "JournalTourist") continue;
                 ContentDisplayer? displayer = null;
                 GameObject? clone = null;
@@ -155,7 +155,7 @@ public static class LoadPatchMain
                 }
                 catch (Exception ex)
                 {
-                    MelonLogger.Warning("FXMask Warning " + ex.Message);
+                    MelonLogger.Warning("FXMask Warning " + ex);
                 }
 
                 if (displayer == null)
@@ -187,7 +187,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("CustomContentDisplayerDict Warning " + ex.Message);
+                MelonLogger.Warning("CustomContentDisplayerDict Warning " + ex);
             }
 
         while (!OnceWarp) yield return null;
@@ -210,7 +210,7 @@ public static class LoadPatchMain
                     }
                     catch (Exception ex)
                     {
-                        MelonLogger.Warning("FXMask Warning " + ex.Message);
+                        MelonLogger.Warning("FXMask Warning " + ex);
                     }
 
                     if (displayer == null) continue;
@@ -239,7 +239,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("WaiterForContentDisplayer WaitForAddDefaultContentPage " + ex.Message);
+                MelonLogger.Warning("WaiterForContentDisplayer WaitForAddDefaultContentPage " + ex);
             }
         }
 
@@ -262,7 +262,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("WaiterForContentDisplayer WaitForAddMainContentPage " + ex.Message);
+                MelonLogger.Warning("WaiterForContentDisplayer WaitForAddMainContentPage " + ex);
             }
         }
 
@@ -284,7 +284,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("WaiterForContentDisplayer PlayerCharacterJournalName " + ex.Message);
+                MelonLogger.Warning("WaiterForContentDisplayer PlayerCharacterJournalName " + ex);
             }
         }
     }
@@ -298,7 +298,7 @@ public static class LoadPatchMain
         }
         catch (Exception ex)
         {
-            MelonLogger.Warning("LoadGuideEntry" + ex.Message);
+            MelonLogger.Warning("LoadGuideEntry" + ex);
         }
     }
 
@@ -313,7 +313,7 @@ public static class LoadPatchMain
         foreach (var o in __instance.Find())
         {
             if (o == null || o.Equals(null)) continue;
-            if (o.Cast<UniqueIDScriptable>() is { } uniqueIDScriptable)
+            if (o.SafeCast<UniqueIDScriptable>() is { } uniqueIDScriptable)
             {
                 RegObj(uniqueIDScriptable.UniqueID, uniqueIDScriptable, uniqueIDScriptable.GetType());
             }
@@ -378,7 +378,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("AddPerkGroup " + ex.Message);
+                MelonLogger.Warning("AddPerkGroup " + ex);
             }
     }
 
@@ -407,7 +407,7 @@ public static class LoadPatchMain
         }
         catch (Exception ex)
         {
-            MelonLogger.Warning(ex.Message);
+            MelonLogger.Warning(ex);
         }
     }
 
@@ -444,7 +444,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("CustomGameObjectFixed " + ex.Message);
+                MelonLogger.Warning("CustomGameObjectFixed " + ex);
             }
     }
 
@@ -478,7 +478,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("AddCustomCardTabGroup " + ex.Message);
+                MelonLogger.Warning("AddCustomCardTabGroup " + ex);
             }
     }
 
@@ -501,7 +501,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("AddVisibleGameStat " + ex.Message);
+                MelonLogger.Warning("AddVisibleGameStat " + ex);
             }
     }
 
@@ -526,7 +526,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("AddCardTabGroup " + ex.Message);
+                MelonLogger.Warning("AddCardTabGroup " + ex);
             }
     }
 
@@ -551,7 +551,7 @@ public static class LoadPatchMain
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("AddBlueprintCardData " + ex.Message);
+                MelonLogger.Warning("AddBlueprintCardData " + ex);
             }
     }
 }

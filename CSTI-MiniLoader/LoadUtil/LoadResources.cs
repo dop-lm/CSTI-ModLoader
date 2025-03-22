@@ -50,7 +50,7 @@ public static class LoadResources
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("LoadEditorScriptableObject " + ex.Message);
+                MelonLogger.Warning("LoadEditorScriptableObject " + ex);
             }
         }
     }
@@ -65,7 +65,7 @@ public static class LoadResources
             foreach (var o in uniqueIDScriptable.Find())
             {
                 if (o == null) continue;
-                if (o.TryCast<UniqueIDScriptable>() is { } idScriptable)
+                if (o.SafeCast<UniqueIDScriptable>() is { } idScriptable)
                 {
                     RegObj(idScriptable.Uid(), idScriptable, idScriptable.GetType());
                 }
@@ -83,7 +83,7 @@ public static class LoadResources
             foreach (var o in uniqueIDScriptable.Find())
             {
                 if (o == null) continue;
-                if (o.TryCast<UniqueIDScriptable>() is { } idScriptable)
+                if (o.SafeCast<UniqueIDScriptable>() is { } idScriptable)
                 {
                     RegObj(idScriptable.Uid(), idScriptable, idScriptable.GetType());
                 }
@@ -93,6 +93,8 @@ public static class LoadResources
                 }
             }
         }
+
+        MelonLogger.Warning($"UidObject Count : {AllGUIDDict.Count}");
     }
 
 
@@ -109,7 +111,8 @@ public static class LoadResources
 
                 var json = processingScriptableObjectPack.CardData;
                 if (json == null) continue;
-                MelonLogger.Msg($"Begin Warpper {processingScriptableObjectPack.ModName}.{processingScriptableObjectPack.Obj.name}");
+                MelonLogger.Msg(
+                    $"Begin Warpper {processingScriptableObjectPack.ModName}.{processingScriptableObjectPack.Obj.name}");
                 WarpFunc.JsonCommonWarpper(processingScriptableObjectPack.Obj, json);
                 if (processingScriptableObjectPack.Obj is CardData cardData)
                 {
@@ -176,7 +179,7 @@ public static class LoadResources
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("WarpperAllEditorMods " + ex.Message);
+                MelonLogger.Warning("WarpperAllEditorMods " + ex);
             }
         }
 
@@ -203,7 +206,7 @@ public static class LoadResources
             }
             catch
             {
-                //MelonLogger.Warning("MatchAndWarpperAllEditorGameSrouce Match " + ex.Message);
+                //MelonLogger.Warning("MatchAndWarpperAllEditorGameSrouce Match " + ex);
             }
         }
 
@@ -253,7 +256,7 @@ public static class LoadResources
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("MatchAndWarpperAllEditorGameSrouce Warpper " + ex.Message);
+                MelonLogger.Warning("MatchAndWarpperAllEditorGameSrouce Warpper " + ex);
             }
         }
     }
@@ -307,7 +310,7 @@ public static class LoadResources
             }
             catch (Exception ex)
             {
-                MelonLogger.Warning("WarpperAllEditorGameSrouces " + ex.Message);
+                MelonLogger.Warning("WarpperAllEditorGameSrouces " + ex);
             }
         }
     }
