@@ -2,8 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using CSTI_MiniLoader.LoadUtil;
+using HarmonyLib;
+using MelonLoader;
 using UnhollowerBaseLib;
 using UnityEngine;
+using IList = Il2CppSystem.Collections.IList;
+using Object = Il2CppSystem.Object;
 
 namespace CSTI_MiniLoader.WarpperClassGen;
 
@@ -19,8 +23,7 @@ public static class WarpFunc
     {
         if (!json.IsObject) return;
         if (obj == null) return;
-        var objType = obj.GetType();
-        var genInfos = MainGen.GetOrGen(objType);
+        var traverse = Trav.Create(obj);
 
         foreach (var key in json.Keys)
         {
@@ -32,9 +35,8 @@ public static class WarpFunc
                     if (!keyData.IsInt || !json.ContainsKey(key.Substring(0, key.Length - 8) + "WarpData"))
                         continue;
                     var fieldName = key.Substring(0, key.Length - 8);
-                    if (!genInfos.TryGetValue(fieldName, out var tuple)) continue;
                     var fieldWarpData = json[fieldName + "WarpData"];
-                    MainGenTools.CommonSet((Il2CppObjectBase)obj, fieldName, fieldWarpData, (WarpType)keyData.Int);
+                    MainGenTools.CommonSet(obj, fieldName, fieldWarpData, (WarpType)keyData.Int);
                 }
                 else if (key.EndsWith("WarpData"))
                     continue;
@@ -43,74 +45,41 @@ public static class WarpFunc
                     if (keyData.IsObject)
                     {
                         var fieldName = key;
-                        if (!genInfos.TryGetValue(fieldName, out var tuple)) continue;
-                        if (tuple.Fld.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
-                            continue;
-                        var subObj = MainGenTools.CommonGet((Il2CppObjectBase)obj, fieldName);
+                        if (!traverse.Field(fieldName).FieldExists()) continue;
+                        var subObj = traverse.Field(fieldName).GetValue();
                         JsonCommonWarpper(subObj, keyData);
-                        MainGenTools.CommonSetFld(obj, fieldName, subObj);
+                        traverse.Field(fieldName).SetValue(subObj);
                     }
                     else if (keyData.IsArray)
                     {
                         var fieldName = key;
-                        if (!genInfos.TryGetValue(fieldName, out var tuple)) continue;
+                        if (!traverse.Field(fieldName).FieldExists()) continue;
 
                         for (var i = 0; i < keyData.Count; i++)
                         {
                             if (keyData[i].IsObject)
                             {
-                                if (tuple.Fld.FieldType.IsGenericType &&
-                                    tuple.Fld.FieldType.GetGenericTypeDefinition() == typeof(List<>))
-                                {
-                                    // var ele_type = field.FieldType.GetGenericArguments().Single();
-                                    if (tuple.Fld.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
-                                        break;
-                                    var list = (IList)MainGenTools.CommonGet(obj, fieldName)!;
-                                    var ele = list!.get_Item(i);
-                                    if (ele == null)
-                                        continue;
-                                    JsonCommonWarpper(ele, keyData[i]);
-                                    list.set_Item(i, ele);
-                                    MainGenTools.CommonSetFld(obj, fieldName, list);
-                                }
-                                else if (tuple.Fld.FieldType.IsArray)
-                                {
-                                    // var ele_type = field.FieldType.GetElementType();
-                                    if (tuple.Fld.FieldType.IsSubclassOf(typeof(UnityEngine.Object)))
-                                        break;
-                                    var array = (IList)MainGenTools.CommonGet(obj, fieldName)!;
-                                    object? ele = null;
-                                    try
-                                    {
-                                        ele = array.get_Item(i);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        var id = "NullId";
-                                        if (obj is UniqueIDScriptable uniqueIDScriptable)
-                                        {
-                                            id = uniqueIDScriptable.Uid();
-                                        }
-                                        else if (obj is ScriptableObject scriptableObject)
-                                        {
-                                            id = scriptableObject.name;
-                                        }
-                                    }
-
-                                    if (ele == null)
-                                        continue;
-                                    JsonCommonWarpper(ele, keyData[i]);
-                                    array.set_Item(i, ele);
-                                    MainGenTools.CommonSetFld(obj, fieldName, array);
-                                }
+                                var o = MainGenTools.CommonGet(obj, fieldName)!;
+                                object? ele = null;
+                                if (o is Il2CppObjectBase il2CppObjectBase)
+                                    ele = il2CppObjectBase.TryCast<IList>().get_Item(i);
+                                else
+                                    ele = ((System.Collections.IList)o)[i];
+                                if (ele == null) continue;
+                                JsonCommonWarpper(ele, keyData[i]);
+                                if (o is Il2CppObjectBase il2CppObjectBase0)
+                                    il2CppObjectBase0.TryCast<IList>().set_Item(i, (Object)ele);
+                                else
+                                    ((System.Collections.IList)o)[i] = ele;
+                                MainGenTools.CommonSetFld(obj, fieldName, o);
                             }
                         }
                     }
                 }
             }
-            // ReSharper disable once EmptyGeneralCatchClause
-            catch (Exception)
+            catch (Exception e)
             {
+                MelonLogger.Error(e);
             }
         }
     }

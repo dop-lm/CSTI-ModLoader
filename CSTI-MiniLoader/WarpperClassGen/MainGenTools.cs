@@ -3,6 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using CSTI_MiniLoader.LoadUtil;
 using HarmonyLib;
+using MelonLoader;
+using UnhollowerBaseLib;
+using UnhollowerRuntimeLib;
 using UnityEngine;
 
 namespace CSTI_MiniLoader.WarpperClassGen;
@@ -11,12 +14,12 @@ public static class MainGenTools
 {
     public static object? CommonGet(object baseObj, string fld)
     {
-        return Traverse.Create(baseObj).Field(fld).GetValue();
+        return Trav.Create(baseObj).Field(fld).GetValue();
     }
 
     public static void CommonSetFld(object baseObj, string fld, object? data)
     {
-        Traverse.Create(baseObj).Field(fld).SetValue(data);
+        Trav.Create(baseObj).Field(fld).SetValue(data);
     }
 
     public static void CommonSet(object baseObj, string fld, KVProvider warpData, WarpType warpType)
@@ -72,7 +75,7 @@ public static class MainGenTools
         if (AllItemDictionary.TryGetValue(typeof(T), out var typedItems) &&
             typedItems.TryGetValue(warpData.ToString(), out var typedItem) && typedItem is T item)
         {
-            var traverse = Traverse.Create(baseObj);
+            var traverse = Trav.Create(baseObj);
             var tfld = traverse.Field(fld);
             tfld.SetValue(item);
         }
@@ -82,9 +85,9 @@ public static class MainGenTools
     {
         if (AllItemDictionary.TryGetValue(typeof(T), out var typedItems))
         {
-            var traverse = Traverse.Create(baseObj);
-            var li = traverse.Field<IList>(fld);
-            var list = li.Value;
+            var traverse = Trav.Create(baseObj);
+            var li = traverse.Field(fld);
+            var list = li.GetValue<IList>();
             if (warpType == WarpType.MODIFY) list.Clear();
             for (var i = 0; i < warpData.Count; i++)
             {
@@ -98,14 +101,14 @@ public static class MainGenTools
 
     public static void SetLiNoWarpper<T>(object baseObj, string fld, KVProvider warpData, WarpType warpType)
     {
-        var traverse = Traverse.Create(baseObj);
-        var li = traverse.Field<IList>(fld);
-        var list = li.Value;
+        var traverse = Trav.Create(baseObj);
+        var li = traverse.Field(fld);
+        var list = li.GetValue<IList>();
         if (warpType == WarpType.MODIFY) list.Clear();
         for (var i = 0; i < warpData.Count; i++)
         {
             var scriptableObject = typeof(T).IsSubclassOf(typeof(ScriptableObject))
-                ? (T)(object)ScriptableObject.CreateInstance(typeof(T))
+                ? (T)(object)ScriptableObject.CreateInstance(Il2CppType.Of<T>())
                 : AccessTools.CreateInstance<T>();
             WarpFunc.JsonCommonWarpper(scriptableObject, warpData[i]);
             list.Add(scriptableObject);
@@ -116,10 +119,10 @@ public static class MainGenTools
     {
         if (AllItemDictionary.TryGetValue(typeof(T), out var typedItems))
         {
-            var traverse = Traverse.Create(baseObj);
-            var arr = traverse.Field<IList>(fld);
-            var cacheTLi = arr.Value.ToList();
-            
+            var traverse = Trav.Create(baseObj);
+            var arr = traverse.Field(fld);
+            var cacheTLi = arr.GetValue<IList>().ToList();
+
             for (var i = 0; i < warpData.Count; i++)
             {
                 if (typedItems.TryGetValue(warpData[i].ToString(), out var typedItem) && typedItem is T item)
@@ -131,23 +134,23 @@ public static class MainGenTools
             var newArr = new T[cacheTLi.Count];
             for (var i = 0; i < cacheTLi.Count; i++)
             {
-                newArr.SetValue(cacheTLi.get_Item(i), i);
+                newArr.SetValue(cacheTLi[i], i);
             }
 
-            arr.Value = newArr;
+            arr.SetValue(newArr);
         }
     }
 
     public static void SetArrNoWarpper<T>(object baseObj, string fld, KVProvider warpData, WarpType warpType)
     {
-        var traverse = Traverse.Create(baseObj);
-        var arr = traverse.Field<IList>(fld);
-        var cacheTLi = arr.Value.ToList();
-        
+        var traverse = Trav.Create(baseObj);
+        var arr = traverse.Field(fld);
+        var cacheTLi = arr.GetValue<IList>().ToList();
+
         for (var i = 0; i < warpData.Count; i++)
         {
             var scriptableObject = typeof(T).IsSubclassOf(typeof(ScriptableObject))
-                ? (T)(object)ScriptableObject.CreateInstance(typeof(T))
+                ? (T)(object)ScriptableObject.CreateInstance(Il2CppType.Of<T>())
                 : AccessTools.CreateInstance<T>();
             WarpFunc.JsonCommonWarpper(scriptableObject, warpData[i]);
             cacheTLi.Add(scriptableObject);
@@ -156,9 +159,9 @@ public static class MainGenTools
         var newArr = new T[cacheTLi.Count];
         for (var i = 0; i < cacheTLi.Count; i++)
         {
-            newArr.SetValue(cacheTLi.get_Item(i), i);
+            newArr.SetValue(cacheTLi[i], i);
         }
 
-        arr.Value = newArr;
+        arr.SetValue(newArr);
     }
 }

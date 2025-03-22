@@ -49,14 +49,14 @@ public static class MainGen
     {
         if (WarpperTypes.TryGetValue(type, out var warpperType)) return warpperType;
         var warpper = new Dictionary<string, Warp>();
-        WarpperTypes.set_Item(type, warpper);
+        WarpperTypes[type]= warpper;
 
         foreach (var field in AccessTools.GetDeclaredFields(type))
         {
             if (!field.IsStatic || !field.Name.StartsWith("NativeFieldInfoPtr")) continue;
             var fPtr = (IntPtr)field.GetValue(null);
-            warpper.set_Item(field.Name["NativeFieldInfoPtr_".Length..],
-                new Warp(field, fPtr, (int)IL2CPP.il2cpp_field_get_offset(fPtr), field.FieldType.IsValueType));
+            warpper[field.Name.Substring("NativeFieldInfoPtr_".Length)]=
+                new Warp(field, fPtr, (int)IL2CPP.il2cpp_field_get_offset(fPtr), field.FieldType.IsValueType);
         }
 
         return warpper;

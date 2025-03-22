@@ -18,7 +18,7 @@ public static class LoadResources
     public static T Pop<T>(this List<T> list)
     {
         if (list.Count == 0) return default;
-        var result = list.get_Item(list.Count - 1);
+        var result = list[list.Count - 1];
         list.RemoveAt(list.Count - 1);
         return result;
     }
@@ -55,13 +55,9 @@ public static class LoadResources
         }
     }
 
-    public static void LoadGameResource(GameLoad __instance)
+    public static void LoadGameResource()
     {
-        // UniqueIDScriptable.AllUniqueObjects --被内联
-        // GameLoad.DataBase --被内联
-        throw new TODO("[TODO0]我没有其他任何办法");
-        foreach (var pair in AccessTools.StaticFieldRefAccess<Dictionary<string, UniqueIDScriptable>>(
-                     typeof(UniqueIDScriptable), "AllUniqueObjects"))
+        foreach (var pair in UniqueIDScriptable.AllUniqueObjects)
         {
             var uniqueIDScriptable = pair.Value;
             var uid = pair.Key;
@@ -69,13 +65,31 @@ public static class LoadResources
             foreach (var o in uniqueIDScriptable.Find())
             {
                 if (o == null) continue;
-                if (o is not UniqueIDScriptable)
+                if (o.TryCast<UniqueIDScriptable>() is { } idScriptable)
+                {
+                    RegObj(idScriptable.Uid(), idScriptable, idScriptable.GetType());
+                }
+                else
                 {
                     RegObj(o.name, o, o.GetType());
                 }
-                else if (o is UniqueIDScriptable idScriptable)
+            }
+        }
+
+        foreach (var uniqueIDScriptable in GameLoad.Instance.DataBase.AllData)
+        {
+            var uid = uniqueIDScriptable.UniqueID;
+            RegObj(uid, uniqueIDScriptable, uniqueIDScriptable.GetType());
+            foreach (var o in uniqueIDScriptable.Find())
+            {
+                if (o == null) continue;
+                if (o.TryCast<UniqueIDScriptable>() is { } idScriptable)
                 {
                     RegObj(idScriptable.Uid(), idScriptable, idScriptable.GetType());
+                }
+                else
+                {
+                    RegObj(o.name, o, o.GetType());
                 }
             }
         }
@@ -90,11 +104,12 @@ public static class LoadResources
         {
             try
             {
-                var processingScriptableObjectPack = WaitForWarpperEditorGuidDict.get_Item(key);
+                var processingScriptableObjectPack = WaitForWarpperEditorGuidDict[key];
                 WaitForWarpperEditorGuidDict.Remove(key);
 
                 var json = processingScriptableObjectPack.CardData;
                 if (json == null) continue;
+                MelonLogger.Msg($"Begin Warpper {processingScriptableObjectPack.ModName}.{processingScriptableObjectPack.Obj.name}");
                 WarpFunc.JsonCommonWarpper(processingScriptableObjectPack.Obj, json);
                 if (processingScriptableObjectPack.Obj is CardData cardData)
                 {
@@ -125,7 +140,7 @@ public static class LoadResources
                                 WaitForAddCardFilterGroupCard.Add(new Tuple<string, CardData>(
                                     json["CardDataCardFilterGroup"][i].ToString(), cardData));
 
-                    Traverse.Create(cardData).Method("FillDropsList").GetValue();
+                    Trav.Create(cardData).Method("FillDropsList").GetValue();
                     // var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
                     // if (FillDropsList != null)
                     // {
@@ -152,7 +167,7 @@ public static class LoadResources
                     foreach (var pair in ItemDictionary(typeof(Gamemode)))
                     {
                         var mode = pair.Value as Gamemode;
-                        mode.PlayableCharacters = mode.PlayableCharacters.AddToArray(character);
+                        mode.PlayableCharacters = mode.PlayableCharacters.AddItem(character).ToArray();
                     }
 
                     WaitForAddJournalPlayerCharacter.Add(new ScriptableObjectPack(character, "", "", "",
@@ -227,7 +242,7 @@ public static class LoadResources
                                         json["MatchTypeWarpData"].ToString())
                                         continue;
                                 WarpFunc.JsonCommonWarpper(card, json);
-                                Traverse.Create(cardData).Method("FillDropsList").GetValue();
+                                Trav.Create(cardData).Method("FillDropsList").GetValue();
                                 // var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
                                 // if (FillDropsList != null)
                                 //     FillDropsList.Invoke(card, null);
@@ -282,7 +297,7 @@ public static class LoadResources
 
                 if (item.Obj is CardData cardData)
                 {
-                    Traverse.Create(cardData).Method("FillDropsList").GetValue();
+                    Trav.Create(cardData).Method("FillDropsList").GetValue();
                     // var FillDropsList = typeof(CardData).GetMethod("FillDropsList", bindingFlags);
                     // if (FillDropsList != null)
                     // {

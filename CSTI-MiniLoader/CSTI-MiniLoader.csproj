@@ -14,6 +14,7 @@
 
     <ItemGroup>
       <PackageReference Include="LitJson" Version="0.19.0" />
+      <PackageReference Include="NAudio" Version="1.10.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -108,6 +109,38 @@
         <HintPath>Libs\Il2CppAssemblyGenerator.dll</HintPath>
         <Private>False</Private>
       </Reference>
+      <Reference Include="Il2CppMono.Security">
+        <HintPath>Libs\Il2CppMono.Security.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Il2Cppmscorlib">
+        <HintPath>Libs\Il2Cppmscorlib.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Il2CppSystem">
+        <HintPath>Libs\Il2CppSystem.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Il2CppSystem.Configuration">
+        <HintPath>Libs\Il2CppSystem.Configuration.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Il2CppSystem.Core">
+        <HintPath>Libs\Il2CppSystem.Core.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Il2CppSystem.Diagnostics.StackTrace">
+        <HintPath>Libs\Il2CppSystem.Diagnostics.StackTrace.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Il2CppSystem.Globalization.Extensions">
+        <HintPath>Libs\Il2CppSystem.Globalization.Extensions.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="Il2CppSystem.Xml">
+        <HintPath>Libs\Il2CppSystem.Xml.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
       <Reference Include="IndexRange">
         <HintPath>Libs\IndexRange.dll</HintPath>
         <Private>False</Private>
@@ -178,6 +211,10 @@
       </Reference>
       <Reference Include="MonoMod.Utils">
         <HintPath>Libs\MonoMod.Utils.dll</HintPath>
+        <Private>False</Private>
+      </Reference>
+      <Reference Include="netstandard">
+        <HintPath>Libs\netstandard.dll</HintPath>
         <Private>False</Private>
       </Reference>
       <Reference Include="Newtonsoft.Json">

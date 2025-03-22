@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 using CSTI_MiniLoader.LoadUtil;
+using CSTI_MiniLoader.LoadUtil.DataFind;
 using HarmonyLib;
 using MelonLoader;
 using UnhollowerBaseLib;
@@ -33,15 +34,13 @@ public static class LoadPatchMain
 
     private static void LoadLocalization()
     {
-        var t_CurrentTexts = Traverse.Create(typeof(LocalizationManager))
-            .Field<Dictionary<string, string>>("CurrentTexts");
+        var currentTexts = LocalizationManager.CurrentTexts;
         if (LocalizationManager.Instance.Languages[LocalizationManager.CurrentLanguage].LanguageName == "简体中文")
             foreach (var pair in WaitForLoadCSVList)
                 try
                 {
                     if (pair.LocalName.Contains("SimpCn"))
                     {
-                        var currentTexts = t_CurrentTexts.Value;
                         var dictionary = CSVParser.LoadFromString(pair.LocalContent);
                         foreach (var keyValuePair in dictionary)
                             if (!currentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
@@ -63,7 +62,6 @@ public static class LoadPatchMain
                 {
                     if (pair.LocalName.Contains("SimpEn"))
                     {
-                        var currentTexts = t_CurrentTexts.Value;
                         var dictionary = CSVParser.LoadFromString(pair.LocalContent);
                         foreach (var keyValuePair in dictionary)
                             if (!currentTexts.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 2)
@@ -124,13 +122,13 @@ public static class LoadPatchMain
             Object[] objs;
             try
             {
-                objs = Resources.FindObjectsOfTypeAll(typeof(ContentDisplayer));
+                objs = Resources.FindObjectsOfTypeAll(Il2CppType.Of<ContentDisplayer>()).ToArray();
             }
             catch (Exception e)
             {
                 try
                 {
-                    objs = [Resources.Load("Assets/JournalTourist")];
+                    objs = [Resources.Load("Assets/JournalTourist").Cast<Object>()];
                     if (objs[0] == null)
                     {
                         objs = [];
@@ -146,7 +144,7 @@ public static class LoadPatchMain
 
             foreach (var o in objs)
             {
-                var obj = (ContentDisplayer)o;
+                var obj = o.Cast<ContentDisplayer>();
                 if (obj.gameObject.name != "JournalTourist") continue;
                 ContentDisplayer? displayer = null;
                 GameObject? clone = null;
@@ -179,7 +177,7 @@ public static class LoadPatchMain
             yield return new WaitForSeconds(0.5f);
         }
 
-        var displayers = Resources.FindObjectsOfTypeAll(typeof(ContentDisplayer));
+        var displayers = Resources.FindObjectsOfTypeAll(Il2CppType.Of<ContentDisplayer>());
         foreach (var displayer in displayers)
             try
             {
@@ -208,7 +206,7 @@ public static class LoadPatchMain
                     try
                     {
                         clone = Object.Instantiate(sample);
-                        displayer = clone.GetComponent(typeof(ContentDisplayer)) as ContentDisplayer;
+                        displayer = clone.GetComponent(Il2CppType.Of<ContentDisplayer>()) as ContentDisplayer;
                     }
                     catch (Exception ex)
                     {
@@ -220,11 +218,11 @@ public static class LoadPatchMain
                     var modPage = item.Obj as ContentPage;
                     if (modPage == null) continue;
 
-                    var tDisplayer = Traverse.Create(displayer);
-                    var pages = tDisplayer.Field<List<ContentPage>>("ExplicitPageContent").Value;
+                    var tDisplayer = Trav.Create(displayer);
+                    var pages = tDisplayer.Field("ExplicitPageContent").GetValue<List<ContentPage>>();
                     pages.Clear();
                     pages.Add(modPage);
-                    tDisplayer.Field<ContentPage>("DefaultPage").Value = modPage;
+                    tDisplayer.Field("DefaultPage").SetValue(modPage);
 
                     if (item.Obj != null)
                     {
@@ -257,7 +255,7 @@ public static class LoadPatchMain
                             nameParts[0] + "_" + nameParts[1],
                             out var displayer))
                     {
-                        var pages = Traverse.Create(displayer).Field<List<ContentPage>>("ExplicitPageContent").Value;
+                        var pages = Trav.Create(displayer).Field("ExplicitPageContent").GetValue<List<ContentPage>>();
                         pages?.Add((ContentPage)item.Obj);
                     }
                 }
@@ -296,7 +294,6 @@ public static class LoadPatchMain
         try
         {
             // GuideManager.AllEntries  -- 被内联
-            throw new TODO("[TODO1]也许有其他办法，但是没有意义，你需要解决另一个问题[TODO0]，那个才是最重要的");
             foreach (var entry in WaitForAddGuideEntry) instance.AllEntries.Add(entry);
         }
         catch (Exception ex)
@@ -306,20 +303,42 @@ public static class LoadPatchMain
     }
 
     private static bool _inited;
+    public static bool CanInit;
 
-    [HarmonyPostfix, HarmonyPatch(typeof(GameLoad), "Update")]
-    public static void LoadAndInit(GameLoad __instance)
+
+    [HarmonyPrefix, HarmonyPatch(typeof(UniqueIDScriptable), nameof(UniqueIDScriptable.Init))]
+    public static void RegObjPatch(UniqueIDScriptable __instance)
+    {
+        RegObj(__instance.UniqueID, __instance, __instance.GetType());
+        foreach (var o in __instance.Find())
+        {
+            if (o == null || o.Equals(null)) continue;
+            if (o.Cast<UniqueIDScriptable>() is { } uniqueIDScriptable)
+            {
+                RegObj(uniqueIDScriptable.UniqueID, uniqueIDScriptable, uniqueIDScriptable.GetType());
+            }
+            else
+            {
+                RegObj(o.name, o, o.GetType());
+            }
+        }
+    }
+
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(GameLoad), nameof(GameLoad.Update))]
+    public static void LoadAndInit()
     {
         if (_inited) return;
+        if (!CanInit) return;
         _inited = true;
         MelonLogger.Warning("Begin to miniLoader");
-        AllItemDictionary.set_Item(typeof(Sprite), new Dictionary<string, object>());
-        AllItemDictionary.set_Item(typeof(AudioClip), new Dictionary<string, object>());
+        AllItemDictionary[typeof(Sprite)] = new Dictionary<string, object>();
+        AllItemDictionary[typeof(AudioClip)] = new Dictionary<string, object>();
         MelonLogger.Warning("Preset AllItemDictionary");
         try
         {
             MelonLogger.Msg("Try LoadGameResource");
-            LoadResources.LoadGameResource(__instance);
+            LoadResources.LoadGameResource();
             MelonLogger.Msg("Try LoadEditorScriptableObject");
             LoadResources.LoadEditorScriptableObject();
             MelonLogger.Msg("Try WarpperAllEditorMods");
@@ -353,7 +372,7 @@ public static class LoadPatchMain
                     var obj = group as PerkGroup;
                     if (obj != null)
                     {
-                        obj.PerksList = obj.PerksList.AddToArray(tuple.Item2);
+                        obj.PerksList = obj.PerksList.AddItem(tuple.Item2).ToArray();
                     }
                 }
             }
@@ -472,7 +491,7 @@ public static class LoadPatchMain
                 // var StatList =
                 //     instance.AllStatsList.GetType().GetField("Tabs", bindingFlags)
                 //         .GetValue(instance.AllStatsList) as StatListTab[];
-                var statList = Traverse.Create(instance.AllStatsList).Field<StatListTab[]>("Tabs").Value;
+                var statList = Trav.Create(instance.AllStatsList).Field("Tabs").GetValue<StatListTab[]>();
                 foreach (var list in statList)
                     if (list.name == tuple.Item1)
                     {
@@ -502,7 +521,7 @@ public static class LoadPatchMain
                 if (tabGroup.SubGroups.Count != 0)
                 {
                     instance.BlueprintModelsPopup.BlueprintTabs =
-                        instance.BlueprintModelsPopup.BlueprintTabs.AddToArray(tabGroup);
+                        instance.BlueprintModelsPopup.BlueprintTabs.AddItem(tabGroup).ToArray();
                 }
             }
             catch (Exception ex)
