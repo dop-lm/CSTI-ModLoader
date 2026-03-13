@@ -1,0 +1,2 @@
+cp ".\bin\Release\ModLoader.dll" "D:\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\plugins\ModLoader\"
+cp ".\bin\Release\LitJSON.dll" "D:\SteamLibrary\steamapps\common\Card Survival Fantasy Forest\BepInEx\plugins\ModLoader\"

@@ -1,6 +1,10 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Publish ModLoader-Next安装包 to folder" type="DotNetFolderPublish" factoryName="Publish to folder">
-    <riderPublish configuration="Release" platform="Any CPU" ready_to_run="true" runtime="win-x64" target_folder="$PROJECT_DIR$/ModLoader-Next安装包/ModLoader-Next安装包" target_framework="net48" uuid_high="-9145916059069559238" uuid_low="-6992659510472311834" />
+    <riderPublish configuration="Release" platform="Any CPU" ready_to_run="true" target_folder="$PROJECT_DIR$/ModLoader-Next安装包/ModLoader-Next安装包">
+      <runtimes>
+        <item value="win-x64" />
+      </runtimes>
+    </riderPublish>
     <method v="2">
       <option name="Build Solution" enabled="true" />
     </method>

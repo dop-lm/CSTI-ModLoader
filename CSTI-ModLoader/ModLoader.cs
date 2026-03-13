@@ -61,7 +61,7 @@ public class ModPack
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public class ModLoader : BaseUnityPlugin
 {
-    public const string ModVersion = "1.1.2";
+    public const string ModVersion = "1.1.6";
 
     public static readonly Dictionary<string, Dictionary<string, string>> AllLuaFiles = new();
     public static event Action<string>? OnLoadMod;
@@ -74,6 +74,7 @@ public class ModLoader : BaseUnityPlugin
             // LuaSupportRuntime.Init(SpriteDict, AllLuaFiles);
             // NormalPatcher.DoPatch(HarmonyInstance);
             HarmonyInstance.PatchAll(typeof(BpFixPatch));
+            HarmonyInstance.PatchAll(typeof(CardDropFixPatch));
             HarmonyInstance.PatchAll(typeof(EnvPatch));
             HarmonyInstance.PatchAll(typeof(NullFixPatch));
             HarmonyInstance.PatchAll(typeof(NpcPatch));
@@ -1381,9 +1382,11 @@ public class ModLoader : BaseUnityPlugin
                     if (group.name == tuple.Item1)
                     {
                         group.ShopSortingList.Add(tuple.Item3);
+                        group.IncludedCards.Add(tuple.Item3);
                         foreach (var sub_group in group.SubGroups)
                             if (sub_group.name == tuple.Item2)
                             {
+                                sub_group.ShopSortingList.Add(tuple.Item3);
                                 sub_group.IncludedCards.Add(tuple.Item3);
                                 break;
                             }
@@ -1844,6 +1847,7 @@ public class ModLoader : BaseUnityPlugin
     {
         try
         {
+            Debug.LogWarning("GraphicsManagerInitPostfix Begin");
             AddCardTabGroup(__instance);
 
             AddBlueprintCardData(__instance);
